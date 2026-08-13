@@ -164,8 +164,14 @@ Each becomes an ADR in `design/adrs/`:
   Mitigation: this iteration codes against the FHIR REST API only, so a mandated Firely Server
   or Azure Health Data Services becomes a configuration change rather than a rewrite. Confirm
   the table before iteration 2, when master data and terminology bind to real products.
-- **Capability 15 (Search, Access & Retrieval) is not assigned to any phase in D1 Section 11.**
-  Surfaced by the traceability matrix. It needs a phase; it is not addressed here.
+- **Capability 15 (Search, Access & Retrieval) phasing - resolved.** D1 Section 11 omitted it
+  while D2.5 already assigned it P1: an inconsistency between documents rather than an open
+  decision. D1 has been corrected to agree. Capability 15 is **P1** (its dependencies - 2, 7, 17,
+  18, 19 - are satisfied by then, content first exists at volume in P1, and the permission-scoping
+  in CAP-SCH-004 must not be retrofitted), extending into **P2** for the consumer-read
+  requirements CAP-SCH-005 and CAP-SCH-007, which depend on publishing (14) and rendering (13).
+  Nothing in capability 15 is built in this iteration, but the authorisation layer built here is
+  what lets P1 search be scoped by construction rather than retrofitted.
 - **NFRs are unquantified** (D3 Section 15 open item 2). This iteration sets no performance
   budget; it should establish the measurement path so budgets can be set against evidence.
 - **Data residency map is unconfirmed** (D3 Section 15 open item 3). Logical scoping is built

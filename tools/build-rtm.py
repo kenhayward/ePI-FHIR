@@ -19,20 +19,9 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 SPEC_DIR = ROOT / "specs" / "capabilities"
+D1 = ROOT / "specs" / "D1-solution-overview.md"
 OUT = ROOT / "design" / "traceability" / "requirements-traceability-matrix.md"
 DELIVERY_MAP = ROOT / "design" / "traceability" / "delivery-map.json"
-
-# D1 Section 11 delivery roadmap.
-PHASE = {}
-for phase, caps in {
-    "P0": [2, 5, 6, 17, 18, 19, 21],
-    "P1": [1, 3, 7, 9, 16],
-    "P2": [10, 11, 12, 13, 14, 20],
-    "P3": [8, 24],
-    "P4": [4, 22, 23],
-}.items():
-    for cap in caps:
-        PHASE[cap] = phase
 
 # D3 Section 2.1 component decomposition.
 COMPONENT = {
@@ -64,6 +53,47 @@ COMPONENT = {
 
 CAP_HEADER = re.compile(r"^#\s+Capability\s+(\d+)\s+-\s+(.+?)\s+\(([A-Z]{3})\)\s*$")
 REQ_ROW = re.compile(r"^\|\s*(CAP-[A-Z]{3}-\d{3})\s*\|\s*(.+?)\s*\|\s*([MSC])\s*\|\s*$")
+# D1 Section 11 roadmap row, e.g. "| **P1** | Author -> manage | 1, 3, 7, 9, 15, 16 | ... |"
+D1_ROW = re.compile(r"^\|\s*\*\*(P\d)\*\*\s*\|[^|]*\|\s*([^|]+?)\s*\|")
+# A capability in a roadmap cell, optionally qualified: "15" or "15(+consumer read)"
+D1_CAP = re.compile(r"(\d+)\s*(\([^)]*\))?")
+# D2 group-summary row, e.g. "| 15 | Search, Access & Retrieval | SCH | P1 | ... |"
+D2_SUMMARY_ROW = re.compile(r"^\|\s*(\d+)\s*\|\s*[^|]+?\s*\|\s*[A-Z]{3}\s*\|\s*(P\d)[^|]*\|")
+
+
+def phases_from_d1():
+    """Primary and extension phases per capability, parsed from the D1 Section 11 roadmap.
+
+    A capability listed plainly ("15") is primary to that phase; one listed with a
+    qualifier ("15(+consumer read)") extends into it. D1 already uses this convention
+    for capabilities 9 and 10.
+    """
+    primary, extends = {}, {}
+    for line in D1.read_text(encoding="utf-8").splitlines():
+        row = D1_ROW.match(line)
+        if not row:
+            continue
+        phase, cell = row.group(1), row.group(2)
+        for number, qualifier in D1_CAP.findall(cell):
+            number = int(number)
+            if qualifier:
+                extends.setdefault(number, []).append(phase)
+            elif number in primary:
+                sys.exit(f"Capability {number} has two primary phases in D1 Section 11.")
+            else:
+                primary[number] = phase
+    return primary, extends
+
+
+def phases_from_d2():
+    """Phase per capability, as claimed by each D2 group-summary table."""
+    claimed = {}
+    for path in sorted(SPEC_DIR.glob("*.md")):
+        for line in path.read_text(encoding="utf-8").splitlines():
+            row = D2_SUMMARY_ROW.match(line)
+            if row:
+                claimed[int(row.group(1))] = row.group(2)
+    return claimed
 
 
 def collect():
@@ -95,7 +125,7 @@ def collect():
     return capabilities, requirements
 
 
-def render(capabilities, requirements, delivery):
+def render(capabilities, requirements, delivery, primary, extends):
     caps_by_number = dict(sorted(capabilities.items()))
     counts = {}
     for req in requirements:
@@ -122,16 +152,17 @@ def render(capabilities, requirements, delivery):
         "",
         "## Capabilities",
         "",
-        "| # | Capability | Abbr | Phase | Component (D3 Section 2.1) | Requirements | Specification |",
-        "|---|---|---|---|---|---|---|",
+        "| # | Capability | Abbr | Phase | Also in | Component (D3 Section 2.1) | Requirements | Specification |",
+        "|---|---|---|---|---|---|---|---|",
     ]
     for number, cap in caps_by_number.items():
         lines.append(
-            "| {} | {} | {} | {} | {} | {} | [{}]({}) |".format(
+            "| {} | {} | {} | {} | {} | {} | {} | [{}]({}) |".format(
                 number,
                 cap["name"],
                 cap["abbr"],
-                PHASE.get(number, "-"),
+                primary.get(number, "-"),
+                ", ".join(extends.get(number, [])) or "-",
                 COMPONENT.get(number, "-"),
                 counts.get(number, 0),
                 Path(cap["source"]).name,
@@ -157,7 +188,7 @@ def render(capabilities, requirements, delivery):
                 req["id"],
                 number,
                 req["priority"],
-                PHASE.get(number, "-"),
+                primary.get(number, "-"),
                 COMPONENT.get(number, "-"),
                 entry.get("iteration", "-"),
                 entry.get("status", "-"),
@@ -191,13 +222,30 @@ def main():
     if not requirements:
         sys.exit("No requirements found - check specs/capabilities/ and the row pattern.")
 
+    # D1 Section 11 and the D2 group summaries both state delivery phase. They must agree,
+    # and every specified capability must appear in the roadmap. Drift here is a documentation
+    # defect that would otherwise surface only when someone plans an iteration.
+    primary, extends = phases_from_d1()
+    claimed = phases_from_d2()
+    problems = [
+        f"  capability {n}: D2 says {claimed[n]}, D1 Section 11 says {primary.get(n) or 'nothing'}"
+        for n in sorted(claimed)
+        if claimed[n] != primary.get(n)
+    ]
+    problems += [
+        f"  capability {n}: specified in D2 but absent from the D1 Section 11 roadmap"
+        for n in sorted(set(capabilities) - set(primary))
+    ]
+    if problems:
+        sys.exit("Delivery phase disagrees between D1 and D2:\n" + "\n".join(problems))
+
     raw = json.loads(DELIVERY_MAP.read_text(encoding="utf-8")) if DELIVERY_MAP.exists() else {}
     delivery = {k: v for k, v in raw.items() if not k.startswith("_")}  # "_" keys are notes
     unknown = sorted(set(delivery) - {r["id"] for r in requirements})
     if unknown:
         sys.exit("delivery-map.json references unknown requirement IDs: " + ", ".join(unknown))
 
-    content = render(capabilities, requirements, delivery)
+    content = render(capabilities, requirements, delivery, primary, extends)
     if args.check:
         current = OUT.read_text(encoding="utf-8") if OUT.exists() else ""
         if current != content:

@@ -21,6 +21,14 @@ python tools/build-rtm.py --check    # fail if stale (this is what CI runs)
 The matrix is regenerated from the specifications on every change, so it cannot drift: adding a
 requirement to a capability specification without regenerating fails CI.
 
+The generator is also a **cross-document consistency check**. Delivery phase is stated twice -
+in the D1 Section 11 roadmap and in each D2 group-summary table - so the generator parses both
+and fails the build if they disagree, or if a specified capability is missing from the roadmap
+entirely. That check exists because exactly this drift occurred: capability 15 was phased P1 in
+D2.5 but omitted from D1 Section 11, and nothing would have caught it until someone planned the
+iteration that needed it. A capability listed plainly in a roadmap cell is primary to that phase;
+one listed with a qualifier, such as `15(+consumer read)`, extends into it.
+
 ## Recording delivery
 
 When a requirement is implemented, add or update its entry in `delivery-map.json` and regenerate:

@@ -17,32 +17,32 @@ requirement -> design -> delivery -> test.
 
 ## Capabilities
 
-| # | Capability | Abbr | Phase | Component (D3 Section 2.1) | Requirements | Specification |
-|---|---|---|---|---|---|---|
-| 1 | Ingestion & Import | ING | P1 | Authoring & Template Service | 14 | [D2.1-content-and-authoring.md](../../specs/capabilities/D2.1-content-and-authoring.md) |
-| 2 | Structured Content Model | SCM | P0 | Content Core (FHIR) | 12 | [D2.1-content-and-authoring.md](../../specs/capabilities/D2.1-content-and-authoring.md) |
-| 3 | Template & Label-Type Management | TPL | P1 | Authoring & Template Service | 12 | [D2.1-content-and-authoring.md](../../specs/capabilities/D2.1-content-and-authoring.md) |
-| 4 | Data Migration & Legacy Onboarding | MIG | P4 | Migration Service | 12 | [D2.1-content-and-authoring.md](../../specs/capabilities/D2.1-content-and-authoring.md) |
-| 5 | Master Data & Identifiers | MDM | P0 | Master Data Service | 10 | [D2.2-reference-and-master-data.md](../../specs/capabilities/D2.2-reference-and-master-data.md) |
-| 6 | Terminology & Code System Management | TRM | P0 | Terminology Service | 10 | [D2.2-reference-and-master-data.md](../../specs/capabilities/D2.2-reference-and-master-data.md) |
-| 7 | Lifecycle & Version Management | LCM | P1 | Lifecycle & Workflow Service | 11 | [D2.3-lifecycle-change-localisation.md](../../specs/capabilities/D2.3-lifecycle-change-localisation.md) |
-| 8 | Change Management & Impact Analysis | CHG | P3 | Change & Impact Service | 10 | [D2.3-lifecycle-change-localisation.md](../../specs/capabilities/D2.3-lifecycle-change-localisation.md) |
-| 9 | Localisation, Multi-region & Translation Management | LOC | P1 | Localisation & Translation Service | 9 | [D2.3-lifecycle-change-localisation.md](../../specs/capabilities/D2.3-lifecycle-change-localisation.md) |
-| 10 | Regulatory Mapping & Conformance Profiles | REG | P2 | Regulatory Profiles Service | 8 | [D2.3-lifecycle-change-localisation.md](../../specs/capabilities/D2.3-lifecycle-change-localisation.md) |
-| 11 | Validation & Quality | VAL | P2 | Validation Service | 8 | [D2.4-quality-and-production.md](../../specs/capabilities/D2.4-quality-and-production.md) |
-| 12 | Compliance & Completeness Checking | CMP | P2 | Compliance Service | 8 | [D2.4-quality-and-production.md](../../specs/capabilities/D2.4-quality-and-production.md) |
-| 13 | Rendering & Transformation | RND | P2 | Rendering Service | 9 | [D2.4-quality-and-production.md](../../specs/capabilities/D2.4-quality-and-production.md) |
-| 14 | Publishing & Distribution | PUB | P2 | Publishing Service | 9 | [D2.4-quality-and-production.md](../../specs/capabilities/D2.4-quality-and-production.md) |
-| 15 | Search, Access & Retrieval | SCH | - | Search Service | 8 | [D2.5-access-and-governance.md](../../specs/capabilities/D2.5-access-and-governance.md) |
-| 16 | Workflow & Approvals | WFL | P1 | Lifecycle & Workflow Service | 8 | [D2.5-access-and-governance.md](../../specs/capabilities/D2.5-access-and-governance.md) |
-| 17 | Identity, Access Control & Permissions - RBAC/ABAC | IAM | P0 | IAM | 9 | [D2.5-access-and-governance.md](../../specs/capabilities/D2.5-access-and-governance.md) |
-| 18 | Security | SEC | P0 | Security | 7 | [D2.5-access-and-governance.md](../../specs/capabilities/D2.5-access-and-governance.md) |
-| 19 | Audit Trail, e-Signature & Inspection Support | AUD | P0 | Audit & e-Signature | 9 | [D2.5-access-and-governance.md](../../specs/capabilities/D2.5-access-and-governance.md) |
-| 20 | Notifications, Events & Subscriptions | EVT | P2 | Notification & Event Backbone | 8 | [D2.6-platform-and-operations.md](../../specs/capabilities/D2.6-platform-and-operations.md) |
-| 21 | Configuration & Business-Rule Management | CFG | P0 | Configuration & Rules Service | 7 | [D2.6-platform-and-operations.md](../../specs/capabilities/D2.6-platform-and-operations.md) |
-| 22 | Records Retention & Archival | RET | P4 | Retention & Archival Service | 7 | [D2.6-platform-and-operations.md](../../specs/capabilities/D2.6-platform-and-operations.md) |
-| 23 | Reporting & Analytics | RPT | P4 | Reporting & Analytics | 7 | [D2.6-platform-and-operations.md](../../specs/capabilities/D2.6-platform-and-operations.md) |
-| 24 | External Integration | INT | P3 | Integration & Adapters | 8 | [D2.6-platform-and-operations.md](../../specs/capabilities/D2.6-platform-and-operations.md) |
+| # | Capability | Abbr | Phase | Also in | Component (D3 Section 2.1) | Requirements | Specification |
+|---|---|---|---|---|---|---|---|
+| 1 | Ingestion & Import | ING | P1 | - | Authoring & Template Service | 14 | [D2.1-content-and-authoring.md](../../specs/capabilities/D2.1-content-and-authoring.md) |
+| 2 | Structured Content Model | SCM | P0 | - | Content Core (FHIR) | 12 | [D2.1-content-and-authoring.md](../../specs/capabilities/D2.1-content-and-authoring.md) |
+| 3 | Template & Label-Type Management | TPL | P1 | - | Authoring & Template Service | 12 | [D2.1-content-and-authoring.md](../../specs/capabilities/D2.1-content-and-authoring.md) |
+| 4 | Data Migration & Legacy Onboarding | MIG | P4 | - | Migration Service | 12 | [D2.1-content-and-authoring.md](../../specs/capabilities/D2.1-content-and-authoring.md) |
+| 5 | Master Data & Identifiers | MDM | P0 | - | Master Data Service | 10 | [D2.2-reference-and-master-data.md](../../specs/capabilities/D2.2-reference-and-master-data.md) |
+| 6 | Terminology & Code System Management | TRM | P0 | - | Terminology Service | 10 | [D2.2-reference-and-master-data.md](../../specs/capabilities/D2.2-reference-and-master-data.md) |
+| 7 | Lifecycle & Version Management | LCM | P1 | - | Lifecycle & Workflow Service | 11 | [D2.3-lifecycle-change-localisation.md](../../specs/capabilities/D2.3-lifecycle-change-localisation.md) |
+| 8 | Change Management & Impact Analysis | CHG | P3 | - | Change & Impact Service | 10 | [D2.3-lifecycle-change-localisation.md](../../specs/capabilities/D2.3-lifecycle-change-localisation.md) |
+| 9 | Localisation, Multi-region & Translation Management | LOC | P1 | P3 | Localisation & Translation Service | 9 | [D2.3-lifecycle-change-localisation.md](../../specs/capabilities/D2.3-lifecycle-change-localisation.md) |
+| 10 | Regulatory Mapping & Conformance Profiles | REG | P2 | P3 | Regulatory Profiles Service | 8 | [D2.3-lifecycle-change-localisation.md](../../specs/capabilities/D2.3-lifecycle-change-localisation.md) |
+| 11 | Validation & Quality | VAL | P2 | - | Validation Service | 8 | [D2.4-quality-and-production.md](../../specs/capabilities/D2.4-quality-and-production.md) |
+| 12 | Compliance & Completeness Checking | CMP | P2 | - | Compliance Service | 8 | [D2.4-quality-and-production.md](../../specs/capabilities/D2.4-quality-and-production.md) |
+| 13 | Rendering & Transformation | RND | P2 | - | Rendering Service | 9 | [D2.4-quality-and-production.md](../../specs/capabilities/D2.4-quality-and-production.md) |
+| 14 | Publishing & Distribution | PUB | P2 | - | Publishing Service | 9 | [D2.4-quality-and-production.md](../../specs/capabilities/D2.4-quality-and-production.md) |
+| 15 | Search, Access & Retrieval | SCH | P1 | P2 | Search Service | 8 | [D2.5-access-and-governance.md](../../specs/capabilities/D2.5-access-and-governance.md) |
+| 16 | Workflow & Approvals | WFL | P1 | - | Lifecycle & Workflow Service | 8 | [D2.5-access-and-governance.md](../../specs/capabilities/D2.5-access-and-governance.md) |
+| 17 | Identity, Access Control & Permissions - RBAC/ABAC | IAM | P0 | - | IAM | 9 | [D2.5-access-and-governance.md](../../specs/capabilities/D2.5-access-and-governance.md) |
+| 18 | Security | SEC | P0 | - | Security | 7 | [D2.5-access-and-governance.md](../../specs/capabilities/D2.5-access-and-governance.md) |
+| 19 | Audit Trail, e-Signature & Inspection Support | AUD | P0 | - | Audit & e-Signature | 9 | [D2.5-access-and-governance.md](../../specs/capabilities/D2.5-access-and-governance.md) |
+| 20 | Notifications, Events & Subscriptions | EVT | P2 | - | Notification & Event Backbone | 8 | [D2.6-platform-and-operations.md](../../specs/capabilities/D2.6-platform-and-operations.md) |
+| 21 | Configuration & Business-Rule Management | CFG | P0 | - | Configuration & Rules Service | 7 | [D2.6-platform-and-operations.md](../../specs/capabilities/D2.6-platform-and-operations.md) |
+| 22 | Records Retention & Archival | RET | P4 | - | Retention & Archival Service | 7 | [D2.6-platform-and-operations.md](../../specs/capabilities/D2.6-platform-and-operations.md) |
+| 23 | Reporting & Analytics | RPT | P4 | - | Reporting & Analytics | 7 | [D2.6-platform-and-operations.md](../../specs/capabilities/D2.6-platform-and-operations.md) |
+| 24 | External Integration | INT | P3 | - | Integration & Adapters | 8 | [D2.6-platform-and-operations.md](../../specs/capabilities/D2.6-platform-and-operations.md) |
 
 ## Matrix
 
@@ -193,14 +193,14 @@ Status values: `planned` (scheduled, not built), `partial` (some aspect delivere
 | CAP-PUB-007 | 14 | S | P2 | Publishing Service | - | - | - |
 | CAP-PUB-008 | 14 | M | P2 | Publishing Service | - | - | - |
 | CAP-PUB-009 | 14 | S | P2 | Publishing Service | - | - | - |
-| CAP-SCH-001 | 15 | M | - | Search Service | - | - | - |
-| CAP-SCH-002 | 15 | M | - | Search Service | - | - | - |
-| CAP-SCH-003 | 15 | M | - | Search Service | - | - | - |
-| CAP-SCH-004 | 15 | M | - | Search Service | - | - | - |
-| CAP-SCH-005 | 15 | M | - | Search Service | - | - | - |
-| CAP-SCH-006 | 15 | S | - | Search Service | - | - | - |
-| CAP-SCH-007 | 15 | S | - | Search Service | - | - | - |
-| CAP-SCH-008 | 15 | S | - | Search Service | - | - | - |
+| CAP-SCH-001 | 15 | M | P1 | Search Service | - | - | - |
+| CAP-SCH-002 | 15 | M | P1 | Search Service | - | - | - |
+| CAP-SCH-003 | 15 | M | P1 | Search Service | - | - | - |
+| CAP-SCH-004 | 15 | M | P1 | Search Service | - | - | - |
+| CAP-SCH-005 | 15 | M | P1 | Search Service | - | - | - |
+| CAP-SCH-006 | 15 | S | P1 | Search Service | - | - | - |
+| CAP-SCH-007 | 15 | S | P1 | Search Service | - | - | - |
+| CAP-SCH-008 | 15 | S | P1 | Search Service | - | - | - |
 | CAP-WFL-001 | 16 | M | P1 | Lifecycle & Workflow Service | - | - | - |
 | CAP-WFL-002 | 16 | M | P1 | Lifecycle & Workflow Service | - | - | - |
 | CAP-WFL-003 | 16 | M | P1 | Lifecycle & Workflow Service | - | - | - |
