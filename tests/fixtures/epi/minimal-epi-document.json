@@ -1,0 +1,62 @@
+{
+  "resourceType": "Bundle",
+  "type": "document",
+  "timestamp": "2026-01-01T00:00:00+00:00",
+  "entry": [
+    {
+      "fullUrl": "urn:uuid:0195f3a0-0000-7000-8000-000000000001",
+      "resource": {
+        "resourceType": "Composition",
+        "status": "final",
+        "type": {
+          "coding": [
+            {
+              "system": "http://example.org/fhir/CodeSystem/synthetic-epi-document-type",
+              "code": "package-leaflet",
+              "display": "Package leaflet"
+            }
+          ]
+        },
+        "date": "2026-01-01T00:00:00+00:00",
+        "title": "SYNTHETIC TEST LABEL - Examplinum 10 mg film-coated tablets",
+        "author": [
+          {
+            "display": "Synthetic Pharma Ltd"
+          }
+        ],
+        "section": [
+          {
+            "title": "1. What Examplinum is and what it is used for",
+            "code": {
+              "coding": [
+                {
+                  "system": "http://example.org/fhir/CodeSystem/synthetic-epi-section-codes",
+                  "code": "indications"
+                }
+              ]
+            },
+            "text": {
+              "status": "generated",
+              "div": "<div xmlns=\"http://www.w3.org/1999/xhtml\"><p>Synthetic test content. Examplinum is not a real medicine.</p></div>"
+            }
+          },
+          {
+            "title": "2. What you need to know before you take Examplinum",
+            "code": {
+              "coding": [
+                {
+                  "system": "http://example.org/fhir/CodeSystem/synthetic-epi-section-codes",
+                  "code": "contraindications"
+                }
+              ]
+            },
+            "text": {
+              "status": "generated",
+              "div": "<div xmlns=\"http://www.w3.org/1999/xhtml\"><p>Synthetic test content. Do not use this fixture as clinical information.</p></div>"
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

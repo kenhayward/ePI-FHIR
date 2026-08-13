@@ -14,8 +14,8 @@ Name unit tests for the function they verify, for example
 ## Coverage
 
 - Design functions declared: **23**
-- Verified by at least one unit test: **2**
-- Not yet verified: **21**
+- Verified by at least one unit test: **8**
+- Not yet verified: **15**
 
 ## Matrix
 
@@ -25,13 +25,13 @@ Name unit tests for the function they verify, for example
 | FN-AUD-002 | Append an audit record to the append-only store | Audit & e-Signature | CAP-AUD-002 | 1 | planned | - |
 | FN-AUD-003 | Reject update or delete of an existing audit record | Audit & e-Signature | CAP-AUD-002 | 1 | planned | - |
 | FN-AUD-004 | Record every access-control decision to the audit sink | Audit & e-Signature | CAP-IAM-009 | 1 | planned | - |
-| FN-CC-001 | Parse an ePI document Bundle anchored by a Composition | Content Core (FHIR) | CAP-SCM-001 | 1 | planned | - |
-| FN-CC-002 | Assign a canonical identifier to a document | Content Core (FHIR) | CAP-SCM-007 | 1 | planned | - |
-| FN-CC-003 | Create an immutable version snapshot and record its lineage | Content Core (FHIR) | CAP-SCM-007 | 1 | planned | - |
-| FN-CC-004 | Persist canonical content through the FHIR REST API | Content Core (FHIR) | CAP-SCM-001 | 1 | planned | - |
-| FN-CC-005 | Retrieve a document by canonical identifier and version | Content Core (FHIR) | CAP-SCM-001 | 1 | planned | - |
-| FN-CC-006 | Serialise and deserialise a Bundle without content loss | Content Core (FHIR) | CAP-SCM-010 | 1 | planned | - |
-| FN-CC-007 | Reject any mutation of an existing version | Content Core (FHIR) | CAP-SCM-007 | 1 | planned | - |
+| FN-CC-001 | Parse an ePI document Bundle anchored by a Composition | Content Core (FHIR) | CAP-SCM-001 | 1 | verified | `FN_CC_001_reads_a_document_bundle_anchored_by_a_composition` (src/Epi.ContentCore.Tests/EpiBundleReaderTests.cs)<br>`FN_CC_001_rejects_a_bundle_that_is_not_of_type_document` (src/Epi.ContentCore.Tests/EpiBundleReaderTests.cs)<br>`FN_CC_001_rejects_a_bundle_with_no_entries` (src/Epi.ContentCore.Tests/EpiBundleReaderTests.cs)<br>`FN_CC_001_rejects_a_document_bundle_whose_first_entry_is_not_a_composition` (src/Epi.ContentCore.Tests/EpiBundleReaderTests.cs)<br>`FN_CC_001_rejects_content_carrying_elements_that_are_not_in_the_model` (src/Epi.ContentCore.Tests/EpiBundleReaderTests.cs)<br>`FN_CC_001_rejects_content_that_is_not_a_bundle` (src/Epi.ContentCore.Tests/EpiBundleReaderTests.cs)<br>`FN_CC_001_rejects_malformed_json_without_leaking_a_parser_stack_trace` (src/Epi.ContentCore.Tests/EpiBundleReaderTests.cs) |
+| FN-CC-002 | Assign a canonical identifier to a document | Content Core (FHIR) | CAP-SCM-007 | 1 | verified | `FN_CC_002_assigns_a_canonical_identifier_the_caller_did_not_supply` (src/Epi.ContentCore.Tests/ContentStoreConformance.cs)<br>`FN_CC_002_encodes_no_business_meaning_in_the_identifier` (src/Epi.ContentCore.Tests/ContentStoreConformance.cs)<br>`FN_CC_002_mints_a_distinct_identifier_for_every_document` (src/Epi.ContentCore.Tests/ContentStoreConformance.cs) |
+| FN-CC-003 | Create an immutable version snapshot and record its lineage | Content Core (FHIR) | CAP-SCM-007 | 1 | verified | `FN_CC_003_records_the_identifier_on_the_stored_bundle` (src/Epi.ContentCore.Tests/ContentStoreConformance.cs)<br>`FN_CC_003_rejects_a_new_version_of_a_document_that_does_not_exist` (src/Epi.ContentCore.Tests/ContentStoreConformance.cs)<br>`FN_CC_003_starts_at_version_one_and_increments_monotonically` (src/Epi.ContentCore.Tests/ContentStoreConformance.cs) |
+| FN-CC-004 | Persist canonical content through the FHIR REST API | Content Core (FHIR) | CAP-SCM-001 | 1 | planned (FHIR REST adapter, PR 4b) | - |
+| FN-CC-005 | Retrieve a document by canonical identifier and version | Content Core (FHIR) | CAP-SCM-001 | 1 | verified | `FN_CC_005_retrieves_a_specific_version_and_the_latest` (src/Epi.ContentCore.Tests/ContentStoreConformance.cs)<br>`FN_CC_005_returns_nothing_for_an_unknown_document_or_version` (src/Epi.ContentCore.Tests/ContentStoreConformance.cs) |
+| FN-CC-006 | Serialise and deserialise a Bundle without content loss | Content Core (FHIR) | CAP-SCM-010 | 1 | verified | `FN_CC_006_preserves_narrative_markup_exactly` (src/Epi.ContentCore.Tests/EpiBundleReaderTests.cs)<br>`FN_CC_006_serialises_and_reparses_without_content_loss` (src/Epi.ContentCore.Tests/EpiBundleReaderTests.cs) |
+| FN-CC-007 | Reject any mutation of an existing version | Content Core (FHIR) | CAP-SCM-007 | 1 | verified | `FN_CC_007_a_caller_mutating_a_retrieved_document_does_not_change_the_store` (src/Epi.ContentCore.Tests/ContentStoreConformance.cs)<br>`FN_CC_007_creating_a_new_version_leaves_the_previous_one_untouched` (src/Epi.ContentCore.Tests/ContentStoreConformance.cs)<br>`FN_CC_007_rejects_a_bundle_that_already_claims_an_identifier_in_our_namespace` (src/Epi.ContentCore.Tests/ContentStoreConformance.cs) |
 | FN-CFG-001 | Load market definitions from configuration data | Configuration & Rules Service | CAP-CFG-001, CAP-CFG-004 | 1 | verified | `FN_CFG_001_an_empty_directory_yields_an_empty_catalogue` (src/Epi.Governance.Tests/MarketCatalogueTests.cs)<br>`FN_CFG_001_exposes_a_market_by_its_code_regardless_of_casing` (src/Epi.Governance.Tests/MarketCatalogueTests.cs)<br>`FN_CFG_001_loads_every_market_definition_in_the_directory` (src/Epi.Governance.Tests/MarketCatalogueTests.cs) |
 | FN-CFG-002 | Resolve the active profile version for a market | Configuration & Rules Service | CAP-CFG-001 | 1 | planned | - |
 | FN-CFG-003 | Reject a market definition that fails schema validation | Configuration & Rules Service | CAP-CFG-006 | 1 | verified | `FN_CFG_003_rejects_a_market_with_a_missing_required_field` (src/Epi.Governance.Tests/MarketCatalogueTests.cs)<br>`FN_CFG_003_rejects_a_market_with_no_languages` (src/Epi.Governance.Tests/MarketCatalogueTests.cs)<br>`FN_CFG_003_rejects_a_missing_directory_rather_than_starting_empty` (src/Epi.Governance.Tests/MarketCatalogueTests.cs)<br>`FN_CFG_003_rejects_an_unknown_property_rather_than_ignoring_it` (src/Epi.Governance.Tests/MarketCatalogueTests.cs)<br>`FN_CFG_003_rejects_malformed_json_naming_the_file` (src/Epi.Governance.Tests/MarketCatalogueTests.cs)<br>`FN_CFG_003_rejects_two_markets_claiming_the_same_code` (src/Epi.Governance.Tests/MarketCatalogueTests.cs)<br>`FN_CFG_003_reports_every_problem_not_only_the_first` (src/Epi.Governance.Tests/MarketCatalogueTests.cs) |

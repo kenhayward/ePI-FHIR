@@ -196,7 +196,8 @@ Each row is one pull request, test-first, reviewed and merged before the next be
 | 1 | .NET solution skeleton, health endpoint, `dotnet` CI job activates | S |
 | 2 | ADRs: identifier and versioning scheme; pinned IG release | S |
 | 3 | Configuration-as-data loader and the first market definition | M |
-| 4 | Content core: create and read a Bundle, round-trip fidelity | L |
+| 4 | Content core domain: identity, versioning, immutability, round-trip fidelity | L |
+| 4b | FHIR REST adapter for the content core, exercised against HAPI in a container | M |
 | 5 | Structural validation at the write gate | M |
 | 6 | OIDC authentication and OPA authorisation with affiliate and market scoping | L |
 | 7 | Append-only audit sink | M |
@@ -206,6 +207,13 @@ Each row is one pull request, test-first, reviewed and merged before the next be
 PR 1 makes the `dotnet` job live, at which point it should be added to the branch-protection
 ruleset's required checks. The `tdd-guard` job begins to apply from PR 3 onward, which is its
 intent.
+
+**PR 4b was added during PR 4.** The content core splits cleanly into a domain (identity,
+versioning, immutability, round-trip fidelity, all provable without a server) and an adapter
+that persists through the FHIR REST API. Separating them is architecturally honest - D3
+Section 2.3 makes the FHIR API a boundary - and it keeps the container-backed tests, which
+need Docker and a HAPI image, in a pull request of their own rather than bundled with the
+domain work. The store conformance suite is written so the adapter inherits the same tests.
 
 ## 12. Exit criteria
 
