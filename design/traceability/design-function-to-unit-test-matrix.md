@@ -13,9 +13,9 @@ Name unit tests for the function they verify, for example
 
 ## Coverage
 
-- Design functions declared: **23**
+- Design functions declared: **38**
 - Verified by at least one unit test: **22**
-- Not yet verified: **1**
+- Not yet verified: **16**
 
 ## Matrix
 
@@ -25,6 +25,7 @@ Name unit tests for the function they verify, for example
 | FN-AUD-002 | Append an audit record to the append-only store | Audit & e-Signature | CAP-AUD-002 | 1 | verified | `FN_AUD_002_the_sink_stamps_the_time_rather_than_trusting_the_caller` (src/Epi.Governance.Tests/AuditTests.cs) |
 | FN-AUD-003 | Reject update or delete of an existing audit record | Audit & e-Signature | CAP-AUD-002 | 1 | verified | `FN_AUD_003_a_reader_cannot_change_history_through_the_list_it_is_given` (src/Epi.Governance.Tests/AuditTests.cs)<br>`FN_AUD_003_the_database_refuses_a_delete_even_from_a_direct_connection` (src/Epi.Governance.IntegrationTests/PostgresAuditSinkTests.cs)<br>`FN_AUD_003_the_database_refuses_an_update_even_from_a_direct_connection` (src/Epi.Governance.IntegrationTests/PostgresAuditSinkTests.cs)<br>`FN_AUD_003_the_record_survives_a_refused_deletion` (src/Epi.Governance.IntegrationTests/PostgresAuditSinkTests.cs)<br>`FN_AUD_003_the_sink_offers_no_way_to_change_or_remove_a_record` (src/Epi.Governance.Tests/AuditTests.cs) |
 | FN-AUD-004 | Record every access-control decision to the audit sink | Audit & e-Signature | CAP-IAM-009 | 1 | verified | `FN_AUD_004_access_decisions_are_recorded_whether_allowed_or_denied` (src/Epi.Governance.Tests/AuditTests.cs) |
+| FN-AUD-005 | Capture an electronic signature over the hash of the pinned version | Audit & e-Signature | CAP-AUD-003 | 2 | planned | - |
 | FN-CC-001 | Parse an ePI document Bundle anchored by a Composition | Content Core (FHIR) | CAP-SCM-001 | 1 | verified | `FN_CC_001_reads_a_document_bundle_anchored_by_a_composition` (src/Epi.ContentCore.Tests/EpiBundleReaderTests.cs)<br>`FN_CC_001_rejects_a_bundle_that_is_not_of_type_document` (src/Epi.ContentCore.Tests/EpiBundleReaderTests.cs)<br>`FN_CC_001_rejects_a_bundle_with_no_entries` (src/Epi.ContentCore.Tests/EpiBundleReaderTests.cs)<br>`FN_CC_001_rejects_a_document_bundle_whose_first_entry_is_not_a_composition` (src/Epi.ContentCore.Tests/EpiBundleReaderTests.cs)<br>`FN_CC_001_rejects_content_carrying_elements_that_are_not_in_the_model` (src/Epi.ContentCore.Tests/EpiBundleReaderTests.cs)<br>`FN_CC_001_rejects_content_that_is_not_a_bundle` (src/Epi.ContentCore.Tests/EpiBundleReaderTests.cs)<br>`FN_CC_001_rejects_malformed_json_without_leaking_a_parser_stack_trace` (src/Epi.ContentCore.Tests/EpiBundleReaderTests.cs) |
 | FN-CC-002 | Assign a canonical identifier to a document | Content Core (FHIR) | CAP-SCM-007 | 1 | verified | `FN_CC_002_assigns_a_canonical_identifier_the_caller_did_not_supply` (src/Epi.ContentCore.Tests/ContentStoreConformance.cs)<br>`FN_CC_002_encodes_no_business_meaning_in_the_identifier` (src/Epi.ContentCore.Tests/ContentStoreConformance.cs)<br>`FN_CC_002_mints_a_distinct_identifier_for_every_document` (src/Epi.ContentCore.Tests/ContentStoreConformance.cs) |
 | FN-CC-003 | Create an immutable version snapshot and record its lineage | Content Core (FHIR) | CAP-SCM-007 | 1 | verified | `FN_CC_003_records_the_identifier_on_the_stored_bundle` (src/Epi.ContentCore.Tests/ContentStoreConformance.cs)<br>`FN_CC_003_rejects_a_new_version_of_a_document_that_does_not_exist` (src/Epi.ContentCore.Tests/ContentStoreConformance.cs)<br>`FN_CC_003_starts_at_version_one_and_increments_monotonically` (src/Epi.ContentCore.Tests/ContentStoreConformance.cs) |
@@ -32,6 +33,8 @@ Name unit tests for the function they verify, for example
 | FN-CC-005 | Retrieve a document by canonical identifier and version | Content Core (FHIR) | CAP-SCM-001 | 1 | verified | `FN_CC_005_retrieves_a_specific_version_and_the_latest` (src/Epi.ContentCore.Tests/ContentStoreConformance.cs)<br>`FN_CC_005_returns_nothing_for_an_unknown_document_or_version` (src/Epi.ContentCore.Tests/ContentStoreConformance.cs) |
 | FN-CC-006 | Serialise and deserialise a Bundle without content loss | Content Core (FHIR) | CAP-SCM-010 | 1 | verified | `FN_CC_006_preserves_narrative_markup_exactly` (src/Epi.ContentCore.Tests/EpiBundleReaderTests.cs)<br>`FN_CC_006_serialises_and_reparses_without_content_loss` (src/Epi.ContentCore.Tests/EpiBundleReaderTests.cs) |
 | FN-CC-007 | Reject any mutation of an existing version | Content Core (FHIR) | CAP-SCM-007 | 1 | verified | `FN_CC_007_a_caller_mutating_a_retrieved_document_does_not_change_the_store` (src/Epi.ContentCore.Tests/ContentStoreConformance.cs)<br>`FN_CC_007_creating_a_new_version_leaves_the_previous_one_untouched` (src/Epi.ContentCore.Tests/ContentStoreConformance.cs)<br>`FN_CC_007_rejects_a_bundle_that_already_claims_an_identifier_in_our_namespace` (src/Epi.ContentCore.Tests/ContentStoreConformance.cs) |
+| FN-CC-008 | Assign a stable identifier to every section at creation | Content Core (FHIR) | CAP-SCM-007 | 2 | planned | - |
+| FN-CC-009 | Preserve section identifiers across versions | Content Core (FHIR) | CAP-SCM-007 | 2 | planned | - |
 | FN-CFG-001 | Load market definitions from configuration data | Configuration & Rules Service | CAP-CFG-001, CAP-CFG-004 | 1 | verified | `FN_CFG_001_an_empty_directory_yields_an_empty_catalogue` (src/Epi.Governance.Tests/MarketCatalogueTests.cs)<br>`FN_CFG_001_exposes_a_market_by_its_code_regardless_of_casing` (src/Epi.Governance.Tests/MarketCatalogueTests.cs)<br>`FN_CFG_001_loads_every_market_definition_in_the_directory` (src/Epi.Governance.Tests/MarketCatalogueTests.cs) |
 | FN-CFG-002 | Resolve the active profile version for a market | Configuration & Rules Service | CAP-CFG-001 | 1 | verified | `FN_CFG_002_an_unknown_market_resolves_to_no_profile` (src/Epi.Governance.Tests/MarketCatalogueTests.cs)<br>`FN_CFG_002_resolves_the_active_profile_for_a_market` (src/Epi.Governance.Tests/MarketCatalogueTests.cs) |
 | FN-CFG-003 | Reject a market definition that fails schema validation | Configuration & Rules Service | CAP-CFG-006 | 1 | verified | `FN_CFG_003_rejects_a_market_that_names_no_conformance_profile` (src/Epi.Governance.Tests/MarketCatalogueTests.cs)<br>`FN_CFG_003_rejects_a_market_with_a_missing_required_field` (src/Epi.Governance.Tests/MarketCatalogueTests.cs)<br>`FN_CFG_003_rejects_a_market_with_no_languages` (src/Epi.Governance.Tests/MarketCatalogueTests.cs)<br>`FN_CFG_003_rejects_a_missing_directory_rather_than_starting_empty` (src/Epi.Governance.Tests/MarketCatalogueTests.cs)<br>`FN_CFG_003_rejects_an_unknown_property_rather_than_ignoring_it` (src/Epi.Governance.Tests/MarketCatalogueTests.cs)<br>`FN_CFG_003_rejects_malformed_json_naming_the_file` (src/Epi.Governance.Tests/MarketCatalogueTests.cs)<br>`FN_CFG_003_rejects_two_markets_claiming_the_same_code` (src/Epi.Governance.Tests/MarketCatalogueTests.cs)<br>`FN_CFG_003_reports_every_problem_not_only_the_first` (src/Epi.Governance.Tests/MarketCatalogueTests.cs) |
@@ -41,9 +44,21 @@ Name unit tests for the function they verify, for example
 | FN-IAM-002 | Build an authorisation query from subject, action, and resource | IAM | CAP-IAM-002 | 1 | verified | `FN_IAM_002_the_query_sent_matches_the_policy_input_contract` (src/Epi.Iam.Tests/OpaPolicyDecisionPointTests.cs) |
 | FN-IAM-003 | Evaluate the policy decision and enforce allow or deny | IAM | CAP-IAM-002 | 1 | verified | `FN_IAM_003_a_deny_decision_is_denied_with_a_reason` (src/Epi.Iam.Tests/OpaPolicyDecisionPointTests.cs)<br>`FN_IAM_003_an_allow_decision_is_allowed` (src/Epi.Iam.Tests/OpaPolicyDecisionPointTests.cs)<br>`FN_IAM_003_an_undefined_result_is_denied` (src/Epi.Iam.Tests/OpaPolicyDecisionPointTests.cs)<br>`FN_IAM_003_an_unreachable_or_failing_policy_server_is_denied` (src/Epi.Iam.Tests/OpaPolicyDecisionPointTests.cs) |
 | FN-IAM-004 | Apply affiliate and market scope filtering at data access | IAM | CAP-IAM-007 | 1 | verified | `FN_IAM_004_a_denied_write_never_reaches_the_store` (src/Epi.Iam.Tests/ScopedContentStoreTests.cs)<br>`FN_IAM_004_content_carrying_no_scope_cannot_be_authorised` (src/Epi.Iam.Tests/ScopedContentStoreTests.cs)<br>`FN_IAM_004_content_in_scope_can_be_written_and_read` (src/Epi.Iam.Tests/ScopedContentStoreTests.cs)<br>`FN_IAM_004_out_of_scope_content_is_invisible_rather_than_refused` (src/Epi.Iam.Tests/ScopedContentStoreTests.cs)<br>`FN_IAM_004_reads_are_authorised_as_reads_not_as_writes` (src/Epi.Iam.Tests/ScopedContentStoreTests.cs)<br>`FN_IAM_004_the_decision_carries_the_documents_own_affiliate_and_market` (src/Epi.Iam.Tests/ScopedContentStoreTests.cs) |
+| FN-LCM-001 | Load the lifecycle state model from configuration | Lifecycle & Workflow Service | CAP-LCM-001 | 2 | planned | - |
+| FN-LCM-002 | Reject a transition the state model does not permit | Lifecycle & Workflow Service | CAP-LCM-001 | 2 | planned | - |
+| FN-LCM-003 | Record a transition with actor, timestamp and reason | Lifecycle & Workflow Service | CAP-LCM-007 | 2 | planned | - |
+| FN-LCM-004 | Hold per-market approval state separately from internal state | Lifecycle & Workflow Service | CAP-LCM-003 | 2 | planned | - |
+| FN-LCM-005 | Pin the content snapshot and its validating context at approval | Lifecycle & Workflow Service | CAP-LCM-011 | 2 | planned | - |
+| FN-LCM-006 | Reconstruct a version's state at any past moment from its transitions | Lifecycle & Workflow Service | CAP-LCM-006 | 2 | planned | - |
+| FN-SCH-001 | Search labels by market, status and identifier, scoped to the caller | Search Service | CAP-SCH-001, CAP-SCH-004 | 2 | planned | - |
+| FN-SCH-002 | Retrieve the current-approved version for a market | Search Service | CAP-SCH-002 | 2 | planned | - |
+| FN-TPL-001 | Instantiate a conformant draft from an approved template | Authoring & Template Service | CAP-TPL-004 | 2 | planned | - |
+| FN-TPL-002 | Record the template version a label was instantiated from | Authoring & Template Service | CAP-TPL-007 | 2 | planned | - |
 | FN-VAL-001 | Check structural well-formedness against the pinned profile | Validation Service | CAP-VAL-003 | 1 | verified | `FN_VAL_001_a_conformant_document_produces_no_errors` (src/Epi.Validation.Tests/StructuralValidatorTests.cs)<br>`FN_VAL_001_a_missing_required_element_is_an_error` (src/Epi.Validation.Tests/StructuralValidatorTests.cs) |
 | FN-VAL-002 | Check reference integrity, rejecting dangling references | Validation Service | CAP-VAL-003 | 1 | verified | `FN_VAL_002_a_reference_satisfied_within_the_document_is_accepted` (src/Epi.Validation.Tests/StructuralValidatorTests.cs)<br>`FN_VAL_002_a_reference_to_something_absent_from_the_document_is_an_error` (src/Epi.Validation.Tests/StructuralValidatorTests.cs)<br>`FN_VAL_002_an_external_reference_is_not_treated_as_dangling` (src/Epi.Validation.Tests/StructuralValidatorTests.cs) |
 | FN-VAL-003 | Produce structured issues carrying severity and element location | Validation Service | CAP-VAL-005 | 1 | verified | `FN_VAL_003_a_valid_document_reports_no_issues_at_all_rather_than_silence` (src/Epi.Validation.Tests/StructuralValidatorTests.cs)<br>`FN_VAL_003_an_issue_carries_a_severity_and_the_element_it_is_about` (src/Epi.Validation.Tests/StructuralValidatorTests.cs) |
+| FN-WFL-001 | Route a version for review and approval | Lifecycle & Workflow Service | CAP-WFL-001 | 2 | planned | - |
+| FN-WFL-002 | Refuse an approval by the author of the version, by any route | Lifecycle & Workflow Service | CAP-WFL-005, CAP-IAM-006 | 2 | planned | - |
 
 ## Requirements covered by these functions
 
@@ -51,16 +66,30 @@ Name unit tests for the function they verify, for example
 |---|---|---|
 | CAP-AUD-001 | FN-AUD-001 | Capture a comprehensive audit trail of all GxP-relevant actions (who, what, when, why, before/after values). |
 | CAP-AUD-002 | FN-AUD-002, FN-AUD-003 | Store audit records tamper-evidently/immutably (append-only). |
+| CAP-AUD-003 | FN-AUD-005 | Provide electronic signatures per 21 CFR Part 11 & EU Annex 11: signing events, signature meaning/manifest, and binding to the signed record and signer identity. |
 | CAP-CFG-001 | FN-CFG-001, FN-CFG-002 | Externalise configuration for markets/regulators, lifecycle state models, workflows, validation/compliance rules, terminology bindings, publishing routing, and event schemas. |
 | CAP-CFG-004 | FN-CFG-001 | Onboard a new market/regulator via configuration without a code release. |
 | CAP-CFG-006 | FN-CFG-003 | Validate configuration consistency before activation. |
 | CAP-EVT-001 | FN-EVT-001, FN-EVT-002 | Provide a publish/subscribe event backbone for inter-capability communication. |
 | CAP-IAM-001 | FN-IAM-001 | Authenticate via the enterprise IdP (OIDC/SAML) with SSO/federation and MFA (delegated to IdP). |
 | CAP-IAM-002 | FN-IAM-002, FN-IAM-003 | Enforce combined RBAC + ABAC authorization on every action and API. |
+| CAP-IAM-006 | FN-WFL-002 | Enforce segregation of duties (e.g. author != approver) across workflows (#16). |
 | CAP-IAM-007 | FN-IAM-004 | Enforce multi-tenant isolation of affiliate data. |
 | CAP-IAM-009 | FN-AUD-004 | Record all access-control decisions and administration changes to audit (#19). |
+| CAP-LCM-001 | FN-LCM-001, FN-LCM-002 | Provide a configurable lifecycle state model with explicitly allowed transitions. |
+| CAP-LCM-003 | FN-LCM-004 | Maintain **internal lifecycle state** separately from **per-market regulatory-approval state**. |
+| CAP-LCM-006 | FN-LCM-006 | Reconstruct the full content and metadata of any historical version. |
+| CAP-LCM-007 | FN-LCM-003 | Enforce transitions through workflow (#16) and permissions/segregation of duties (#17). |
+| CAP-LCM-011 | FN-LCM-005 | Pin the content snapshot (including reusable-unit versions per policy) at approval. |
+| CAP-SCH-001 | FN-SCH-001 | Provide a FHIR RESTful API with search parameters (product, market, language, status, identifier, effective date). |
+| CAP-SCH-002 | FN-SCH-002 | Retrieve a specific version and the current-approved version of a label per market/language. |
+| CAP-SCH-004 | FN-SCH-001 | Scope all results by caller permissions/attributes (#17); never leak out-of-scope content. |
 | CAP-SCM-001 | FN-CC-001, FN-CC-004, FN-CC-005 | Represent an ePI as a FHIR document `Bundle` anchored by a `Composition` with typed, coded sections. |
-| CAP-SCM-007 | FN-CC-002, FN-CC-003, FN-CC-007 | Define **canonical identifier and versioning semantics** for documents, sections, and reusable units (stable IDs across languages/markets/versions). |
+| CAP-SCM-007 | FN-CC-002, FN-CC-003, FN-CC-007, FN-CC-008, FN-CC-009 | Define **canonical identifier and versioning semantics** for documents, sections, and reusable units (stable IDs across languages/markets/versions). |
 | CAP-SCM-010 | FN-CC-006 | Preserve full fidelity round-trip: a conformant ePI can be represented and re-serialised without content loss. |
+| CAP-TPL-004 | FN-TPL-001 | Instantiate a new label from a template, producing a conformant, pre-scaffolded draft handed to #7. |
+| CAP-TPL-007 | FN-TPL-002 | Version templates with effective dates; record which template (and version) each label was instantiated from. |
 | CAP-VAL-003 | FN-VAL-001, FN-VAL-002 | Validate structural well-formedness and reference integrity (#2), including no dangling references in approval candidates. |
 | CAP-VAL-005 | FN-VAL-003 | Produce structured, actionable issues with severity and precise location (section/element). |
+| CAP-WFL-001 | FN-WFL-001 | Configurable multi-step review/approval workflows per market and label type (config-as-data, #21). |
+| CAP-WFL-005 | FN-WFL-002 | Drive lifecycle transitions in #7 on step completion. |

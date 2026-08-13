@@ -13,8 +13,8 @@ For the full V model see [v-model-trace.md](v-model-trace.md).
 ## Coverage
 
 - Requirements specified: **220** across **24** capabilities
-- Requirements with delivery evidence: **15**
-- Requirements not yet scheduled: **205**
+- Requirements with delivery evidence: **29**
+- Requirements not yet scheduled: **191**
 
 ## Capabilities
 
@@ -81,10 +81,10 @@ Status values: `planned` (scheduled, not built), `partial` (some aspect delivere
 | CAP-TPL-001 | 3 | M | P1 | Authoring & Template Service | - | - | - |
 | CAP-TPL-002 | 3 | M | P1 | Authoring & Template Service | - | - | - |
 | CAP-TPL-003 | 3 | M | P1 | Authoring & Template Service | - | - | - |
-| CAP-TPL-004 | 3 | M | P1 | Authoring & Template Service | - | - | - |
+| CAP-TPL-004 | 3 | M | P1 | Authoring & Template Service | 2 | planned | iteration-2 (see design/iteration-2.md) |
 | CAP-TPL-005 | 3 | M | P1 | Authoring & Template Service | - | - | - |
 | CAP-TPL-006 | 3 | M | P1 | Authoring & Template Service | - | - | - |
-| CAP-TPL-007 | 3 | M | P1 | Authoring & Template Service | - | - | - |
+| CAP-TPL-007 | 3 | M | P1 | Authoring & Template Service | 2 | planned | iteration-2 (see design/iteration-2.md) |
 | CAP-TPL-008 | 3 | M | P1 | Authoring & Template Service | - | - | - |
 | CAP-TPL-009 | 3 | M | P1 | Authoring & Template Service | - | - | - |
 | CAP-TPL-010 | 3 | S | P1 | Authoring & Template Service | - | - | - |
@@ -122,17 +122,17 @@ Status values: `planned` (scheduled, not built), `partial` (some aspect delivere
 | CAP-TRM-008 | 6 | S | P0 | Terminology Service | - | - | - |
 | CAP-TRM-009 | 6 | M | P0 | Terminology Service | - | - | - |
 | CAP-TRM-010 | 6 | S | P0 | Terminology Service | - | - | - |
-| CAP-LCM-001 | 7 | M | P1 | Lifecycle & Workflow Service | - | - | - |
+| CAP-LCM-001 | 7 | M | P1 | Lifecycle & Workflow Service | 2 | planned | iteration-2 (see design/iteration-2.md) |
 | CAP-LCM-002 | 7 | M | P1 | Lifecycle & Workflow Service | - | - | - |
-| CAP-LCM-003 | 7 | M | P1 | Lifecycle & Workflow Service | - | - | - |
+| CAP-LCM-003 | 7 | M | P1 | Lifecycle & Workflow Service | 2 | planned | iteration-2 (see design/iteration-2.md) |
 | CAP-LCM-004 | 7 | M | P1 | Lifecycle & Workflow Service | - | - | - |
 | CAP-LCM-005 | 7 | M | P1 | Lifecycle & Workflow Service | - | - | - |
-| CAP-LCM-006 | 7 | M | P1 | Lifecycle & Workflow Service | - | - | - |
-| CAP-LCM-007 | 7 | M | P1 | Lifecycle & Workflow Service | - | - | - |
+| CAP-LCM-006 | 7 | M | P1 | Lifecycle & Workflow Service | 2 | planned | iteration-2 (see design/iteration-2.md) |
+| CAP-LCM-007 | 7 | M | P1 | Lifecycle & Workflow Service | 2 | planned | iteration-2 (see design/iteration-2.md) |
 | CAP-LCM-008 | 7 | S | P1 | Lifecycle & Workflow Service | - | - | - |
 | CAP-LCM-009 | 7 | M | P1 | Lifecycle & Workflow Service | - | - | - |
 | CAP-LCM-010 | 7 | M | P1 | Lifecycle & Workflow Service | - | - | - |
-| CAP-LCM-011 | 7 | M | P1 | Lifecycle & Workflow Service | - | - | - |
+| CAP-LCM-011 | 7 | M | P1 | Lifecycle & Workflow Service | 2 | planned | iteration-2 (see design/iteration-2.md) |
 | CAP-CHG-001 | 8 | M | P3 | Change & Impact Service | - | - | - |
 | CAP-CHG-002 | 8 | M | P3 | Change & Impact Service | - | - | - |
 | CAP-CHG-003 | 8 | M | P3 | Change & Impact Service | - | - | - |
@@ -194,19 +194,19 @@ Status values: `planned` (scheduled, not built), `partial` (some aspect delivere
 | CAP-PUB-007 | 14 | S | P2 | Publishing Service | - | - | - |
 | CAP-PUB-008 | 14 | M | P2 | Publishing Service | - | - | - |
 | CAP-PUB-009 | 14 | S | P2 | Publishing Service | - | - | - |
-| CAP-SCH-001 | 15 | M | P1 | Search Service | - | - | - |
-| CAP-SCH-002 | 15 | M | P1 | Search Service | - | - | - |
+| CAP-SCH-001 | 15 | M | P1 | Search Service | 2 | planned | iteration-2 (see design/iteration-2.md) |
+| CAP-SCH-002 | 15 | M | P1 | Search Service | 2 | planned | iteration-2 (see design/iteration-2.md) |
 | CAP-SCH-003 | 15 | M | P1 | Search Service | - | - | - |
-| CAP-SCH-004 | 15 | M | P1 | Search Service | - | - | - |
+| CAP-SCH-004 | 15 | M | P1 | Search Service | 2 | planned | iteration-2 (see design/iteration-2.md) |
 | CAP-SCH-005 | 15 | M | P1 | Search Service | - | - | - |
 | CAP-SCH-006 | 15 | S | P1 | Search Service | - | - | - |
 | CAP-SCH-007 | 15 | S | P1 | Search Service | - | - | - |
 | CAP-SCH-008 | 15 | S | P1 | Search Service | - | - | - |
-| CAP-WFL-001 | 16 | M | P1 | Lifecycle & Workflow Service | - | - | - |
+| CAP-WFL-001 | 16 | M | P1 | Lifecycle & Workflow Service | 2 | planned | iteration-2 (see design/iteration-2.md) |
 | CAP-WFL-002 | 16 | M | P1 | Lifecycle & Workflow Service | - | - | - |
 | CAP-WFL-003 | 16 | M | P1 | Lifecycle & Workflow Service | - | - | - |
 | CAP-WFL-004 | 16 | M | P1 | Lifecycle & Workflow Service | - | - | - |
-| CAP-WFL-005 | 16 | M | P1 | Lifecycle & Workflow Service | - | - | - |
+| CAP-WFL-005 | 16 | M | P1 | Lifecycle & Workflow Service | 2 | planned | iteration-2 (see design/iteration-2.md) |
 | CAP-WFL-006 | 16 | S | P1 | Lifecycle & Workflow Service | - | - | - |
 | CAP-WFL-007 | 16 | M | P1 | Lifecycle & Workflow Service | - | - | - |
 | CAP-WFL-008 | 16 | M | P1 | Lifecycle & Workflow Service | - | - | - |
@@ -215,7 +215,7 @@ Status values: `planned` (scheduled, not built), `partial` (some aspect delivere
 | CAP-IAM-003 | 17 | M | P0 | IAM | - | - | - |
 | CAP-IAM-004 | 17 | M | P0 | IAM | - | - | - |
 | CAP-IAM-005 | 17 | M | P0 | IAM | - | - | - |
-| CAP-IAM-006 | 17 | M | P0 | IAM | - | - | - |
+| CAP-IAM-006 | 17 | M | P0 | IAM | 2 | planned | iteration-2 (see design/iteration-2.md) |
 | CAP-IAM-007 | 17 | M | P0 | IAM | 1 | partial | FN_IAM_004 on every store operation, reached through the API; physical partitioning for residency markets is ADR-004, later |
 | CAP-IAM-008 | 17 | M | P0 | IAM | - | - | - |
 | CAP-IAM-009 | 17 | M | P0 | IAM | 1 | partial | FN_AUD_004: decisions recorded whether allowed or denied; administration changes are recorded when that surface exists |
@@ -228,7 +228,7 @@ Status values: `planned` (scheduled, not built), `partial` (some aspect delivere
 | CAP-SEC-007 | 18 | S | P0 | Security | - | - | - |
 | CAP-AUD-001 | 19 | M | P0 | Audit & e-Signature | 1 | partial | FN_AUD_001 and IT_003 for content writes and access decisions; other capabilities write as they arrive |
 | CAP-AUD-002 | 19 | M | P0 | Audit & e-Signature | 1 | partial | FN_AUD_002 and FN_AUD_003: append-only by interface, and enforced by the database in the PostgreSQL sink; sealed WORM export is capability 22 |
-| CAP-AUD-003 | 19 | M | P0 | Audit & e-Signature | - | - | - |
+| CAP-AUD-003 | 19 | M | P0 | Audit & e-Signature | 2 | planned | iteration-2 (see design/iteration-2.md) |
 | CAP-AUD-004 | 19 | M | P0 | Audit & e-Signature | - | - | - |
 | CAP-AUD-005 | 19 | M | P0 | Audit & e-Signature | - | - | - |
 | CAP-AUD-006 | 19 | M | P0 | Audit & e-Signature | - | - | - |

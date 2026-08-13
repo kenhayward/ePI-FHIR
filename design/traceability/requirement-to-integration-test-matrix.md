@@ -12,10 +12,10 @@ Name integration tests for the case they validate, for example
 
 ## Coverage
 
-- Integration tests declared: **9**
+- Integration tests declared: **17**
 - Implemented in code: **9**
-- Requirements validated by at least one integration test: **15**
-- Scheduled requirements still without one: **0**
+- Requirements validated by at least one integration test: **26**
+- Scheduled requirements still without one: **3**
 
 ## Integration tests
 
@@ -30,6 +30,14 @@ Name integration tests for the case they validate, for example
 | IT-007 | A request without a valid OIDC token is rejected before reaching content | CAP-IAM-001 | 1 | implemented | `IT_007_a_request_without_a_token_is_refused` (src/Epi.Api.Tests/ContentEndpointTests.cs)<br>`IT_007_reading_without_a_token_is_refused_too` (src/Epi.Api.Tests/ContentEndpointTests.cs)<br>`IT_007_the_health_probe_stays_open` (src/Epi.Api.Tests/ContentEndpointTests.cs) |
 | IT-008 | Creating a document emits a content event to the backbone | CAP-EVT-001 | 1 | implemented | `IT_008_creating_a_document_emits_an_event_naming_it` (src/Epi.Governance.Tests/ContentEventTests.cs) |
 | IT-009 | An invalid market definition is rejected before activation | CAP-CFG-006 | 1 | implemented | `IT_009_an_invalid_market_definition_is_rejected_before_activation` (src/Epi.Governance.Tests/MarketConfigurationIntegrationTests.cs) |
+| IT-010 | An unpermitted transition is rejected and a permitted one records actor and timestamp | CAP-LCM-001, CAP-LCM-007 | 2 | planned | - |
+| IT-011 | The author of a version cannot approve it, by any route | CAP-IAM-006, CAP-WFL-005 | 2 | planned | - |
+| IT-012 | Approval captures a signature binding signer, meaning, time and a hash of the version signed | CAP-AUD-003 | 2 | planned | - |
+| IT-013 | A version approved in one market is not approved in another, on the same content | CAP-LCM-003 | 2 | planned | - |
+| IT-014 | A label instantiated from a template validates and records its template version | CAP-TPL-004, CAP-TPL-007 | 2 | planned | - |
+| IT-015 | Section identifiers survive a new version unchanged | CAP-SCM-007 | 2 | planned | - |
+| IT-016 | Search returns only what the caller may see and can return the current-approved version per market | CAP-SCH-002, CAP-SCH-004 | 2 | planned | - |
+| IT-017 | A historical version is reconstructable with the metadata that made it valid | CAP-LCM-006 | 2 | planned | - |
 
 ## By requirement
 
@@ -37,16 +45,27 @@ Name integration tests for the case they validate, for example
 |---|---|---|
 | CAP-AUD-001 | IT-003 | Capture a comprehensive audit trail of all GxP-relevant actions (who, what, when, why, before/after values). |
 | CAP-AUD-002 | IT-003 | Store audit records tamper-evidently/immutably (append-only). |
+| CAP-AUD-003 | IT-012 | Provide electronic signatures per 21 CFR Part 11 & EU Annex 11: signing events, signature meaning/manifest, and binding to the signed record and signer identity. |
 | CAP-CFG-001 | IT-004 | Externalise configuration for markets/regulators, lifecycle state models, workflows, validation/compliance rules, terminology bindings, publishing routing, and event schemas. |
 | CAP-CFG-004 | IT-004 | Onboard a new market/regulator via configuration without a code release. |
 | CAP-CFG-006 | IT-009 | Validate configuration consistency before activation. |
 | CAP-EVT-001 | IT-008 | Provide a publish/subscribe event backbone for inter-capability communication. |
 | CAP-IAM-001 | IT-007 | Authenticate via the enterprise IdP (OIDC/SAML) with SSO/federation and MFA (delegated to IdP). |
 | CAP-IAM-002 | IT-002 | Enforce combined RBAC + ABAC authorization on every action and API. |
+| CAP-IAM-006 | IT-011 | Enforce segregation of duties (e.g. author != approver) across workflows (#16). |
 | CAP-IAM-007 | IT-002 | Enforce multi-tenant isolation of affiliate data. |
 | CAP-IAM-009 | IT-003 | Record all access-control decisions and administration changes to audit (#19). |
+| CAP-LCM-001 | IT-010 | Provide a configurable lifecycle state model with explicitly allowed transitions. |
+| CAP-LCM-003 | IT-013 | Maintain **internal lifecycle state** separately from **per-market regulatory-approval state**. |
+| CAP-LCM-006 | IT-017 | Reconstruct the full content and metadata of any historical version. |
+| CAP-LCM-007 | IT-010 | Enforce transitions through workflow (#16) and permissions/segregation of duties (#17). |
+| CAP-SCH-002 | IT-016 | Retrieve a specific version and the current-approved version of a label per market/language. |
+| CAP-SCH-004 | IT-016 | Scope all results by caller permissions/attributes (#17); never leak out-of-scope content. |
 | CAP-SCM-001 | IT-001 | Represent an ePI as a FHIR document `Bundle` anchored by a `Composition` with typed, coded sections. |
-| CAP-SCM-007 | IT-006 | Define **canonical identifier and versioning semantics** for documents, sections, and reusable units (stable IDs across languages/markets/versions). |
+| CAP-SCM-007 | IT-006, IT-015 | Define **canonical identifier and versioning semantics** for documents, sections, and reusable units (stable IDs across languages/markets/versions). |
 | CAP-SCM-010 | IT-001 | Preserve full fidelity round-trip: a conformant ePI can be represented and re-serialised without content loss. |
+| CAP-TPL-004 | IT-014 | Instantiate a new label from a template, producing a conformant, pre-scaffolded draft handed to #7. |
+| CAP-TPL-007 | IT-014 | Version templates with effective dates; record which template (and version) each label was instantiated from. |
 | CAP-VAL-003 | IT-005 | Validate structural well-formedness and reference integrity (#2), including no dangling references in approval candidates. |
 | CAP-VAL-005 | IT-005 | Produce structured, actionable issues with severity and precise location (section/element). |
+| CAP-WFL-005 | IT-011 | Drive lifecycle transitions in #7 on step completion. |

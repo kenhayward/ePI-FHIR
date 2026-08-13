@@ -1,24 +1,148 @@
 {
   "_comment": "Hand-maintained delivery evidence, merged into the generated matrix by tools/build-rtm.py. One entry per requirement that an iteration commits to. Evidence should name the test or artifact that proves it, once it exists.",
-
-  "CAP-SCM-001": {"iteration": "1", "status": "partial", "evidence": "EpiBundleReader plus the store conformance suite run against both the in-memory store and HAPI; coded section typing is a later iteration"},
-  "CAP-SCM-007": {"iteration": "1", "status": "partial", "evidence": "ADR-015 plus FN-CC-002/003/007 for documents; section and reusable-unit identity are later iterations"},
-  "CAP-SCM-010": {"iteration": "1", "status": "partial", "evidence": "FN_CC_006 and IT_001, the latter run against both the in-memory store and a real HAPI server; validation against the pinned profile is PR 5"},
-
-  "CAP-VAL-003": {"iteration": "1", "status": "partial", "evidence": "FN_VAL_001 and FN_VAL_002 at the write gate; other gates (ingest, pre-approval, pre-publish) arrive with the capabilities that own them"},
-  "CAP-VAL-005": {"iteration": "1", "status": "partial", "evidence": "FN_VAL_003 and IT_005: issues carry severity and a FHIRPath location; severity configurability per gate and market is CAP-VAL-007, later"},
-
-  "CAP-IAM-001": {"iteration": "1", "status": "partial", "evidence": "FN_IAM_001 plus bearer authentication on every content endpoint (IT_007); federation and MFA are the identity provider's, per CAP-IAM-001"},
-  "CAP-IAM-002": {"iteration": "1", "status": "partial", "evidence": "FN_IAM_002 and FN_IAM_003, IT_002 against real OPA, and enforcement on every content endpoint; other capabilities enforce as they arrive"},
-  "CAP-IAM-007": {"iteration": "1", "status": "partial", "evidence": "FN_IAM_004 on every store operation, reached through the API; physical partitioning for residency markets is ADR-004, later"},
-  "CAP-IAM-009": {"iteration": "1", "status": "partial", "evidence": "FN_AUD_004: decisions recorded whether allowed or denied; administration changes are recorded when that surface exists"},
-
-  "CAP-AUD-001": {"iteration": "1", "status": "partial", "evidence": "FN_AUD_001 and IT_003 for content writes and access decisions; other capabilities write as they arrive"},
-  "CAP-AUD-002": {"iteration": "1", "status": "partial", "evidence": "FN_AUD_002 and FN_AUD_003: append-only by interface, and enforced by the database in the PostgreSQL sink; sealed WORM export is capability 22"},
-
-  "CAP-CFG-001": {"iteration": "1", "status": "partial", "evidence": "MarketCatalogue with FN_CFG_002 profile binding; lifecycle, workflow and rule config are later iterations"},
-  "CAP-CFG-004": {"iteration": "1", "status": "partial", "evidence": "IT_004_a_new_market_is_added_by_configuration_alone; a market carries no behaviour until PR 6 consumes it"},
-  "CAP-CFG-006": {"iteration": "1", "status": "partial", "evidence": "IT_009_an_invalid_market_definition_is_rejected_before_activation; market configuration only"},
-
-  "CAP-EVT-001": {"iteration": "1", "status": "partial", "evidence": "FN_EVT_001, FN_EVT_002 and IT_008: emission only, against an in-memory publisher; the broker adapter and delivery guarantees are later"}
+  "CAP-SCM-001": {
+    "iteration": "1",
+    "status": "partial",
+    "evidence": "EpiBundleReader plus the store conformance suite run against both the in-memory store and HAPI; coded section typing is a later iteration"
+  },
+  "CAP-SCM-007": {
+    "iteration": "1",
+    "status": "partial",
+    "evidence": "ADR-015 plus FN-CC-002/003/007 for documents; section and reusable-unit identity are later iterations"
+  },
+  "CAP-SCM-010": {
+    "iteration": "1",
+    "status": "partial",
+    "evidence": "FN_CC_006 and IT_001, the latter run against both the in-memory store and a real HAPI server; validation against the pinned profile is PR 5"
+  },
+  "CAP-VAL-003": {
+    "iteration": "1",
+    "status": "partial",
+    "evidence": "FN_VAL_001 and FN_VAL_002 at the write gate; other gates (ingest, pre-approval, pre-publish) arrive with the capabilities that own them"
+  },
+  "CAP-VAL-005": {
+    "iteration": "1",
+    "status": "partial",
+    "evidence": "FN_VAL_003 and IT_005: issues carry severity and a FHIRPath location; severity configurability per gate and market is CAP-VAL-007, later"
+  },
+  "CAP-IAM-001": {
+    "iteration": "1",
+    "status": "partial",
+    "evidence": "FN_IAM_001 plus bearer authentication on every content endpoint (IT_007); federation and MFA are the identity provider's, per CAP-IAM-001"
+  },
+  "CAP-IAM-002": {
+    "iteration": "1",
+    "status": "partial",
+    "evidence": "FN_IAM_002 and FN_IAM_003, IT_002 against real OPA, and enforcement on every content endpoint; other capabilities enforce as they arrive"
+  },
+  "CAP-IAM-007": {
+    "iteration": "1",
+    "status": "partial",
+    "evidence": "FN_IAM_004 on every store operation, reached through the API; physical partitioning for residency markets is ADR-004, later"
+  },
+  "CAP-IAM-009": {
+    "iteration": "1",
+    "status": "partial",
+    "evidence": "FN_AUD_004: decisions recorded whether allowed or denied; administration changes are recorded when that surface exists"
+  },
+  "CAP-AUD-001": {
+    "iteration": "1",
+    "status": "partial",
+    "evidence": "FN_AUD_001 and IT_003 for content writes and access decisions; other capabilities write as they arrive"
+  },
+  "CAP-AUD-002": {
+    "iteration": "1",
+    "status": "partial",
+    "evidence": "FN_AUD_002 and FN_AUD_003: append-only by interface, and enforced by the database in the PostgreSQL sink; sealed WORM export is capability 22"
+  },
+  "CAP-CFG-001": {
+    "iteration": "1",
+    "status": "partial",
+    "evidence": "MarketCatalogue with FN_CFG_002 profile binding; lifecycle, workflow and rule config are later iterations"
+  },
+  "CAP-CFG-004": {
+    "iteration": "1",
+    "status": "partial",
+    "evidence": "IT_004_a_new_market_is_added_by_configuration_alone; a market carries no behaviour until PR 6 consumes it"
+  },
+  "CAP-CFG-006": {
+    "iteration": "1",
+    "status": "partial",
+    "evidence": "IT_009_an_invalid_market_definition_is_rejected_before_activation; market configuration only"
+  },
+  "CAP-EVT-001": {
+    "iteration": "1",
+    "status": "partial",
+    "evidence": "FN_EVT_001, FN_EVT_002 and IT_008: emission only, against an in-memory publisher; the broker adapter and delivery guarantees are later"
+  },
+  "CAP-LCM-001": {
+    "iteration": "2",
+    "status": "planned",
+    "evidence": "iteration-2 (see design/iteration-2.md)"
+  },
+  "CAP-LCM-003": {
+    "iteration": "2",
+    "status": "planned",
+    "evidence": "iteration-2 (see design/iteration-2.md)"
+  },
+  "CAP-LCM-006": {
+    "iteration": "2",
+    "status": "planned",
+    "evidence": "iteration-2 (see design/iteration-2.md)"
+  },
+  "CAP-LCM-007": {
+    "iteration": "2",
+    "status": "planned",
+    "evidence": "iteration-2 (see design/iteration-2.md)"
+  },
+  "CAP-LCM-011": {
+    "iteration": "2",
+    "status": "planned",
+    "evidence": "iteration-2 (see design/iteration-2.md)"
+  },
+  "CAP-WFL-001": {
+    "iteration": "2",
+    "status": "planned",
+    "evidence": "iteration-2 (see design/iteration-2.md)"
+  },
+  "CAP-WFL-005": {
+    "iteration": "2",
+    "status": "planned",
+    "evidence": "iteration-2 (see design/iteration-2.md)"
+  },
+  "CAP-AUD-003": {
+    "iteration": "2",
+    "status": "planned",
+    "evidence": "iteration-2 (see design/iteration-2.md)"
+  },
+  "CAP-IAM-006": {
+    "iteration": "2",
+    "status": "planned",
+    "evidence": "iteration-2 (see design/iteration-2.md)"
+  },
+  "CAP-SCH-001": {
+    "iteration": "2",
+    "status": "planned",
+    "evidence": "iteration-2 (see design/iteration-2.md)"
+  },
+  "CAP-SCH-002": {
+    "iteration": "2",
+    "status": "planned",
+    "evidence": "iteration-2 (see design/iteration-2.md)"
+  },
+  "CAP-SCH-004": {
+    "iteration": "2",
+    "status": "planned",
+    "evidence": "iteration-2 (see design/iteration-2.md)"
+  },
+  "CAP-TPL-004": {
+    "iteration": "2",
+    "status": "planned",
+    "evidence": "iteration-2 (see design/iteration-2.md)"
+  },
+  "CAP-TPL-007": {
+    "iteration": "2",
+    "status": "planned",
+    "evidence": "iteration-2 (see design/iteration-2.md)"
+  }
 }
