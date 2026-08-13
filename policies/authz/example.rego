@@ -30,10 +30,12 @@ deny_sod if {
 
 # Effective decision (deny SoD overrides allow).
 decision := "deny" if deny_sod
+
 decision := "allow" if {
 	not deny_sod
 	allow
 }
+
 decision := "deny" if {
 	not deny_sod
 	not allow
