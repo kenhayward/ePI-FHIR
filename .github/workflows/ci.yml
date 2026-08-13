@@ -80,6 +80,10 @@ jobs:
       - name: Traceability matrices are current
         run: python3 tools/build-traceability.py --check
 
+      # A pinned conformance package is only a pin if the bytes are the reviewed ones.
+      - name: Vendored profile packages match their digests
+        run: python3 tools/verify-profile-packages.py
+
       - name: Relative Markdown links resolve
         run: |
           fail=0

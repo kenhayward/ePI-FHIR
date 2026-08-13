@@ -7,3 +7,8 @@
 # UTF-8 BOM and CRLF endings every time a project is added. Git normalises the endings here;
 # the BOM is caught by the ASCII check in CI (see .github/workflows/ci.yml).
 *.sln text eol=lf
+
+# Vendored conformance packages are compressed archives: never touch their bytes. Their
+# digests are recorded in profiles/packages/manifest.json and verified in CI.
+*.tgz binary
+*.zip binary
