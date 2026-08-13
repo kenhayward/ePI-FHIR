@@ -235,7 +235,7 @@ Status values: `planned` (scheduled, not built), `partial` (some aspect delivere
 | CAP-AUD-007 | 19 | M | P0 | Audit & e-Signature | - | - | - |
 | CAP-AUD-008 | 19 | M | P0 | Audit & e-Signature | - | - | - |
 | CAP-AUD-009 | 19 | M | P0 | Audit & e-Signature | - | - | - |
-| CAP-EVT-001 | 20 | M | P2 | Notification & Event Backbone | 1 | planned | iteration-1 PR 8 (emit only) |
+| CAP-EVT-001 | 20 | M | P2 | Notification & Event Backbone | 1 | partial | FN_EVT_001, FN_EVT_002 and IT_008: emission only, against an in-memory publisher; the broker adapter and delivery guarantees are later |
 | CAP-EVT-002 | 20 | M | P2 | Notification & Event Backbone | - | - | - |
 | CAP-EVT-003 | 20 | M | P2 | Notification & Event Backbone | - | - | - |
 | CAP-EVT-004 | 20 | M | P2 | Notification & Event Backbone | - | - | - |
