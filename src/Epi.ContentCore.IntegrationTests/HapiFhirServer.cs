@@ -1,5 +1,6 @@
 using DotNet.Testcontainers.Builders;
 using DotNet.Testcontainers.Containers;
+using Epi.ContentCore;
 using Hl7.Fhir.Rest;
 using Xunit;
 
@@ -34,13 +35,11 @@ public sealed class HapiFhirServer : IAsyncLifetime
 
     public string BaseUrl => $"http://{_container.Hostname}:{_container.GetMappedPublicPort(HttpPort)}/fhir";
 
-    public FhirClient CreateClient() => new(
-        BaseUrl,
-        settings: new FhirClientSettings
-        {
-            PreferredFormat = ResourceFormat.Json,
-            VerifyFhirVersion = false,
-        });
+    /// <summary>
+    /// A client configured exactly as production configures it, so the tests exercise the
+    /// real client behaviour rather than a more forgiving one.
+    /// </summary>
+    public FhirClient CreateClient() => FhirContentClient.Create(BaseUrl);
 
     public System.Threading.Tasks.Task InitializeAsync() => _container.StartAsync();
 
