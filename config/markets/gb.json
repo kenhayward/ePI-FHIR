@@ -1,0 +1,7 @@
+{
+  "code": "GB",
+  "name": "United Kingdom",
+  "regulator": "MHRA",
+  "languages": ["en-GB"],
+  "affiliates": ["uk-affiliate"]
+}
