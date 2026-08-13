@@ -1,0 +1,4 @@
+# Every change requires review from a human maintainer before merge.
+# Enforced by branch protection on main ("Require review from Code Owners").
+
+*       @kenhayward
