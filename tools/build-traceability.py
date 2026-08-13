@@ -158,7 +158,15 @@ def discover_tests():
                 text = path.read_text(encoding="utf-8")
             except (UnicodeDecodeError, OSError):
                 continue
-            for token in TOKEN.findall(text):
+            # Evidence must come from code, not prose. A comment saying a test covers
+            # FN-CC-004 is not a test covering FN-CC-004, and counting it would let a
+            # docstring mark a requirement verified. Attributes and traits are code and
+            # still count.
+            code = "\n".join(
+                line for line in text.splitlines()
+                if not line.lstrip().startswith(("//", "*", "/*", "#"))
+            )
+            for token in TOKEN.findall(code):
                 match = ID_IN_TOKEN.search(token)
                 if not match:
                     continue

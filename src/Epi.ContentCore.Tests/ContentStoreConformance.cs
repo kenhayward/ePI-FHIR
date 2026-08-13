@@ -11,8 +11,9 @@ namespace Epi.ContentCore.Tests;
 /// </summary>
 /// <remarks>
 /// Covers FN-CC-002 (assign a canonical identifier), FN-CC-003 (immutable version snapshot
-/// and lineage), FN-CC-004 (persist), FN-CC-005 (retrieve), FN-CC-007 (reject mutation),
-/// and the integration scenarios IT-001 and IT-006.
+/// and lineage), FN-CC-005 (retrieve), FN-CC-007 (reject mutation), and the integration
+/// scenarios IT-001 and IT-006. Persisting through the FHIR REST API is a separate design
+/// function and arrives with the adapter that implements it.
 /// </remarks>
 public abstract class ContentStoreConformance
 {

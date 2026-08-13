@@ -66,16 +66,16 @@ Status values: `planned` (scheduled, not built), `partial` (some aspect delivere
 | CAP-ING-012 | 1 | M | P1 | Authoring & Template Service | - | - | - |
 | CAP-ING-013 | 1 | M | P1 | Authoring & Template Service | - | - | - |
 | CAP-ING-014 | 1 | S | P1 | Authoring & Template Service | - | - | - |
-| CAP-SCM-001 | 2 | M | P0 | Content Core (FHIR) | 1 | planned | iteration-1 PR 4 |
+| CAP-SCM-001 | 2 | M | P0 | Content Core (FHIR) | 1 | partial | EpiBundleReader and the store conformance suite; persistence through the FHIR REST API lands in PR 4b |
 | CAP-SCM-002 | 2 | M | P0 | Content Core (FHIR) | - | - | - |
 | CAP-SCM-003 | 2 | M | P0 | Content Core (FHIR) | - | - | - |
 | CAP-SCM-004 | 2 | M | P0 | Content Core (FHIR) | - | - | - |
 | CAP-SCM-005 | 2 | M | P0 | Content Core (FHIR) | - | - | - |
 | CAP-SCM-006 | 2 | M | P0 | Content Core (FHIR) | - | - | - |
-| CAP-SCM-007 | 2 | M | P0 | Content Core (FHIR) | 1 | partial | ADR-015 (scheme decided); implementation in iteration-1 PR 4 |
+| CAP-SCM-007 | 2 | M | P0 | Content Core (FHIR) | 1 | partial | ADR-015 plus FN-CC-002/003/007 for documents; section and reusable-unit identity are later iterations |
 | CAP-SCM-008 | 2 | M | P0 | Content Core (FHIR) | - | - | - |
 | CAP-SCM-009 | 2 | M | P0 | Content Core (FHIR) | - | - | - |
-| CAP-SCM-010 | 2 | M | P0 | Content Core (FHIR) | 1 | planned | iteration-1 PR 4 round-trip test |
+| CAP-SCM-010 | 2 | M | P0 | Content Core (FHIR) | 1 | partial | FN_CC_006 and IT_001 against the in-memory store; re-run against HAPI in PR 4b |
 | CAP-SCM-011 | 2 | M | P0 | Content Core (FHIR) | - | - | - |
 | CAP-SCM-012 | 2 | M | P0 | Content Core (FHIR) | - | - | - |
 | CAP-TPL-001 | 3 | M | P1 | Authoring & Template Service | - | - | - |

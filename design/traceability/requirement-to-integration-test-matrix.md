@@ -13,7 +13,7 @@ Name integration tests for the case they validate, for example
 ## Coverage
 
 - Integration tests declared: **9**
-- Implemented in code: **2**
+- Implemented in code: **4**
 - Requirements validated by at least one integration test: **15**
 - Scheduled requirements still without one: **0**
 
@@ -21,12 +21,12 @@ Name integration tests for the case they validate, for example
 
 | Test | Scenario | Verifies | Iteration | Status | Implementation |
 |---|---|---|---|---|---|
-| IT-001 | A conformant ePI Bundle round-trips through create and read with no content loss | CAP-SCM-010, CAP-SCM-001 | 1 | planned | - |
+| IT-001 | A conformant ePI Bundle round-trips through create and read with no content loss | CAP-SCM-010, CAP-SCM-001 | 1 | implemented | `IT_001_a_conformant_bundle_round_trips_through_create_and_read_without_content_loss` (src/Epi.ContentCore.Tests/ContentStoreConformance.cs) |
 | IT-002 | A caller outside the resource affiliate or market is denied and sees nothing | CAP-IAM-002, CAP-IAM-007 | 1 | planned | - |
 | IT-003 | A content write and an access decision each produce an immutable audit record | CAP-AUD-001, CAP-AUD-002, CAP-IAM-009 | 1 | planned | - |
 | IT-004 | A second market is served by adding configuration alone, with no code change | CAP-CFG-004, CAP-CFG-001 | 1 | implemented | `IT_004_a_new_market_is_added_by_configuration_alone` (src/Epi.Governance.Tests/MarketConfigurationIntegrationTests.cs)<br>`IT_004_the_shipped_market_configuration_loads_and_validates` (src/Epi.Governance.Tests/MarketConfigurationIntegrationTests.cs) |
 | IT-005 | Malformed content is rejected with itemised located errors and leaves no partial state | CAP-VAL-003, CAP-VAL-005 | 1 | planned | - |
-| IT-006 | An attempt to mutate an existing version is rejected and history remains reconstructable | CAP-SCM-007 | 1 | planned | - |
+| IT-006 | An attempt to mutate an existing version is rejected and history remains reconstructable | CAP-SCM-007 | 1 | implemented | `IT_006_an_attempt_to_mutate_an_existing_version_is_rejected_and_history_is_reconstructable` (src/Epi.ContentCore.Tests/ContentStoreConformance.cs) |
 | IT-007 | A request without a valid OIDC token is rejected before reaching content | CAP-IAM-001 | 1 | planned | - |
 | IT-008 | Creating a document emits a content event to the backbone | CAP-EVT-001 | 1 | planned | - |
 | IT-009 | An invalid market definition is rejected before activation | CAP-CFG-006 | 1 | implemented | `IT_009_an_invalid_market_definition_is_rejected_before_activation` (src/Epi.Governance.Tests/MarketConfigurationIntegrationTests.cs) |

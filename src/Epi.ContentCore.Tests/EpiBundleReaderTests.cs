@@ -49,11 +49,31 @@ public sealed class EpiBundleReaderTests
     [Fact]
     public void FN_CC_001_rejects_a_document_bundle_whose_first_entry_is_not_a_composition()
     {
-        var json = MinimalDocumentJson().Replace("\"resourceType\": \"Composition\"", "\"resourceType\": \"Patient\"");
+        // A parseable resource in the anchor position, so the structural check is what
+        // rejects it rather than the parser.
+        var json = """
+            {
+              "resourceType": "Bundle",
+              "type": "document",
+              "entry": [ { "resource": { "resourceType": "Patient", "active": true } } ]
+            }
+            """;
 
         var error = Assert.Throws<InvalidEpiBundleException>(() => EpiBundleReader.Read(json));
 
         Assert.Contains(error.Problems, p => p.Contains("Composition", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
+    public void FN_CC_001_rejects_content_carrying_elements_that_are_not_in_the_model()
+    {
+        // Strict parsing: an element the model does not define is content we could store but
+        // not faithfully reproduce, which is exactly what CAP-SCM-010 forbids.
+        var json = MinimalDocumentJson().Replace("\"title\":", "\"titel\":");
+
+        var error = Assert.Throws<InvalidEpiBundleException>(() => EpiBundleReader.Read(json));
+
+        Assert.Contains(error.Problems, p => p.Contains("titel"));
     }
 
     [Fact]
@@ -69,7 +89,7 @@ public sealed class EpiBundleReaderTests
     public void FN_CC_001_rejects_content_that_is_not_a_bundle()
     {
         var error = Assert.Throws<InvalidEpiBundleException>(
-            () => EpiBundleReader.Read("""{"resourceType": "Patient"}"""));
+            () => EpiBundleReader.Read("""{"resourceType": "Patient", "active": true}"""));
 
         Assert.Contains(error.Problems, p => p.Contains("Bundle", StringComparison.OrdinalIgnoreCase));
     }
