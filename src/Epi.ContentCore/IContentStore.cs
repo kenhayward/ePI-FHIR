@@ -7,20 +7,28 @@ namespace Epi.ContentCore;
 /// content is immutable once stored, and a correction is a new version (CAP-LCM-002,
 /// CAP-SCM-007). Immutability is a property of the interface, not a convention callers follow.
 /// </summary>
+/// <remarks>
+/// Asynchronous because the real implementation talks to a FHIR server over HTTP. A
+/// synchronous facade over that would be a deadlock waiting to happen under load.
+/// </remarks>
 public interface IContentStore
 {
     /// <summary>Stores new content, minting its identity and creating version 1.</summary>
-    EpiDocument Create(Bundle bundle);
+    Task<EpiDocument> CreateAsync(Bundle bundle, CancellationToken cancellationToken = default);
 
     /// <summary>Stores the next version of an existing document.</summary>
-    EpiDocument CreateVersion(DocumentIdentity identity, Bundle bundle);
+    Task<EpiDocument> CreateVersionAsync(
+        DocumentIdentity identity, Bundle bundle, CancellationToken cancellationToken = default);
 
     /// <summary>The document at a specific version, or null.</summary>
-    EpiDocument? Get(DocumentIdentity identity, int version);
+    Task<EpiDocument?> GetAsync(
+        DocumentIdentity identity, int version, CancellationToken cancellationToken = default);
 
     /// <summary>The most recent version of a document, or null.</summary>
-    EpiDocument? GetLatest(DocumentIdentity identity);
+    Task<EpiDocument?> GetLatestAsync(
+        DocumentIdentity identity, CancellationToken cancellationToken = default);
 
     /// <summary>Every version of a document, ascending.</summary>
-    IReadOnlyList<int> Versions(DocumentIdentity identity);
+    Task<IReadOnlyList<int>> VersionsAsync(
+        DocumentIdentity identity, CancellationToken cancellationToken = default);
 }
