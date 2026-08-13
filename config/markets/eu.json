@@ -2,6 +2,14 @@
   "code": "EU",
   "name": "European Union (centrally authorised)",
   "regulator": "EMA",
-  "languages": ["en-GB"],
-  "affiliates": ["eu-central"]
+  "languages": [
+    "en-GB"
+  ],
+  "affiliates": [
+    "eu-central"
+  ],
+  "profile": {
+    "package": "hl7.fhir.uv.emedicinal-product-info",
+    "version": "1.0.0"
+  }
 }

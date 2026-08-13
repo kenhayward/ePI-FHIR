@@ -34,6 +34,8 @@ public sealed class MarketConfigurationIntegrationTests
             Assert.NotEmpty(market.Code);
             Assert.NotEmpty(market.Languages);
             Assert.NotEmpty(market.Affiliates);
+            Assert.NotEmpty(market.Profile.Package);
+            Assert.NotEmpty(market.Profile.Version);
         });
     }
 
@@ -59,7 +61,8 @@ public sealed class MarketConfigurationIntegrationTests
                   "name": "Canada",
                   "regulator": "Health Canada",
                   "languages": ["en-CA", "fr-CA"],
-                  "affiliates": ["ca-affiliate"]
+                  "affiliates": ["ca-affiliate"],
+                  "profile": {"package": "hl7.fhir.uv.emedicinal-product-info", "version": "1.0.0"}
                 }
                 """);
 

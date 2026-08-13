@@ -2,6 +2,14 @@
   "code": "GB",
   "name": "United Kingdom",
   "regulator": "MHRA",
-  "languages": ["en-GB"],
-  "affiliates": ["uk-affiliate"]
+  "languages": [
+    "en-GB"
+  ],
+  "affiliates": [
+    "uk-affiliate"
+  ],
+  "profile": {
+    "package": "hl7.fhir.uv.emedicinal-product-info",
+    "version": "1.0.0"
+  }
 }
