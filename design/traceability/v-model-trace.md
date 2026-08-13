@@ -22,7 +22,7 @@ set is in [requirements-traceability-matrix.md](requirements-traceability-matrix
 - Scheduled requirements: **29**
 - With at least one design function: **29**
 - With at least one integration test: **26**
-- Design functions awaiting a unit test: **14** of 38
+- Design functions awaiting a unit test: **12** of 38
 - Integration tests awaiting implementation: **8** of 17
 
 ## Trace
@@ -34,7 +34,7 @@ set is in [requirements-traceability-matrix.md](requirements-traceability-matrix
 | CAP-SCM-010 | P0 | 1 | FN-CC-006 | `FN_CC_006_preserves_narrative_markup_exactly` (src/Epi.ContentCore.Tests/EpiBundleReaderTests.cs)<br>`FN_CC_006_serialises_and_reparses_without_content_loss` (src/Epi.ContentCore.Tests/EpiBundleReaderTests.cs) | IT-001 | `IT_001_a_conformant_bundle_round_trips_through_create_and_read_without_content_loss` (src/Epi.ContentCore.Tests/ContentStoreConformance.cs) |
 | CAP-TPL-004 | P1 | 2 | FN-TPL-001 | - | IT-014 | - |
 | CAP-TPL-007 | P1 | 2 | FN-TPL-002 | - | IT-014 | - |
-| CAP-LCM-001 | P1 | 2 | FN-LCM-001, FN-LCM-002 | - | IT-010 | - |
+| CAP-LCM-001 | P1 | 2 | FN-LCM-001, FN-LCM-002 | `FN_LCM_001_carries_the_conditions_a_transition_imposes` (src/Epi.Lifecycle.Tests/LifecycleModelTests.cs)<br>`FN_LCM_001_loads_states_and_transitions_from_configuration` (src/Epi.Lifecycle.Tests/LifecycleModelTests.cs)<br>`FN_LCM_001_rejects_a_model_with_no_states_at_all` (src/Epi.Lifecycle.Tests/LifecycleModelTests.cs)<br>`FN_LCM_001_rejects_a_transition_referring_to_a_state_that_does_not_exist` (src/Epi.Lifecycle.Tests/LifecycleModelTests.cs)<br>`FN_LCM_001_rejects_an_initial_state_that_is_not_among_the_states` (src/Epi.Lifecycle.Tests/LifecycleModelTests.cs)<br>`FN_LCM_001_rejects_two_transitions_claiming_the_same_state_and_action` (src/Epi.Lifecycle.Tests/LifecycleModelTests.cs)<br>`FN_LCM_001_the_shipped_label_model_loads_and_gates_approval` (src/Epi.Lifecycle.Tests/LifecycleModelTests.cs)<br>`FN_LCM_002_a_transition_the_model_does_not_permit_is_not_found` (src/Epi.Lifecycle.Tests/LifecycleModelTests.cs)<br>`FN_LCM_002_states_are_matched_exactly_rather_than_loosely` (src/Epi.Lifecycle.Tests/LifecycleModelTests.cs) | IT-010 | - |
 | CAP-LCM-003 | P1 | 2 | FN-LCM-004 | - | IT-013 | - |
 | CAP-LCM-006 | P1 | 2 | FN-LCM-006 | - | IT-017 | - |
 | CAP-LCM-007 | P1 | 2 | FN-LCM-003 | - | IT-010 | - |
@@ -68,6 +68,6 @@ normal work in progress. Referential errors, by contrast, fail the build.
 
 **Scheduled requirements with no integration test:** CAP-LCM-011, CAP-SCH-001, CAP-WFL-001
 
-**Design functions with no unit test:** FN-AUD-001, FN-AUD-005, FN-LCM-001, FN-LCM-002, FN-LCM-003, FN-LCM-004, FN-LCM-005, FN-LCM-006, FN-SCH-001, FN-SCH-002, FN-TPL-001, FN-TPL-002, FN-WFL-001, FN-WFL-002
+**Design functions with no unit test:** FN-AUD-001, FN-AUD-005, FN-LCM-003, FN-LCM-004, FN-LCM-005, FN-LCM-006, FN-SCH-001, FN-SCH-002, FN-TPL-001, FN-TPL-002, FN-WFL-001, FN-WFL-002
 
 **Integration tests not yet implemented:** IT-010, IT-011, IT-012, IT-013, IT-014, IT-015, IT-016, IT-017

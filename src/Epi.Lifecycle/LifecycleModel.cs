@@ -24,7 +24,14 @@ public sealed class LifecycleModel(
     public IReadOnlyList<LifecycleTransition> Transitions { get; } = transitions;
 
     /// <summary>The transition for this action from this state, or null if none is permitted.</summary>
-    public LifecycleTransition? Find(string from, string action) => throw new NotImplementedException();
+    /// <remarks>
+    /// Matched exactly, not loosely. A state model is a control, and matching "Approved" to
+    /// "approved" would let a typo in a caller succeed silently, which is the wrong failure
+    /// mode for a gate.
+    /// </remarks>
+    public LifecycleTransition? Find(string from, string action) => Transitions.FirstOrDefault(
+        t => string.Equals(t.From, from, StringComparison.Ordinal)
+             && string.Equals(t.Action, action, StringComparison.Ordinal));
 }
 
 /// <summary>Raised when a transition the model does not permit is attempted.</summary>
