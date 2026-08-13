@@ -1,6 +1,9 @@
 using System.Security.Claims;
 using Epi.ContentCore;
+using Epi.Contracts;
+using Epi.Governance.Audit;
 using Epi.Governance.Configuration;
+using Epi.Governance.Events;
 using Epi.Iam;
 using Epi.Validation;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -36,10 +39,51 @@ builder.Services.AddSingleton<IPolicyDecisionPoint>(_ => new OpaPolicyDecisionPo
         BaseAddress = new Uri(builder.Configuration["Epi:Authorization:OpaUrl"] ?? "http://localhost:8181"),
     }));
 
-builder.Services.AddSingleton<IContentStore, InMemoryContentStore>();
+// The identifier authority is configuration, never a literal (ADR-017). A deployment that
+// has not set it runs on a namespace nobody owns, which is the intended, conspicuous default.
+builder.Services.AddSingleton(_ => IdentifierAuthorityConfiguration.LoadFrom(
+    builder.Configuration["Epi:IdentifiersPath"]
+    ?? Path.Combine(builder.Environment.ContentRootPath, "config", "identifiers.json")));
+
+// Each dependency is real when it is configured and a reference implementation when it is not,
+// so the platform runs unattended for a demonstration and against the stack for anything else.
+// The choice is logged at start-up: a service quietly holding its audit trail in memory is the
+// kind of thing nobody notices until an inspection asks for it.
+var auditConnection = builder.Configuration["Epi:Audit:ConnectionString"];
+builder.Services.AddSingleton<IAuditSink>(_ => string.IsNullOrWhiteSpace(auditConnection)
+    ? new InMemoryAuditSink()
+    : new PostgresAuditSink(auditConnection));
+
+var brokers = builder.Configuration["Epi:Events:BootstrapServers"];
+builder.Services.AddSingleton<IEventPublisher>(_ => string.IsNullOrWhiteSpace(brokers)
+    ? new InMemoryEventPublisher()
+    : new KafkaEventPublisher(brokers, builder.Configuration["Epi:Events:Topic"]));
+
+var fhirServer = builder.Configuration["Epi:Content:FhirServerUrl"];
+builder.Services.AddSingleton<IContentStore>(_ => string.IsNullOrWhiteSpace(fhirServer)
+    ? new InMemoryContentStore()
+    : new FhirRestContentStore(FhirContentClient.Create(fhirServer)));
 builder.Services.AddSingleton(_ => new StructuralValidator(ProfileSource.FromPinnedPackages()));
 
 var app = builder.Build();
+
+if (string.IsNullOrWhiteSpace(auditConnection) || string.IsNullOrWhiteSpace(brokers)
+    || string.IsNullOrWhiteSpace(fhirServer))
+{
+    app.Logger.LogWarning(
+        "Running with in-memory components (content: {Content}, audit: {Audit}, events: {Events}). "
+        + "Nothing is durable. This is a demonstration default, not a deployment.",
+        string.IsNullOrWhiteSpace(fhirServer) ? "in-memory" : "FHIR server",
+        string.IsNullOrWhiteSpace(auditConnection) ? "in-memory" : "PostgreSQL",
+        string.IsNullOrWhiteSpace(brokers) ? "in-memory" : "Kafka");
+}
+
+// The audit table and its append-only trigger must exist before the first record. In a
+// qualified environment this belongs in a controlled migration (D3 Section 10.3).
+if (app.Services.GetRequiredService<IAuditSink>() is PostgresAuditSink durableAudit)
+{
+    await durableAudit.InitialiseAsync();
+}
 
 app.UseAuthentication();
 app.UseAuthorization();
@@ -55,6 +99,8 @@ app.MapPost("/fhir/Bundle", async (
     IContentStore store,
     StructuralValidator validator,
     IPolicyDecisionPoint policy,
+    IAuditSink audit,
+    IEventPublisher events,
     CancellationToken cancellationToken) =>
 {
     var subject = SubjectFactory.From(principal);
@@ -72,8 +118,15 @@ app.MapPost("/fhir/Bundle", async (
 
         // Composed here so no endpoint can reach the raw store by accident: scope on every
         // operation, validation on the way in.
-        var gated = new ValidatingContentStore(
-            new ScopedContentStore(store, policy, subject), validator);
+        // Auditing outermost so a rejected write is recorded, then events after a successful
+        // one, then scope, then validation closest to the store.
+        var gated = new AuditingContentStore(
+            new PublishingContentStore(
+                new ValidatingContentStore(
+                    new ScopedContentStore(store, policy, subject), validator),
+                events),
+            audit,
+            subject.Id);
 
         var stored = await gated.CreateAsync(bundle, cancellationToken);
         return Results.Created($"/fhir/Bundle/{stored.Identity.Value}", new

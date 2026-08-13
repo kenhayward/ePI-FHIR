@@ -203,6 +203,35 @@ services:
       - "3000:3000"
     networks: [epi]
 
+  # ---- The platform itself: the walking skeleton of design/iteration-1.md ----
+  epi-api:
+    build:
+      context: ../..
+      dockerfile: src/Epi.Api/Dockerfile
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      # Each dependency is real here. Left unset, the service falls back to in-memory
+      # components and says so loudly at start-up.
+      Epi__Content__FhirServerUrl: http://hapi-fhir:8080/fhir
+      Epi__Audit__ConnectionString: "Host=postgres;Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD};Database=epi_operational"
+      Epi__Events__BootstrapServers: kafka:9092
+      Epi__Authorization__OpaUrl: http://opa:8181
+      # Authentication is delegated to Keycloak; create the realm and client before use
+      # (see README). Without an authority configured, every content call is refused.
+      Epi__Authentication__Authority: http://keycloak:8080/realms/epi
+      Epi__Authentication__Audience: epi-api
+      ASPNETCORE_ENVIRONMENT: Development
+    volumes:
+      # Configuration and the pinned conformance packages are mounted, so changing a market or
+      # the identifier authority does not mean rebuilding the image.
+      - ../../config:/config:ro
+      - ../../profiles/packages:/app/profiles/packages:ro
+    ports:
+      - "8080:8080"
+    networks: [epi]
+
   # ============ optional profile: observability ============
   otel-collector:
     image: otel/opentelemetry-collector-contrib:latest
