@@ -14,8 +14,16 @@ public sealed class StructuralValidatorTests : IClassFixture<StructuralValidator
 
     public StructuralValidatorTests(StructuralValidatorFixture fixture) => _validator = fixture.Validator;
 
-    private static Bundle MinimalDocument() =>
-        EpiBundleReader.Read(File.ReadAllText(TestFixtures.Path("epi", "minimal-epi-document.json")));
+    /// <summary>
+    /// The fixture as the validator sees it in production: stamped with a canonical identity.
+    /// FHIR constraint bdl-9 requires a document Bundle to carry an identifier, and the
+    /// platform mints that rather than the submitter supplying it (ADR-015), so the artefact
+    /// under validation is always the stamped one.
+    /// </summary>
+    private static Bundle MinimalDocument() => ContentIdentity.Stamp(
+        EpiBundleReader.Read(File.ReadAllText(TestFixtures.Path("epi", "minimal-epi-document.json"))),
+        ContentIdentity.Mint(),
+        version: 1);
 
     private static Composition CompositionOf(Bundle bundle) =>
         Assert.IsType<Composition>(bundle.Entry[0].Resource);
@@ -53,8 +61,11 @@ public sealed class StructuralValidatorTests : IClassFixture<StructuralValidator
 
         var error = report.Issues.First(i => i.Severity == ValidationSeverity.Error);
         Assert.False(string.IsNullOrWhiteSpace(error.Message));
-        Assert.False(string.IsNullOrWhiteSpace(error.Location));
-        Assert.Contains("Composition", error.Location, StringComparison.OrdinalIgnoreCase);
+
+        // A path into the document, such as "Bundle.entry[0].resource[0]", which is what
+        // CAP-VAL-005 means by a precise location: it addresses the element, not the type.
+        Assert.StartsWith("Bundle", error.Location, StringComparison.Ordinal);
+        Assert.Contains("entry", error.Location, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
