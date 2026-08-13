@@ -77,8 +77,8 @@
   },
   "CAP-LCM-001": {
     "iteration": "2",
-    "status": "planned",
-    "evidence": "iteration-2 (see design/iteration-2.md)"
+    "status": "partial",
+    "evidence": "FN_LCM_001/002 and IT_010: model loaded from configuration and unpermitted transitions refused"
   },
   "CAP-LCM-003": {
     "iteration": "2",
@@ -92,8 +92,8 @@
   },
   "CAP-LCM-007": {
     "iteration": "2",
-    "status": "planned",
-    "evidence": "iteration-2 (see design/iteration-2.md)"
+    "status": "partial",
+    "evidence": "FN_LCM_003: transitions recorded with actor, time and reason; workflow routing is a later PR"
   },
   "CAP-LCM-011": {
     "iteration": "2",
@@ -107,8 +107,8 @@
   },
   "CAP-WFL-005": {
     "iteration": "2",
-    "status": "planned",
-    "evidence": "iteration-2 (see design/iteration-2.md)"
+    "status": "partial",
+    "evidence": "IT_011 for the approval gate; routing and escalation are later"
   },
   "CAP-AUD-003": {
     "iteration": "2",
@@ -117,8 +117,8 @@
   },
   "CAP-IAM-006": {
     "iteration": "2",
-    "status": "planned",
-    "evidence": "iteration-2 (see design/iteration-2.md)"
+    "status": "partial",
+    "evidence": "IT_011: the author of a version cannot approve it, enforced in the one path every transition takes"
   },
   "CAP-SCH-001": {
     "iteration": "2",
