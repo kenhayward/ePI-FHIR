@@ -137,10 +137,32 @@ Each becomes an ADR:
    config-as-data (capability 21), but their storage, and how a transition is recorded against
    an immutable version, is not settled. This interacts with ADR-005's separation of internal
    and per-market state.
-2. **Electronic signature mechanism.** What is signed (a canonical serialisation of the pinned
-   version), how the hash is computed and recorded, and what "signature" means without a PKI in
-   a demonstration. 21 CFR Part 11 sets the requirements; the demonstration must be honest about
-   which are met by mechanism and which by process.
+2. **Electronic signature mechanism - direction settled, ADR still needed.** The demonstration
+   uses **user identifier and password re-authentication at the signing gate**, with the
+   signature manifest persisted in the audit trail and linked to the electronic record. PKI is
+   the expected production mechanism.
+
+   This is not a demonstration shortcut. 21 CFR Part 11 Subpart C admits non-biometric
+   electronic signatures built from **at least two distinct identification components**, of
+   which a user identifier and a password is the canonical pair, and Section 11.70 requires a
+   signature to be **linked to its record** so it cannot be excised, copied, or transferred.
+   What the ADR must still specify:
+
+   - **Re-authentication at the point of signing**, rather than relying on the session. A
+     signature any authenticated session can produce is an authorisation, not a signature.
+   - **What is signed**: the hash of the canonical serialisation of the pinned version, so the
+     signature covers exactly the content approved and later alteration is detectable.
+   - **The manifest**: signer identity, printed name, date and time, and the **meaning** of the
+     signature (authorship, approval, review), which Section 11.50 requires to be recorded.
+   - **Where it lives**: the append-only audit store from iteration 1, which already refuses
+     update and delete at the database, linked to the version signed.
+   - **What is met by process rather than mechanism**: password policy, identity proofing,
+     revocation, and the administrative controls Part 11 requires of the organisation. Naming
+     these honestly matters more than the feature, because a regulated buyer will probe exactly
+     this boundary and overclaiming would cost more than it gains.
+
+   Note that **authentication needs no change**: Keycloak already signs users in with a
+   username and password, and OIDC is only how the resulting token reaches the API.
 3. **Template representation.** D2.1 open item 1: `Questionnaire` plus profile, or a template
    `Composition` skeleton. Deferred through iteration 1 because nothing needed it.
 4. **Secondary identifiers.** Where a submitter's or legacy identifier lives, given
@@ -154,19 +176,38 @@ than during.
 1. **Is content reuse in scope?** Reusable units (CAP-SCM-004) with pinned resolution (ADR-007)
    are a significant piece of modelling. Including them makes the content model materially more
    complete and the iteration materially longer.
-2. **How much authoring UI?** `apps/authoring-ui` is still empty. For a demonstration being
-   shown to prospective adopters, a visible template-driven authoring surface may be worth more
-   than any backend capability. It is also the largest single piece of work available, and none
-   of the current test approach transfers to it directly.
+2. **How much authoring UI? - answered.** A thin, template-driven authoring surface is in
+   scope, built on **TipTap** for narrative editing. See Section 8.1.
 3. **Is a SNOMED CT licence being pursued?** Terminology (capability 6) cannot be demonstrated
    properly without one, and the lead time is not ours to control.
 
-My recommendation on the second: build the backbone in this iteration and a **thin** authoring
-surface at the end of it, driven by the template from capability 3 - enough to show a state
-transition and an approval happening on screen, rather than a general-purpose editor. A
-demonstration that can show the approval flow with a signature is more persuasive than one with
-a richer editor and no governance, because the governance is the part that is hard to build and
-the part a regulated buyer cannot get elsewhere.
+Backbone first, then the surface: a demonstration that shows an approval with a signature is
+more persuasive than a richer editor with no governance behind it, because the governance is
+the hard part and the part a regulated buyer cannot get elsewhere.
+
+## 8.1 The authoring surface
+
+**TipTap for narrative editing**, with two constraints that are not optional.
+
+**FHIR narrative is not arbitrary HTML.** `Narrative.div` is a constrained XHTML subset: a valid
+XHTML fragment carrying the XHTML namespace, excluding scripts, forms, active content, and
+external references. An editor emitting ordinary HTML produces content that fails at the write
+gate or, worse, round-trips imperfectly - and CAP-SCM-010 round-trip fidelity is already
+enforced by test, so it surfaces immediately rather than silently. The editor schema must
+therefore be **restricted to the permitted subset at the point of editing**, not sanitised
+afterwards: an author should be unable to produce content the platform will refuse, rather than
+discovering it at approval.
+
+**Narrative is not the whole model.** Sections carry coded, structured content as well as
+narrative (CAP-SCM-003), and the template (capability 3) says which is which. TipTap edits the
+narrative *within* a structure the template defines; it does not define the structure. Letting a
+rich-text editor own the document shape is how a structured content platform quietly becomes a
+word processor with a FHIR export.
+
+**Licence**: TipTap's core and standard extensions are MIT, satisfying the Apache-2.0 rule in
+`CLAUDE.md`. Some extensions, collaboration among them, are commercially licensed. The ADR
+should record that the platform stays on the MIT core, so a later convenience does not introduce
+a licence obligation unnoticed.
 
 ## 9. Delivery sequence
 
