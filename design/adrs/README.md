@@ -16,6 +16,7 @@ of them next needs revising, not as a bulk exercise.
 | [ADR-016](0016-pinned-epi-ig-release-and-section-codes.md) | Pinned ePI IG release and section code systems | accepted |
 | [ADR-017](0017-identifier-authority-as-configuration.md) | Identifier authority as configuration | accepted |
 | [ADR-018](0018-audit-event-contract.md) | Audit event contract | accepted |
+| [ADR-019](0019-lifecycle-state-model.md) | Lifecycle state model | accepted |
 
 A record stays `proposed` until the pull request carrying it is merged, at which point it
 becomes `accepted`. Superseding a decision means a new record that says so, never editing the
