@@ -114,7 +114,8 @@ made it valid.
 
 ## Open points
 
-- **The identifier authority.** The `system` URI for each identifier type needs a real
-  authority, for example `https://epi.<organisation>/identifier/document`. The organisation and
-  domain are not settled in the specifications. Blocking before the first shared environment,
-  not before iteration 1: development data is disposable.
+- **The identifier authority - resolved by [ADR-017](0017-identifier-authority-as-configuration.md).**
+  The `system` URI for each identifier type is configuration, not code, and the repository ships
+  a deliberately unownable placeholder. This repository is a demonstration whose adopting
+  organisation is not yet known, so the value cannot be determined here; ADR-017 records the
+  mechanism and the criteria an adopter applies to determine theirs.

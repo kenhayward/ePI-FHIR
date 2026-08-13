@@ -15,30 +15,32 @@ namespace Epi.ContentCore;
 public static class ContentIdentity
 {
     /// <summary>A fresh, opaque, time-ordered identity in the platform's own system.</summary>
-    public static DocumentIdentity Mint() => new(
-        ContentCoreDefaults.DocumentIdentifierSystem,
+    public static DocumentIdentity Mint(IdentifierAuthority? authority = null) => new(
+        (authority ?? IdentifierAuthority.Demonstration).DocumentSystem,
         Guid.CreateVersion7().ToString());
 
     /// <summary>Writes identity and version onto a bundle about to be stored.</summary>
-    public static Bundle Stamp(Bundle bundle, DocumentIdentity identity, int version)
+    public static Bundle Stamp(
+        Bundle bundle, DocumentIdentity identity, int version, IdentifierAuthority? authority = null)
     {
+        var systems = authority ?? IdentifierAuthority.Demonstration;
         bundle.Identifier = new Identifier(identity.System, identity.Value);
 
         // The version travels with the content rather than relying on the server's own
         // versioning, which ADR-015 keeps us independent of.
         bundle.Meta ??= new Meta();
         bundle.Meta.Tag = [
-            .. bundle.Meta.Tag.Where(t => t.System != ContentCoreDefaults.DocumentVersionTagSystem),
-            new Coding(ContentCoreDefaults.DocumentVersionTagSystem, version.ToString())
+            .. bundle.Meta.Tag.Where(t => t.System != systems.VersionTagSystem),
+            new Coding(systems.VersionTagSystem, version.ToString())
         ];
 
         return bundle;
     }
 
     /// <summary>The platform version stamped on a stored bundle, if any.</summary>
-    public static int? VersionOf(Bundle bundle) =>
+    public static int? VersionOf(Bundle bundle, IdentifierAuthority? authority = null) =>
         bundle.Meta?.Tag
-            .Where(t => t.System == ContentCoreDefaults.DocumentVersionTagSystem)
+            .Where(t => t.System == (authority ?? IdentifierAuthority.Demonstration).VersionTagSystem)
             .Select(t => int.TryParse(t.Code, out var v) ? v : (int?)null)
             .FirstOrDefault(v => v is not null);
 
@@ -46,10 +48,11 @@ public static class ContentIdentity
     /// Submitted content must not claim an identifier in the platform's own system: identity
     /// is minted here (ADR-015), or an external system could collide with our identity space.
     /// </summary>
-    public static void RejectClaimedIdentity(Bundle bundle)
+    public static void RejectClaimedIdentity(Bundle bundle, IdentifierAuthority? authority = null)
     {
         if (string.Equals(bundle.Identifier?.System,
-                ContentCoreDefaults.DocumentIdentifierSystem, StringComparison.OrdinalIgnoreCase))
+                (authority ?? IdentifierAuthority.Demonstration).DocumentSystem,
+                StringComparison.OrdinalIgnoreCase))
         {
             throw new InvalidEpiBundleException([
                 "Submitted content must not carry an identifier in the platform's own identifier "

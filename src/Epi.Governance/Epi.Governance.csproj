@@ -1,5 +1,9 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
+  <ItemGroup>
+    <ProjectReference Include="..\Epi.ContentCore\Epi.ContentCore.csproj" />
+  </ItemGroup>
+
   <PropertyGroup>
     <RootNamespace>Epi.Governance</RootNamespace>
   </PropertyGroup>

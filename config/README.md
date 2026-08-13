@@ -5,6 +5,11 @@ workflow definitions, terminology bindings, publishing routing, and event schema
 so a new country, rule, or scheme is a configuration change, not a code release (D3 ADR-012).
 
 Layout:
+- `identifiers.json` - the namespaces this deployment mints identifiers and tags into
+  ([ADR-017](../design/adrs/0017-identifier-authority-as-configuration.md)). **An adopting
+  organisation replaces these before storing anything they intend to keep**: identifiers are
+  permanent and appear in stored content and audit records. The shipped values use a domain
+  reserved for documentation, so an unset authority is conspicuous rather than plausible.
 - `markets/` - per-market/regulator configuration. **Implemented**, see below.
 - `lifecycle/` - state models and allowed transitions. Later iteration (capability 7).
 - `workflows/` - review/approval workflow definitions. Later iteration (capability 16).
