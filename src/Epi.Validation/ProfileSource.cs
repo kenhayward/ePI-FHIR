@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Formats.Tar;
 using System.IO.Compression;
 using Hl7.Fhir.Specification.Source;
@@ -15,10 +16,25 @@ namespace Epi.Validation;
 /// </remarks>
 public static class ProfileSource
 {
+    private static readonly ConcurrentDictionary<string, Lazy<IAsyncResourceResolver>> Resolvers = new();
+
     /// <summary>Every conformance resource the platform validates against.</summary>
+    /// <remarks>
+    /// Built once per process and shared. The resolver is read-only and safe to share, loading
+    /// and indexing the packages takes seconds, and building two at once races: the core
+    /// definitions are unzipped into a shared cache directory by the SDK, and concurrent
+    /// construction collides there. One instance removes the whole class of problem rather
+    /// than defending against it in several places.
+    /// </remarks>
     public static IAsyncResourceResolver FromPinnedPackages(string? packagesDirectory = null)
     {
-        var packages = packagesDirectory ?? LocatePackagesDirectory();
+        var key = packagesDirectory ?? LocatePackagesDirectory();
+        return Resolvers.GetOrAdd(key, path =>
+            new Lazy<IAsyncResourceResolver>(() => Build(path), LazyThreadSafetyMode.ExecutionAndPublication)).Value;
+    }
+
+    private static IAsyncResourceResolver Build(string packages)
+    {
         var expanded = Expand(packages);
 
         // Core R5 definitions ship with the validator rather than being vendored; see
