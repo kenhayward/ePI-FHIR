@@ -181,8 +181,10 @@ public abstract class ContentStoreConformance
         expected.Identifier = actual.Identifier = null;
         expected.Meta = actual.Meta = null;
 
-        Assert.True(expected.IsExactly(actual),
-            "Content submitted and content retrieved are not structurally identical.");
+        // Compared as canonical JSON rather than with IsExactly: both sides are serialised
+        // from POCOs by the same writer, so ordering is determined by the model, and a
+        // failure shows which element differs instead of merely asserting that one does.
+        Assert.Equal(EpiBundleReader.Write(expected), EpiBundleReader.Write(actual));
     }
 
     [Fact]
