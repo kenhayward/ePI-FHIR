@@ -8,8 +8,8 @@
   "CAP-VAL-003": {"iteration": "1", "status": "partial", "evidence": "FN_VAL_001 and FN_VAL_002 at the write gate; other gates (ingest, pre-approval, pre-publish) arrive with the capabilities that own them"},
   "CAP-VAL-005": {"iteration": "1", "status": "partial", "evidence": "FN_VAL_003 and IT_005: issues carry severity and a FHIRPath location; severity configurability per gate and market is CAP-VAL-007, later"},
 
-  "CAP-IAM-001": {"iteration": "1", "status": "planned", "evidence": "iteration-1 PR 6"},
-  "CAP-IAM-002": {"iteration": "1", "status": "planned", "evidence": "iteration-1 PR 6"},
+  "CAP-IAM-001": {"iteration": "1", "status": "partial", "evidence": "FN_IAM_001 subject extraction; the host's bearer authentication is wired in PR 6b"},
+  "CAP-IAM-002": {"iteration": "1", "status": "partial", "evidence": "FN_IAM_002 and FN_IAM_003 plus IT_002 against real OPA; enforcement on every API call is PR 6b"},
   "CAP-IAM-007": {"iteration": "1", "status": "planned", "evidence": "iteration-1 PR 6"},
   "CAP-IAM-009": {"iteration": "1", "status": "planned", "evidence": "iteration-1 PR 7"},
 

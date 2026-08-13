@@ -22,8 +22,8 @@ set is in [requirements-traceability-matrix.md](requirements-traceability-matrix
 - Scheduled requirements: **15**
 - With at least one design function: **15**
 - With at least one integration test: **15**
-- Design functions awaiting a unit test: **11** of 23
-- Integration tests awaiting implementation: **4** of 9
+- Design functions awaiting a unit test: **8** of 23
+- Integration tests awaiting implementation: **3** of 9
 
 ## Trace
 
@@ -34,9 +34,9 @@ set is in [requirements-traceability-matrix.md](requirements-traceability-matrix
 | CAP-SCM-010 | P0 | 1 | FN-CC-006 | `FN_CC_006_preserves_narrative_markup_exactly` (src/Epi.ContentCore.Tests/EpiBundleReaderTests.cs)<br>`FN_CC_006_serialises_and_reparses_without_content_loss` (src/Epi.ContentCore.Tests/EpiBundleReaderTests.cs) | IT-001 | `IT_001_a_conformant_bundle_round_trips_through_create_and_read_without_content_loss` (src/Epi.ContentCore.Tests/ContentStoreConformance.cs) |
 | CAP-VAL-003 | P2 | 1 | FN-VAL-001, FN-VAL-002 | `FN_VAL_001_a_conformant_document_produces_no_errors` (src/Epi.Validation.Tests/StructuralValidatorTests.cs)<br>`FN_VAL_001_a_missing_required_element_is_an_error` (src/Epi.Validation.Tests/StructuralValidatorTests.cs)<br>`FN_VAL_002_a_reference_satisfied_within_the_document_is_accepted` (src/Epi.Validation.Tests/StructuralValidatorTests.cs)<br>`FN_VAL_002_a_reference_to_something_absent_from_the_document_is_an_error` (src/Epi.Validation.Tests/StructuralValidatorTests.cs)<br>`FN_VAL_002_an_external_reference_is_not_treated_as_dangling` (src/Epi.Validation.Tests/StructuralValidatorTests.cs) | IT-005 | `IT_005_a_rejected_new_version_leaves_the_previous_version_intact` (src/Epi.Validation.Tests/ValidatingContentStoreTests.cs)<br>`IT_005_malformed_content_is_rejected_with_itemised_located_errors` (src/Epi.Validation.Tests/ValidatingContentStoreTests.cs)<br>`IT_005_rejected_content_leaves_no_partial_state` (src/Epi.Validation.Tests/ValidatingContentStoreTests.cs)<br>`IT_005_valid_content_passes_the_gate_and_is_stored` (src/Epi.Validation.Tests/ValidatingContentStoreTests.cs) |
 | CAP-VAL-005 | P2 | 1 | FN-VAL-003 | `FN_VAL_003_a_valid_document_reports_no_issues_at_all_rather_than_silence` (src/Epi.Validation.Tests/StructuralValidatorTests.cs)<br>`FN_VAL_003_an_issue_carries_a_severity_and_the_element_it_is_about` (src/Epi.Validation.Tests/StructuralValidatorTests.cs) | IT-005 | `IT_005_a_rejected_new_version_leaves_the_previous_version_intact` (src/Epi.Validation.Tests/ValidatingContentStoreTests.cs)<br>`IT_005_malformed_content_is_rejected_with_itemised_located_errors` (src/Epi.Validation.Tests/ValidatingContentStoreTests.cs)<br>`IT_005_rejected_content_leaves_no_partial_state` (src/Epi.Validation.Tests/ValidatingContentStoreTests.cs)<br>`IT_005_valid_content_passes_the_gate_and_is_stored` (src/Epi.Validation.Tests/ValidatingContentStoreTests.cs) |
-| CAP-IAM-001 | P0 | 1 | FN-IAM-001 | - | IT-007 | - |
-| CAP-IAM-002 | P0 | 1 | FN-IAM-002, FN-IAM-003 | - | IT-002 | - |
-| CAP-IAM-007 | P0 | 1 | FN-IAM-004 | - | IT-002 | - |
+| CAP-IAM-001 | P0 | 1 | FN-IAM-001 | `FN_IAM_001_a_token_carrying_no_scope_yields_empty_scope_not_unrestricted_access` (src/Epi.Iam.Tests/SubjectFactoryTests.cs)<br>`FN_IAM_001_a_token_without_a_subject_identifier_is_nobody` (src/Epi.Iam.Tests/SubjectFactoryTests.cs)<br>`FN_IAM_001_accepts_sub_as_the_identifier_when_the_mapped_claim_is_absent` (src/Epi.Iam.Tests/SubjectFactoryTests.cs)<br>`FN_IAM_001_an_unauthenticated_principal_is_nobody` (src/Epi.Iam.Tests/SubjectFactoryTests.cs)<br>`FN_IAM_001_reads_identity_roles_and_scope_from_an_authenticated_principal` (src/Epi.Iam.Tests/SubjectFactoryTests.cs) | IT-007 | - |
+| CAP-IAM-002 | P0 | 1 | FN-IAM-002, FN-IAM-003 | `FN_IAM_002_the_query_sent_matches_the_policy_input_contract` (src/Epi.Iam.Tests/OpaPolicyDecisionPointTests.cs)<br>`FN_IAM_003_a_deny_decision_is_denied_with_a_reason` (src/Epi.Iam.Tests/OpaPolicyDecisionPointTests.cs)<br>`FN_IAM_003_an_allow_decision_is_allowed` (src/Epi.Iam.Tests/OpaPolicyDecisionPointTests.cs)<br>`FN_IAM_003_an_undefined_result_is_denied` (src/Epi.Iam.Tests/OpaPolicyDecisionPointTests.cs)<br>`FN_IAM_003_an_unreachable_or_failing_policy_server_is_denied` (src/Epi.Iam.Tests/OpaPolicyDecisionPointTests.cs) | IT-002 | `IT_002_a_role_without_the_action_is_denied` (src/Epi.Iam.IntegrationTests/AuthorizationTests.cs)<br>`IT_002_a_subject_from_another_affiliate_is_denied` (src/Epi.Iam.IntegrationTests/AuthorizationTests.cs)<br>`IT_002_a_subject_in_scope_with_the_right_role_is_allowed` (src/Epi.Iam.IntegrationTests/AuthorizationTests.cs)<br>`IT_002_a_subject_without_the_market_in_scope_is_denied` (src/Epi.Iam.IntegrationTests/AuthorizationTests.cs)<br>`IT_002_an_independent_approver_is_allowed` (src/Epi.Iam.IntegrationTests/AuthorizationTests.cs)<br>`IT_002_segregation_of_duties_denies_an_author_approving_their_own_label` (src/Epi.Iam.IntegrationTests/AuthorizationTests.cs) |
+| CAP-IAM-007 | P0 | 1 | FN-IAM-004 | - | IT-002 | `IT_002_a_role_without_the_action_is_denied` (src/Epi.Iam.IntegrationTests/AuthorizationTests.cs)<br>`IT_002_a_subject_from_another_affiliate_is_denied` (src/Epi.Iam.IntegrationTests/AuthorizationTests.cs)<br>`IT_002_a_subject_in_scope_with_the_right_role_is_allowed` (src/Epi.Iam.IntegrationTests/AuthorizationTests.cs)<br>`IT_002_a_subject_without_the_market_in_scope_is_denied` (src/Epi.Iam.IntegrationTests/AuthorizationTests.cs)<br>`IT_002_an_independent_approver_is_allowed` (src/Epi.Iam.IntegrationTests/AuthorizationTests.cs)<br>`IT_002_segregation_of_duties_denies_an_author_approving_their_own_label` (src/Epi.Iam.IntegrationTests/AuthorizationTests.cs) |
 | CAP-IAM-009 | P0 | 1 | FN-AUD-004 | - | IT-003 | - |
 | CAP-AUD-001 | P0 | 1 | FN-AUD-001 | - | IT-003 | - |
 | CAP-AUD-002 | P0 | 1 | FN-AUD-002, FN-AUD-003 | - | IT-003 | - |
@@ -54,6 +54,6 @@ normal work in progress. Referential errors, by contrast, fail the build.
 
 **Scheduled requirements with no integration test:** none
 
-**Design functions with no unit test:** FN-AUD-001, FN-AUD-002, FN-AUD-003, FN-AUD-004, FN-CFG-002, FN-EVT-001, FN-EVT-002, FN-IAM-001, FN-IAM-002, FN-IAM-003, FN-IAM-004
+**Design functions with no unit test:** FN-AUD-001, FN-AUD-002, FN-AUD-003, FN-AUD-004, FN-CFG-002, FN-EVT-001, FN-EVT-002, FN-IAM-004
 
-**Integration tests not yet implemented:** IT-002, IT-003, IT-007, IT-008
+**Integration tests not yet implemented:** IT-003, IT-007, IT-008

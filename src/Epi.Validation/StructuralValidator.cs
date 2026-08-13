@@ -16,6 +16,13 @@ namespace Epi.Validation;
 /// </remarks>
 public sealed class StructuralValidator
 {
+    // The SDK caches compiled schemas in state shared through the resolver, and concurrent
+    // validation can make an uncached canonical fail to resolve. The validator reports that as
+    // an error, so the gate would reject valid content intermittently. Serialised until the
+    // shared state is understood well enough to do better: a slow gate is acceptable, a gate
+    // that rejects valid labels under load is not.
+    private static readonly SemaphoreSlim Gate = new(1, 1);
+
     private readonly Validator _validator;
 
     public StructuralValidator(IAsyncResourceResolver resolver)
@@ -32,7 +39,16 @@ public sealed class StructuralValidator
     {
         ArgumentNullException.ThrowIfNull(bundle);
 
-        var outcome = _validator.Validate(bundle);
+        Gate.Wait();
+        OperationOutcome outcome;
+        try
+        {
+            outcome = _validator.Validate(bundle);
+        }
+        finally
+        {
+            Gate.Release();
+        }
 
         var issues = outcome.Issue
             .Select(Translate)

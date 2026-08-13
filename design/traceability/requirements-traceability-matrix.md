@@ -210,8 +210,8 @@ Status values: `planned` (scheduled, not built), `partial` (some aspect delivere
 | CAP-WFL-006 | 16 | S | P1 | Lifecycle & Workflow Service | - | - | - |
 | CAP-WFL-007 | 16 | M | P1 | Lifecycle & Workflow Service | - | - | - |
 | CAP-WFL-008 | 16 | M | P1 | Lifecycle & Workflow Service | - | - | - |
-| CAP-IAM-001 | 17 | M | P0 | IAM | 1 | planned | iteration-1 PR 6 |
-| CAP-IAM-002 | 17 | M | P0 | IAM | 1 | planned | iteration-1 PR 6 |
+| CAP-IAM-001 | 17 | M | P0 | IAM | 1 | partial | FN_IAM_001 subject extraction; the host's bearer authentication is wired in PR 6b |
+| CAP-IAM-002 | 17 | M | P0 | IAM | 1 | partial | FN_IAM_002 and FN_IAM_003 plus IT_002 against real OPA; enforcement on every API call is PR 6b |
 | CAP-IAM-003 | 17 | M | P0 | IAM | - | - | - |
 | CAP-IAM-004 | 17 | M | P0 | IAM | - | - | - |
 | CAP-IAM-005 | 17 | M | P0 | IAM | - | - | - |
