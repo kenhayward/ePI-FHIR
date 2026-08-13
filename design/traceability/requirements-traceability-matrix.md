@@ -162,9 +162,9 @@ Status values: `planned` (scheduled, not built), `partial` (some aspect delivere
 | CAP-REG-008 | 10 | S | P2 | Regulatory Profiles Service | - | - | - |
 | CAP-VAL-001 | 11 | M | P2 | Validation Service | - | - | - |
 | CAP-VAL-002 | 11 | M | P2 | Validation Service | - | - | - |
-| CAP-VAL-003 | 11 | M | P2 | Validation Service | 1 | planned | iteration-1 PR 5 |
+| CAP-VAL-003 | 11 | M | P2 | Validation Service | 1 | partial | FN_VAL_001 and FN_VAL_002 at the write gate; other gates (ingest, pre-approval, pre-publish) arrive with the capabilities that own them |
 | CAP-VAL-004 | 11 | M | P2 | Validation Service | - | - | - |
-| CAP-VAL-005 | 11 | M | P2 | Validation Service | 1 | planned | iteration-1 PR 5 |
+| CAP-VAL-005 | 11 | M | P2 | Validation Service | 1 | partial | FN_VAL_003 and IT_005: issues carry severity and a FHIRPath location; severity configurability per gate and market is CAP-VAL-007, later |
 | CAP-VAL-006 | 11 | S | P2 | Validation Service | - | - | - |
 | CAP-VAL-007 | 11 | S | P2 | Validation Service | - | - | - |
 | CAP-VAL-008 | 11 | M | P2 | Validation Service | - | - | - |

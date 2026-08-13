@@ -6,7 +6,13 @@ namespace Epi.ContentCore;
 /// Minting and stamping of canonical identity (ADR-015). Shared by every store so that two
 /// implementations cannot drift into two different notions of what identity means.
 /// </summary>
-internal static class ContentIdentity
+/// <remarks>
+/// Public because validation needs it too: FHIR constraint bdl-9 requires a document Bundle to
+/// carry an identifier, and the platform mints that identifier rather than the submitter
+/// supplying it. A write gate must therefore validate the stamped form - the artefact that will
+/// actually be stored - not the draft that arrived.
+/// </remarks>
+public static class ContentIdentity
 {
     /// <summary>A fresh, opaque, time-ordered identity in the platform's own system.</summary>
     public static DocumentIdentity Mint() => new(

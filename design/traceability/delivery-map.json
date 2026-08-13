@@ -5,8 +5,8 @@
   "CAP-SCM-007": {"iteration": "1", "status": "partial", "evidence": "ADR-015 plus FN-CC-002/003/007 for documents; section and reusable-unit identity are later iterations"},
   "CAP-SCM-010": {"iteration": "1", "status": "partial", "evidence": "FN_CC_006 and IT_001, the latter run against both the in-memory store and a real HAPI server; validation against the pinned profile is PR 5"},
 
-  "CAP-VAL-003": {"iteration": "1", "status": "planned", "evidence": "iteration-1 PR 5"},
-  "CAP-VAL-005": {"iteration": "1", "status": "planned", "evidence": "iteration-1 PR 5"},
+  "CAP-VAL-003": {"iteration": "1", "status": "partial", "evidence": "FN_VAL_001 and FN_VAL_002 at the write gate; other gates (ingest, pre-approval, pre-publish) arrive with the capabilities that own them"},
+  "CAP-VAL-005": {"iteration": "1", "status": "partial", "evidence": "FN_VAL_003 and IT_005: issues carry severity and a FHIRPath location; severity configurability per gate and market is CAP-VAL-007, later"},
 
   "CAP-IAM-001": {"iteration": "1", "status": "planned", "evidence": "iteration-1 PR 6"},
   "CAP-IAM-002": {"iteration": "1", "status": "planned", "evidence": "iteration-1 PR 6"},

@@ -14,8 +14,8 @@ Name unit tests for the function they verify, for example
 ## Coverage
 
 - Design functions declared: **23**
-- Verified by at least one unit test: **9**
-- Not yet verified: **14**
+- Verified by at least one unit test: **12**
+- Not yet verified: **11**
 
 ## Matrix
 
@@ -41,9 +41,9 @@ Name unit tests for the function they verify, for example
 | FN-IAM-002 | Build an authorisation query from subject, action, and resource | IAM | CAP-IAM-002 | 1 | planned | - |
 | FN-IAM-003 | Evaluate the policy decision and enforce allow or deny | IAM | CAP-IAM-002 | 1 | planned | - |
 | FN-IAM-004 | Apply affiliate and market scope filtering at data access | IAM | CAP-IAM-007 | 1 | planned | - |
-| FN-VAL-001 | Check structural well-formedness against the pinned profile | Validation Service | CAP-VAL-003 | 1 | planned | - |
-| FN-VAL-002 | Check reference integrity, rejecting dangling references | Validation Service | CAP-VAL-003 | 1 | planned | - |
-| FN-VAL-003 | Produce structured issues carrying severity and element location | Validation Service | CAP-VAL-005 | 1 | planned | - |
+| FN-VAL-001 | Check structural well-formedness against the pinned profile | Validation Service | CAP-VAL-003 | 1 | verified | `FN_VAL_001_a_conformant_document_produces_no_errors` (src/Epi.Validation.Tests/StructuralValidatorTests.cs)<br>`FN_VAL_001_a_missing_required_element_is_an_error` (src/Epi.Validation.Tests/StructuralValidatorTests.cs) |
+| FN-VAL-002 | Check reference integrity, rejecting dangling references | Validation Service | CAP-VAL-003 | 1 | verified | `FN_VAL_002_a_reference_satisfied_within_the_document_is_accepted` (src/Epi.Validation.Tests/StructuralValidatorTests.cs)<br>`FN_VAL_002_a_reference_to_something_absent_from_the_document_is_an_error` (src/Epi.Validation.Tests/StructuralValidatorTests.cs)<br>`FN_VAL_002_an_external_reference_is_not_treated_as_dangling` (src/Epi.Validation.Tests/StructuralValidatorTests.cs) |
+| FN-VAL-003 | Produce structured issues carrying severity and element location | Validation Service | CAP-VAL-005 | 1 | verified | `FN_VAL_003_a_valid_document_reports_no_issues_at_all_rather_than_silence` (src/Epi.Validation.Tests/StructuralValidatorTests.cs)<br>`FN_VAL_003_an_issue_carries_a_severity_and_the_element_it_is_about` (src/Epi.Validation.Tests/StructuralValidatorTests.cs) |
 
 ## Requirements covered by these functions
 
