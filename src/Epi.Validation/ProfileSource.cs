@@ -61,27 +61,38 @@ public static class ProfileSource
                 continue;
             }
 
-            var staging = target + ".partial";
-            if (Directory.Exists(staging))
-            {
-                Directory.Delete(staging, recursive: true);
-            }
-
+            // Staging is unique per attempt. Several validators can be constructed at once -
+            // xUnit builds one fixture per test class in parallel, and a service will have
+            // more than one consumer - and a shared staging directory means two of them
+            // extracting over each other. That fails on a cold cache and passes on a warm
+            // one, which is the worst kind of bug to leave in.
+            var staging = $"{target}.{Guid.NewGuid():N}.partial";
             Directory.CreateDirectory(staging);
-            using (var file = File.OpenRead(archive))
-            using (var gzip = new GZipStream(file, CompressionMode.Decompress))
+            try
             {
-                TarFile.ExtractToDirectory(gzip, staging, overwriteFiles: true);
-            }
+                using (var file = File.OpenRead(archive))
+                using (var gzip = new GZipStream(file, CompressionMode.Decompress))
+                {
+                    TarFile.ExtractToDirectory(gzip, staging, overwriteFiles: true);
+                }
 
-            // Publish atomically, so a half-expanded package is never served.
-            if (!Directory.Exists(target))
-            {
-                Directory.Move(staging, target);
+                // Publish by rename, so a half-expanded package is never served. Whoever
+                // gets there first wins and the rest discard their copy.
+                try
+                {
+                    Directory.Move(staging, target);
+                }
+                catch (IOException)
+                {
+                    // Another writer published first, which is fine: the content is identical.
+                }
             }
-            else
+            finally
             {
-                Directory.Delete(staging, recursive: true);
+                if (Directory.Exists(staging))
+                {
+                    Directory.Delete(staging, recursive: true);
+                }
             }
         }
 
