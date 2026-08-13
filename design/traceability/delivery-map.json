@@ -18,6 +18,7 @@
 
   "CAP-CFG-001": {"iteration": "1", "status": "planned", "evidence": "iteration-1 PR 3 (markets only)"},
   "CAP-CFG-004": {"iteration": "1", "status": "planned", "evidence": "iteration-1 PR 3 new-market test"},
+  "CAP-CFG-006": {"iteration": "1", "status": "planned", "evidence": "iteration-1 PR 3 (config rejected before activation)"},
 
   "CAP-EVT-001": {"iteration": "1", "status": "planned", "evidence": "iteration-1 PR 8 (emit only)"}
 }

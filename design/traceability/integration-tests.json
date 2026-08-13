@@ -1,0 +1,13 @@
+{
+  "_comment": "Integration tests: the right-hand ascent of the V model at requirement level. Each entry states which capability requirements a test validates end to end, against real collaborators (FHIR server, policy engine, database, broker). 'verifies' must reference requirement IDs that exist in specs/capabilities/. The implementing test is discovered from test code by its IT id, so this file records intent and the code records fact.",
+
+  "IT-001": {"name": "A conformant ePI Bundle round-trips through create and read with no content loss", "verifies": ["CAP-SCM-010", "CAP-SCM-001"], "iteration": "1", "status": "planned"},
+  "IT-002": {"name": "A caller outside the resource affiliate or market is denied and sees nothing", "verifies": ["CAP-IAM-002", "CAP-IAM-007"], "iteration": "1", "status": "planned"},
+  "IT-003": {"name": "A content write and an access decision each produce an immutable audit record", "verifies": ["CAP-AUD-001", "CAP-AUD-002", "CAP-IAM-009"], "iteration": "1", "status": "planned"},
+  "IT-004": {"name": "A second market is served by adding configuration alone, with no code change", "verifies": ["CAP-CFG-004", "CAP-CFG-001"], "iteration": "1", "status": "planned"},
+  "IT-005": {"name": "Malformed content is rejected with itemised located errors and leaves no partial state", "verifies": ["CAP-VAL-003", "CAP-VAL-005"], "iteration": "1", "status": "planned"},
+  "IT-006": {"name": "An attempt to mutate an existing version is rejected and history remains reconstructable", "verifies": ["CAP-SCM-007"], "iteration": "1", "status": "planned"},
+  "IT-007": {"name": "A request without a valid OIDC token is rejected before reaching content", "verifies": ["CAP-IAM-001"], "iteration": "1", "status": "planned"},
+  "IT-008": {"name": "Creating a document emits a content event to the backbone", "verifies": ["CAP-EVT-001"], "iteration": "1", "status": "planned"},
+  "IT-009": {"name": "An invalid market definition is rejected before activation", "verifies": ["CAP-CFG-006"], "iteration": "1", "status": "planned"}
+}

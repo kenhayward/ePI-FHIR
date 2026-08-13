@@ -115,18 +115,26 @@ exists is the classic failure of this system shape.
 
 ## 7. Traceability
 
-Requirements trace to delivery mechanically rather than by hand.
+Requirements trace to delivery mechanically rather than by hand, as a **V model**: requirement ->
+design function -> unit test on the way down and back up, and requirement -> integration test
+across the top. See `design/traceability/` for the registries and the generated matrices.
 
-- Every test is named for the requirement it covers, for example
-  `CAP_SCM_010_bundle_round_trips_without_loss`.
-- `design/traceability/requirements-traceability-matrix.md` is generated from the capability
-  specifications by `tools/build-rtm.py`, and CI fails when it is out of date.
-- Delivery evidence is recorded in `design/traceability/delivery-map.json` as each requirement
-  is implemented.
+This iteration declares 23 design functions and 9 integration-test scenarios against its 15
+scheduled requirements, before any of them exist in code. Under test-driven development that
+ordering is the point: the trace is written first, the gap report in `v-model-trace.md` lists
+everything not yet built, and the gaps close as tests land.
+
+- Unit tests are named for the design function they verify, for example
+  `FN_CC_006_serialises_without_content_loss`.
+- Integration tests are named for the scenario, for example
+  `IT_001_bundle_round_trips_through_create_and_read`.
+- Both are **discovered from the code** by `tools/build-traceability.py`, so no matrix has to be
+  updated by hand after writing a test, and CI fails if a generated matrix is stale or a test
+  names something that does not exist.
 
 This is the Deliverables Definition Section 8 cross-cutting artefact, and the spine of the
-GxP/CSV chain in D3 Section 8.4: requirement -> design -> delivery -> test. It costs almost
-nothing now and cannot reasonably be reconstructed across hundreds of tests later.
+GxP/CSV chain in D3 Section 8.4. It costs almost nothing now and cannot reasonably be
+reconstructed across hundreds of tests later.
 
 ## 8. Solution shape
 

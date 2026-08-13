@@ -1,19 +1,20 @@
 # Requirements Traceability Matrix
 
-GENERATED FILE - do not edit by hand. Regenerate with `python tools/build-rtm.py`;
-CI fails if it is out of date. Requirement text, IDs, and priority come from the
-capability specifications; phase from D1 Section 11; component from D3 Section 2.1.
-Delivery evidence is the only hand-maintained input, in `delivery-map.json`.
+GENERATED FILE - do not edit by hand. Regenerate with
+`python tools/build-traceability.py`; CI fails if it is out of date.
 
-This is the cross-cutting artefact called for in the Deliverables Definition
-Section 8, and the spine of the GxP/CSV traceability chain (D3 Section 8.4):
-requirement -> design -> delivery -> test.
+Requirement text, IDs, and priority come from the capability specifications; phase from
+D1 Section 11 (cross-checked against the D2 group summaries); component from D3 Section
+2.1. Delivery evidence is hand-maintained in `delivery-map.json`.
+
+This is the cross-cutting artefact called for in the Deliverables Definition Section 8.
+For the full V model see [v-model-trace.md](v-model-trace.md).
 
 ## Coverage
 
 - Requirements specified: **220** across **24** capabilities
-- Requirements with delivery evidence: **14**
-- Requirements not yet scheduled: **206**
+- Requirements with delivery evidence: **15**
+- Requirements not yet scheduled: **205**
 
 ## Capabilities
 
@@ -47,7 +48,7 @@ requirement -> design -> delivery -> test.
 ## Matrix
 
 Status values: `planned` (scheduled, not built), `partial` (some aspect delivered),
-`done` (delivered with evidence), blank (not yet scheduled).
+`done` (delivered with evidence), `-` (not yet scheduled).
 
 | Requirement | Cap | Pri | Phase | Component | Iteration | Status | Evidence |
 |---|---|---|---|---|---|---|---|
@@ -247,7 +248,7 @@ Status values: `planned` (scheduled, not built), `partial` (some aspect delivere
 | CAP-CFG-003 | 21 | M | P0 | Configuration & Rules Service | - | - | - |
 | CAP-CFG-004 | 21 | M | P0 | Configuration & Rules Service | 1 | planned | iteration-1 PR 3 new-market test |
 | CAP-CFG-005 | 21 | M | P0 | Configuration & Rules Service | - | - | - |
-| CAP-CFG-006 | 21 | M | P0 | Configuration & Rules Service | - | - | - |
+| CAP-CFG-006 | 21 | M | P0 | Configuration & Rules Service | 1 | planned | iteration-1 PR 3 (config rejected before activation) |
 | CAP-CFG-007 | 21 | M | P0 | Configuration & Rules Service | - | - | - |
 | CAP-RET-001 | 22 | M | P4 | Retention & Archival Service | - | - | - |
 | CAP-RET-002 | 22 | M | P4 | Retention & Archival Service | - | - | - |

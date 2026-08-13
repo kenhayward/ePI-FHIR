@@ -1,0 +1,32 @@
+{
+  "_comment": "Design functions: the left-hand descent of the V model. Each entry decomposes one or more capability requirements into a unit of design that can be verified by a unit test. IDs are FN-<AREA>-NNN and are stable once published. 'satisfies' must reference requirement IDs that exist in specs/capabilities/. Unit tests are NOT listed here - they are discovered from test code by the FN id in the test name, so this file cannot go stale.",
+
+  "FN-CC-001": {"name": "Parse an ePI document Bundle anchored by a Composition", "component": "Content Core (FHIR)", "satisfies": ["CAP-SCM-001"], "iteration": "1", "status": "planned"},
+  "FN-CC-002": {"name": "Assign a canonical identifier to a document", "component": "Content Core (FHIR)", "satisfies": ["CAP-SCM-007"], "iteration": "1", "status": "planned"},
+  "FN-CC-003": {"name": "Create an immutable version snapshot and record its lineage", "component": "Content Core (FHIR)", "satisfies": ["CAP-SCM-007"], "iteration": "1", "status": "planned"},
+  "FN-CC-004": {"name": "Persist canonical content through the FHIR REST API", "component": "Content Core (FHIR)", "satisfies": ["CAP-SCM-001"], "iteration": "1", "status": "planned"},
+  "FN-CC-005": {"name": "Retrieve a document by canonical identifier and version", "component": "Content Core (FHIR)", "satisfies": ["CAP-SCM-001"], "iteration": "1", "status": "planned"},
+  "FN-CC-006": {"name": "Serialise and deserialise a Bundle without content loss", "component": "Content Core (FHIR)", "satisfies": ["CAP-SCM-010"], "iteration": "1", "status": "planned"},
+  "FN-CC-007": {"name": "Reject any mutation of an existing version", "component": "Content Core (FHIR)", "satisfies": ["CAP-SCM-007"], "iteration": "1", "status": "planned"},
+
+  "FN-VAL-001": {"name": "Check structural well-formedness against the pinned profile", "component": "Validation Service", "satisfies": ["CAP-VAL-003"], "iteration": "1", "status": "planned"},
+  "FN-VAL-002": {"name": "Check reference integrity, rejecting dangling references", "component": "Validation Service", "satisfies": ["CAP-VAL-003"], "iteration": "1", "status": "planned"},
+  "FN-VAL-003": {"name": "Produce structured issues carrying severity and element location", "component": "Validation Service", "satisfies": ["CAP-VAL-005"], "iteration": "1", "status": "planned"},
+
+  "FN-IAM-001": {"name": "Validate an OIDC access token and extract subject claims", "component": "IAM", "satisfies": ["CAP-IAM-001"], "iteration": "1", "status": "planned"},
+  "FN-IAM-002": {"name": "Build an authorisation query from subject, action, and resource", "component": "IAM", "satisfies": ["CAP-IAM-002"], "iteration": "1", "status": "planned"},
+  "FN-IAM-003": {"name": "Evaluate the policy decision and enforce allow or deny", "component": "IAM", "satisfies": ["CAP-IAM-002"], "iteration": "1", "status": "planned"},
+  "FN-IAM-004": {"name": "Apply affiliate and market scope filtering at data access", "component": "IAM", "satisfies": ["CAP-IAM-007"], "iteration": "1", "status": "planned"},
+
+  "FN-AUD-001": {"name": "Compose an audit record with actor, action, target, before and after values", "component": "Audit & e-Signature", "satisfies": ["CAP-AUD-001"], "iteration": "1", "status": "planned"},
+  "FN-AUD-002": {"name": "Append an audit record to the append-only store", "component": "Audit & e-Signature", "satisfies": ["CAP-AUD-002"], "iteration": "1", "status": "planned"},
+  "FN-AUD-003": {"name": "Reject update or delete of an existing audit record", "component": "Audit & e-Signature", "satisfies": ["CAP-AUD-002"], "iteration": "1", "status": "planned"},
+  "FN-AUD-004": {"name": "Record every access-control decision to the audit sink", "component": "Audit & e-Signature", "satisfies": ["CAP-IAM-009"], "iteration": "1", "status": "planned"},
+
+  "FN-CFG-001": {"name": "Load market definitions from configuration data", "component": "Configuration & Rules Service", "satisfies": ["CAP-CFG-001", "CAP-CFG-004"], "iteration": "1", "status": "planned"},
+  "FN-CFG-002": {"name": "Resolve the active profile version for a market", "component": "Configuration & Rules Service", "satisfies": ["CAP-CFG-001"], "iteration": "1", "status": "planned"},
+  "FN-CFG-003": {"name": "Reject a market definition that fails schema validation", "component": "Configuration & Rules Service", "satisfies": ["CAP-CFG-006"], "iteration": "1", "status": "planned"},
+
+  "FN-EVT-001": {"name": "Build a content event from a persisted document", "component": "Notification & Event Backbone", "satisfies": ["CAP-EVT-001"], "iteration": "1", "status": "planned"},
+  "FN-EVT-002": {"name": "Publish a content event to the event backbone", "component": "Notification & Event Backbone", "satisfies": ["CAP-EVT-001"], "iteration": "1", "status": "planned"}
+}
