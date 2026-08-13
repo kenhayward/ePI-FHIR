@@ -1,24 +1,17 @@
 namespace Epi.ContentCore;
 
+/// <summary>
+/// Convenience access to the identifier systems in use when nothing is configured.
+/// </summary>
+/// <remarks>
+/// The values themselves live in <see cref="IdentifierAuthority"/> and are configuration
+/// (ADR-017). These members exist so that call sites reading the demonstration defaults stay
+/// readable; anything that can be configured should take an
+/// <see cref="IdentifierAuthority"/> instead.
+/// </remarks>
 public static class ContentCoreDefaults
 {
-    /// <summary>
-    /// The identifier system documents are minted into.
-    /// </summary>
-    /// <remarks>
-    /// DEVELOPMENT VALUE ONLY. ADR-015 records the identifier authority as an open point: this
-    /// must be replaced with a real authority before any data exists outside a development
-    /// environment, because identifiers are permanent.
-    /// </remarks>
-    public const string DocumentIdentifierSystem = "https://epi.example.org/identifier/document";
+    public static string DocumentIdentifierSystem => IdentifierAuthority.Demonstration.DocumentSystem;
 
-    /// <summary>
-    /// The tag system carrying the platform's own version number on a stored document.
-    /// </summary>
-    /// <remarks>
-    /// ADR-015 decision 4: the version is ours, a monotonic integer over the document identity.
-    /// It is deliberately not the FHIR server's meta.versionId, which is server-assigned and
-    /// would not survive a change of server (ADR-003).
-    /// </remarks>
-    public const string DocumentVersionTagSystem = "https://epi.example.org/tag/document-version";
+    public static string DocumentVersionTagSystem => IdentifierAuthority.Demonstration.VersionTagSystem;
 }

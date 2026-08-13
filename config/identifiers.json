@@ -1,0 +1,8 @@
+{
+  "_comment": "The namespaces this deployment mints identifiers and tags into (ADR-017). ADOPTING ORGANISATIONS MUST REPLACE THESE before storing anything they intend to keep: identifiers are permanent, they appear in stored content and in audit records, and changing them later means rewriting append-only history or maintaining a translation table forever. The values below use a domain RFC 2606 reserves for documentation and which can never be owned by anyone, so an unset authority is conspicuous rather than plausible. ADR-017 records how to determine your own. Use the same values in every environment: per-environment identity means the same document has a different identity in test and production and cannot be promoted between them.",
+
+  "documentSystem": "https://epi.example.org/identifier/document",
+  "versionTagSystem": "https://epi.example.org/tag/document-version",
+  "affiliateTagSystem": "https://epi.example.org/tag/affiliate",
+  "marketTagSystem": "https://epi.example.org/tag/market"
+}

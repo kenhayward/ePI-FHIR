@@ -15,11 +15,9 @@ public sealed record DocumentScope(string Affiliate, string Market);
 /// </summary>
 public static class ContentScope
 {
-    public const string AffiliateTagSystem = "https://epi.example.org/tag/affiliate";
-    public const string MarketTagSystem = "https://epi.example.org/tag/market";
-
-    public static Bundle Stamp(Bundle bundle, DocumentScope scope)
+    public static Bundle Stamp(Bundle bundle, DocumentScope scope, IdentifierAuthority? authority = null)
     {
+        var systems = authority ?? IdentifierAuthority.Demonstration;
         ArgumentNullException.ThrowIfNull(bundle);
         ArgumentNullException.ThrowIfNull(scope);
         ArgumentException.ThrowIfNullOrWhiteSpace(scope.Affiliate);
@@ -28,21 +26,22 @@ public static class ContentScope
         bundle.Meta ??= new Meta();
         bundle.Meta.Tag = [
             .. bundle.Meta.Tag.Where(t =>
-                t.System != AffiliateTagSystem && t.System != MarketTagSystem),
-            new Coding(AffiliateTagSystem, scope.Affiliate),
-            new Coding(MarketTagSystem, scope.Market),
+                t.System != systems.AffiliateTagSystem && t.System != systems.MarketTagSystem),
+            new Coding(systems.AffiliateTagSystem, scope.Affiliate),
+            new Coding(systems.MarketTagSystem, scope.Market),
         ];
 
         return bundle;
     }
 
     /// <summary>The scope a document carries, or null when it carries none.</summary>
-    public static DocumentScope? Of(Bundle bundle)
+    public static DocumentScope? Of(Bundle bundle, IdentifierAuthority? authority = null)
     {
         ArgumentNullException.ThrowIfNull(bundle);
 
-        var affiliate = Tag(bundle, AffiliateTagSystem);
-        var market = Tag(bundle, MarketTagSystem);
+        var systems = authority ?? IdentifierAuthority.Demonstration;
+        var affiliate = Tag(bundle, systems.AffiliateTagSystem);
+        var market = Tag(bundle, systems.MarketTagSystem);
 
         return affiliate is null || market is null ? null : new DocumentScope(affiliate, market);
     }

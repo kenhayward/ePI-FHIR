@@ -73,7 +73,7 @@ public sealed class FhirRestContentStore(FhirClient client) : IContentStore
         ArgumentNullException.ThrowIfNull(identity);
 
         var stored = await FindAsync(identity, cancellationToken);
-        return [.. stored.Select(ContentIdentity.VersionOf).Where(v => v is not null).Select(v => v!.Value).Order()];
+        return [.. stored.Select(b => ContentIdentity.VersionOf(b)).Where(v => v is not null).Select(v => v!.Value).Order()];
     }
 
     private async Task<EpiDocument> StoreAsync(
