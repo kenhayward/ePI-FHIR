@@ -13,6 +13,7 @@
 
   <ItemGroup>
     <ProjectReference Include="../Epi.Iam/Epi.Iam.csproj" />
+    <ProjectReference Include="..\Epi.ContentCore\Epi.ContentCore.csproj" />
   </ItemGroup>
 
 </Project>

@@ -71,6 +71,8 @@ public sealed class MarketCatalogue
             var regulator = Required(problems, file, "regulator", parsed.Regulator);
             var languages = RequiredList(problems, file, "languages", parsed.Languages);
             var affiliates = RequiredList(problems, file, "affiliates", parsed.Affiliates);
+            var package = Required(problems, file, "profile.package", parsed.Profile?.Package);
+            var profileVersion = Required(problems, file, "profile.version", parsed.Profile?.Version);
 
             if (problems.Count != before)
             {
@@ -84,7 +86,8 @@ public sealed class MarketCatalogue
             }
 
             definedIn[code] = file;
-            markets[code] = new MarketDefinition(code, name, regulator, languages, affiliates);
+            markets[code] = new MarketDefinition(
+                code, name, regulator, languages, affiliates, new ProfileBinding(package, profileVersion));
         }
 
         if (problems.Count > 0)
@@ -98,6 +101,13 @@ public sealed class MarketCatalogue
     public IReadOnlyCollection<MarketDefinition> Markets => _byCode.Values;
 
     public int Count => _byCode.Count;
+
+    /// <summary>
+    /// The conformance profile a market's content is validated against (FN-CFG-002), or null
+    /// when the market is unknown. Resolved from configuration rather than compiled in, so
+    /// adopting a profile release is a configuration change (ADR-016 decision 7).
+    /// </summary>
+    public ProfileBinding? ActiveProfileFor(string marketCode) => Find(marketCode)?.Profile;
 
     /// <summary>The market with this code, or null. Codes are matched case-insensitively.</summary>
     public MarketDefinition? Find(string code) =>
@@ -139,5 +149,8 @@ public sealed class MarketCatalogue
         string? Name,
         string? Regulator,
         IReadOnlyList<string>? Languages,
-        IReadOnlyList<string>? Affiliates);
+        IReadOnlyList<string>? Affiliates,
+        ProfileFile? Profile);
+
+    private sealed record ProfileFile(string? Package, string? Version);
 }

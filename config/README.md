@@ -21,7 +21,11 @@ Adding a market is adding a file - no code change, no registration step (CAP-CFG
   "name": "United Kingdom",
   "regulator": "MHRA",
   "languages": ["en-GB"],
-  "affiliates": ["uk-affiliate"]
+  "affiliates": ["uk-affiliate"],
+  "profile": {
+    "package": "hl7.fhir.uv.emedicinal-product-info",
+    "version": "1.0.0"
+  }
 }
 ```
 
@@ -32,13 +36,15 @@ Adding a market is adding a file - no code change, no registration step (CAP-CFG
 | `regulator` | Required, non-empty |
 | `languages` | Required, at least one non-empty BCP-47 tag |
 | `affiliates` | Required, at least one non-empty affiliate scope (consumed by capability 17) |
+| `profile` | Required. The pinned conformance package and version this market's content is validated against (ADR-016 decision 7). A market with no profile has no yardstick, so it does not load |
 
 Validation is strict and all-or-nothing: an unknown or mistyped property is an error rather
 than being ignored, every problem in every file is reported together rather than only the
 first, and one invalid file means no catalogue rather than a partial one (CAP-CFG-006).
 
-The binding to a conformance profile package and version is **not yet present**. It arrives
-once the exact published ePI IG release is confirmed - see
+Naming a package and version per market is what lets a market adopt a conformance release on
+its own timetable, without a platform release. The packages themselves are vendored under
+[profiles/packages/](../profiles/packages/README.md) and pinned by
 [ADR-016](../design/adrs/0016-pinned-epi-ig-release-and-section-codes.md).
 
 Configuration is versioned with effective dates, validated before activation, and promoted

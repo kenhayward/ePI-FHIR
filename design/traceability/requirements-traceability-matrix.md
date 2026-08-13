@@ -216,7 +216,7 @@ Status values: `planned` (scheduled, not built), `partial` (some aspect delivere
 | CAP-IAM-004 | 17 | M | P0 | IAM | - | - | - |
 | CAP-IAM-005 | 17 | M | P0 | IAM | - | - | - |
 | CAP-IAM-006 | 17 | M | P0 | IAM | - | - | - |
-| CAP-IAM-007 | 17 | M | P0 | IAM | 1 | planned | iteration-1 PR 6 |
+| CAP-IAM-007 | 17 | M | P0 | IAM | 1 | partial | FN_IAM_004 on every store operation; enforcement at the API boundary is PR 6c |
 | CAP-IAM-008 | 17 | M | P0 | IAM | - | - | - |
 | CAP-IAM-009 | 17 | M | P0 | IAM | 1 | planned | iteration-1 PR 7 |
 | CAP-SEC-001 | 18 | M | P0 | Security | - | - | - |
@@ -243,7 +243,7 @@ Status values: `planned` (scheduled, not built), `partial` (some aspect delivere
 | CAP-EVT-006 | 20 | S | P2 | Notification & Event Backbone | - | - | - |
 | CAP-EVT-007 | 20 | M | P2 | Notification & Event Backbone | - | - | - |
 | CAP-EVT-008 | 20 | M | P2 | Notification & Event Backbone | - | - | - |
-| CAP-CFG-001 | 21 | M | P0 | Configuration & Rules Service | 1 | partial | MarketCatalogue: markets only; lifecycle, workflow, rule and binding config are later iterations |
+| CAP-CFG-001 | 21 | M | P0 | Configuration & Rules Service | 1 | partial | MarketCatalogue with FN_CFG_002 profile binding; lifecycle, workflow and rule config are later iterations |
 | CAP-CFG-002 | 21 | M | P0 | Configuration & Rules Service | - | - | - |
 | CAP-CFG-003 | 21 | M | P0 | Configuration & Rules Service | - | - | - |
 | CAP-CFG-004 | 21 | M | P0 | Configuration & Rules Service | 1 | partial | IT_004_a_new_market_is_added_by_configuration_alone; a market carries no behaviour until PR 6 consumes it |
