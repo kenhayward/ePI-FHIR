@@ -71,6 +71,10 @@ jobs:
           done < <(git ls-files)
           exit $fail
 
+      # The requirement -> design -> delivery chain must not drift from the specs.
+      - name: Traceability matrix is current
+        run: python3 tools/build-rtm.py --check
+
       - name: Relative Markdown links resolve
         run: |
           fail=0

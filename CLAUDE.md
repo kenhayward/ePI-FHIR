@@ -98,6 +98,16 @@ inline in D3 Section 14; split into `design/adrs/NNNN-title.md` as they grow).
 Changes that add or alter behaviour should reference the relevant D2 requirement ID and, if
 architectural, an ADR.
 
+**Traceability is mechanical, not manual.**
+[design/traceability/requirements-traceability-matrix.md](design/traceability/requirements-traceability-matrix.md)
+is generated from the capability specs by `tools/build-rtm.py` and verified in CI - never edit it
+by hand. Adding or changing a requirement in `specs/capabilities/` means regenerating it. Record
+delivery evidence in `design/traceability/delivery-map.json`, and name tests after the requirement
+they prove (`CAP_SCM_010_bundle_round_trips_without_loss`) so an auditor can go from a requirement
+ID to its test without reading code.
+
+The current increment is planned in [design/iteration-1.md](design/iteration-1.md).
+
 ## Writing conventions
 
 - Markdown is **ASCII-only** (note the specs use "-" where you'd expect an em dash, and spell out
