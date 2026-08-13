@@ -3,9 +3,7 @@ package epi.authz
 # Minimal illustrative RBAC/ABAC policy (capability 17). Not production policy.
 # Decision: allow if the subject has a role granting the action AND the subject's scope
 # covers the resource's affiliate and market.
-
-import future.keywords.if
-import future.keywords.in
+# Note: "if" and "in" are keywords by default in OPA 1.x, so no future imports.
 
 default allow := false
 
@@ -32,10 +30,12 @@ deny_sod if {
 
 # Effective decision (deny SoD overrides allow).
 decision := "deny" if deny_sod
+
 decision := "allow" if {
 	not deny_sod
 	allow
 }
+
 decision := "deny" if {
 	not deny_sod
 	not allow

@@ -1,0 +1,185 @@
+name: CI
+
+# Runs on GitHub-hosted cloud runners. This is the authoritative gate for every pull
+# request - a green local run is not evidence, a green CI run is.
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+
+  # ---- What exists in the tree? Gates the language-specific jobs below. ----
+  detect:
+    runs-on: ubuntu-latest
+    outputs:
+      dotnet: ${{ steps.check.outputs.dotnet }}
+      node: ${{ steps.check.outputs.node }}
+      rego_tests: ${{ steps.check.outputs.rego_tests }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: check
+        run: |
+          has() { [ -n "$(find . -path ./.git -prune -o -name "$1" -print -quit)" ] && echo true || echo false; }
+          {
+            echo "dotnet=$(has '*.sln')"
+            echo "node=$(has 'package.json')"
+            echo "rego_tests=$(has '*_test.rego')"
+          } >> "$GITHUB_OUTPUT"
+          cat "$GITHUB_OUTPUT"
+
+  # ---- Specifications are the product: keep them ASCII-only and LF (.editorconfig). ----
+  docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Applies to everything: specifications, source code, code comments, and config.
+      # Non-ASCII belongs in content and localisation data, not in the repository text.
+      - name: Repository must be ASCII-only
+        run: |
+          fail=0
+          while IFS= read -r f; do
+            grep -qI . "$f" 2>/dev/null || continue   # skip binary and empty files
+            if LC_ALL=C grep -qP '[^\x00-\x7F]' "$f"; then
+              echo "::error file=$f::non-ASCII characters (this repository is ASCII-only - see CLAUDE.md and CONTRIBUTING.md)"
+              fail=1
+            fi
+          done < <(git ls-files)
+          exit $fail
+
+      - name: Line endings and final newline
+        run: |
+          fail=0
+          while IFS= read -r f; do
+            case "$f" in *.md|*.yml|*.yaml|*.rego|*.sh|*.json) ;; *) continue ;; esac
+            [ -s "$f" ] || continue
+            if [ -n "$(tail -c 1 "$f")" ]; then
+              echo "::error file=$f::missing final newline"; fail=1
+            fi
+            if grep -qU $'\r' "$f"; then
+              echo "::error file=$f::CRLF line endings (.editorconfig requires LF)"; fail=1
+            fi
+          done < <(git ls-files)
+          exit $fail
+
+      - name: Relative Markdown links resolve
+        run: |
+          fail=0
+          while IFS= read -r f; do
+            case "$f" in *.md) ;; *) continue ;; esac
+            links=$(grep -oP '\]\(\K[^)]*' "$f" || true)
+            [ -n "$links" ] || continue
+            while IFS= read -r link; do
+              case "$link" in http*|mailto:*|'#'*|'') continue ;; esac
+              target="${link%%#*}"
+              [ -n "$target" ] || continue
+              if [ ! -e "$(dirname "$f")/$target" ]; then
+                echo "::error file=$f::broken relative link: $link"
+                fail=1
+              fi
+            done <<< "$links"
+          done < <(git ls-files)
+          exit $fail
+
+  # ---- The dev stack must at least be a valid, resolvable compose project. ----
+  compose:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate docker compose (all profiles)
+        working-directory: deploy/docker-compose
+        run: |
+          cp .env.example .env
+          docker compose config -q
+          docker compose --profile observability --profile gateway --profile messaging config -q
+
+      - name: Shell scripts
+        run: shellcheck --severity=warning tools/*.sh deploy/docker-compose/init/*.sh
+
+  # ---- Authorization policy is config-as-data: format, check, and test it like code. ----
+  policies:
+    runs-on: ubuntu-latest
+    needs: detect
+    steps:
+      - uses: actions/checkout@v4
+      - uses: open-policy-agent/setup-opa@v2
+        with:
+          version: latest
+
+      - name: Format check
+        run: opa fmt --diff --fail policies   # --diff so a failure shows what to change
+
+      - name: Static check
+        run: opa check policies
+
+      - name: Unit tests
+        if: needs.detect.outputs.rego_tests == 'true'
+        run: opa test policies -v
+
+      - name: No policy tests yet
+        if: needs.detect.outputs.rego_tests != 'true'
+        run: echo "::warning::No *_test.rego files found. Rego policy is testable - write tests first (opa test)."
+
+  # ---- Application code: jobs activate as soon as the first project lands. ----
+  dotnet:
+    runs-on: ubuntu-latest
+    needs: detect
+    if: needs.detect.outputs.dotnet == 'true'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.x'
+      - run: dotnet restore
+      - run: dotnet build --no-restore --configuration Release
+      - run: dotnet test --no-build --configuration Release --logger "trx;LogFileName=test-results.trx"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: dotnet-test-results
+          path: '**/test-results.trx'
+
+  web:
+    runs-on: ubuntu-latest
+    needs: detect
+    if: needs.detect.outputs.node == 'true'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm ci
+      - run: npm run lint --if-present
+      - run: npm test --if-present
+
+  # ---- Test-driven development guard (see CLAUDE.md). ----
+  # Production code may not enter the tree without tests in the same pull request.
+  # Escape hatch: apply the 'no-tests-needed' label with a justification in the PR body.
+  tdd-guard:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'no-tests-needed')
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Production code changes require test changes
+        run: |
+          changed=$(git diff --name-only "${{ github.event.pull_request.base.sha }}" "${{ github.sha }}")
+          prod=$(echo "$changed" | grep -E '^(src|apps)/' | grep -viE '(test|spec)' || true)
+          tests=$(echo "$changed" | grep -iE '(test|spec)' || true)
+          if [ -n "$prod" ] && [ -z "$tests" ]; then
+            echo "::error::Production code changed with no accompanying tests."
+            echo "This repository is test-driven: write the failing test first (see CLAUDE.md)."
+            echo "Changed production files:"; echo "$prod"
+            exit 1
+          fi
+          echo "TDD guard passed."
