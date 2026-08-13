@@ -116,7 +116,7 @@ jobs:
           version: latest
 
       - name: Format check
-        run: opa fmt --list --fail policies
+        run: opa fmt --diff --fail policies   # --diff so a failure shows what to change
 
       - name: Static check
         run: opa check policies
