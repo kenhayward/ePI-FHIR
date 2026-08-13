@@ -1,0 +1,24 @@
+{
+  "_comment": "Hand-maintained delivery evidence, merged into the generated matrix by tools/build-rtm.py. One entry per requirement that an iteration commits to. Evidence should name the test or artifact that proves it, once it exists.",
+
+  "CAP-SCM-001": {"iteration": "1", "status": "planned", "evidence": "iteration-1 PR 4"},
+  "CAP-SCM-007": {"iteration": "1", "status": "planned", "evidence": "iteration-1 ADR (identifier and versioning scheme)"},
+  "CAP-SCM-010": {"iteration": "1", "status": "planned", "evidence": "iteration-1 PR 4 round-trip test"},
+
+  "CAP-VAL-003": {"iteration": "1", "status": "planned", "evidence": "iteration-1 PR 5"},
+  "CAP-VAL-005": {"iteration": "1", "status": "planned", "evidence": "iteration-1 PR 5"},
+
+  "CAP-IAM-001": {"iteration": "1", "status": "planned", "evidence": "iteration-1 PR 6"},
+  "CAP-IAM-002": {"iteration": "1", "status": "planned", "evidence": "iteration-1 PR 6"},
+  "CAP-IAM-007": {"iteration": "1", "status": "planned", "evidence": "iteration-1 PR 6"},
+  "CAP-IAM-009": {"iteration": "1", "status": "planned", "evidence": "iteration-1 PR 7"},
+
+  "CAP-AUD-001": {"iteration": "1", "status": "planned", "evidence": "iteration-1 PR 7"},
+  "CAP-AUD-002": {"iteration": "1", "status": "planned", "evidence": "iteration-1 PR 7"},
+
+  "CAP-CFG-001": {"iteration": "1", "status": "planned", "evidence": "iteration-1 PR 3 (markets only)"},
+  "CAP-CFG-004": {"iteration": "1", "status": "planned", "evidence": "iteration-1 PR 3 new-market test"},
+  "CAP-CFG-006": {"iteration": "1", "status": "planned", "evidence": "iteration-1 PR 3 (config rejected before activation)"},
+
+  "CAP-EVT-001": {"iteration": "1", "status": "planned", "evidence": "iteration-1 PR 8 (emit only)"}
+}

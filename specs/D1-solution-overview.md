@@ -356,8 +356,8 @@ Target-state capabilities delivered in phases; each phase is independently valua
 | Phase | Theme | Primary capabilities | Outcome |
 |---|---|---|---|
 | **P0** | Foundations | 2, 5, 6, 17, 18, 19, 21 | FHIR core, terminology, identity, audit, config - the validatable spine. |
-| **P1** | Author -> manage (EU) | 1, 3, 7, 9, 16 | Template-driven authoring, lifecycle, EU localisation, approvals. |
-| **P2** | Assure -> publish (EU) | 10, 11, 12, 13, 14, 20 | Mapping, validation, compliance, rendering, publishing, events. |
+| **P1** | Author -> manage (EU) | 1, 3, 7, 9, 15, 16 | Template-driven authoring, lifecycle, EU localisation, approvals, permission-scoped search and retrieval. |
+| **P2** | Assure -> publish (EU) | 10, 11, 12, 13, 14, 15(+consumer read), 20 | Mapping, validation, compliance, rendering, publishing, events, downstream consumer read access. |
 | **P3** | Change & multi-region | 8, 9(+markets), 10(+US/national), 24 | Change/impact, US SPL + national schemes, RIM/DMS integration. |
 | **P4** | Scale & operate | 4, 22, 23 | Legacy migration at scale, retention/archival, reporting/analytics. |
 

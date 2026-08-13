@@ -75,6 +75,11 @@ jobs:
           done < <(git ls-files)
           exit $fail
 
+      # The V-model chain (requirement -> design function -> unit test, requirement ->
+      # integration test) must not drift from the specs or the code.
+      - name: Traceability matrices are current
+        run: python3 tools/build-traceability.py --check
+
       - name: Relative Markdown links resolve
         run: |
           fail=0
