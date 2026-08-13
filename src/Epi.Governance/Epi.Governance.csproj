@@ -2,6 +2,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Epi.ContentCore\Epi.ContentCore.csproj" />
+    <ProjectReference Include="..\Epi.Contracts\Epi.Contracts.csproj" />
   </ItemGroup>
 
   <PropertyGroup>

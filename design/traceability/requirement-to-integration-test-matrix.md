@@ -13,7 +13,7 @@ Name integration tests for the case they validate, for example
 ## Coverage
 
 - Integration tests declared: **9**
-- Implemented in code: **8**
+- Implemented in code: **9**
 - Requirements validated by at least one integration test: **15**
 - Scheduled requirements still without one: **0**
 
@@ -28,7 +28,7 @@ Name integration tests for the case they validate, for example
 | IT-005 | Malformed content is rejected with itemised located errors and leaves no partial state | CAP-VAL-003, CAP-VAL-005 | 1 | implemented | `IT_005_a_rejected_new_version_leaves_the_previous_version_intact` (src/Epi.Validation.Tests/ValidatingContentStoreTests.cs)<br>`IT_005_malformed_content_is_rejected_with_itemised_located_errors` (src/Epi.Validation.Tests/ValidatingContentStoreTests.cs)<br>`IT_005_rejected_content_leaves_no_partial_state` (src/Epi.Validation.Tests/ValidatingContentStoreTests.cs)<br>`IT_005_valid_content_passes_the_gate_and_is_stored` (src/Epi.Validation.Tests/ValidatingContentStoreTests.cs) |
 | IT-006 | An attempt to mutate an existing version is rejected and history remains reconstructable | CAP-SCM-007 | 1 | implemented | `IT_006_an_attempt_to_mutate_an_existing_version_is_rejected_and_history_is_reconstructable` (src/Epi.ContentCore.Tests/ContentStoreConformance.cs) |
 | IT-007 | A request without a valid OIDC token is rejected before reaching content | CAP-IAM-001 | 1 | implemented | `IT_007_a_request_without_a_token_is_refused` (src/Epi.Api.Tests/ContentEndpointTests.cs)<br>`IT_007_reading_without_a_token_is_refused_too` (src/Epi.Api.Tests/ContentEndpointTests.cs)<br>`IT_007_the_health_probe_stays_open` (src/Epi.Api.Tests/ContentEndpointTests.cs) |
-| IT-008 | Creating a document emits a content event to the backbone | CAP-EVT-001 | 1 | planned | - |
+| IT-008 | Creating a document emits a content event to the backbone | CAP-EVT-001 | 1 | implemented | `IT_008_creating_a_document_emits_an_event_naming_it` (src/Epi.Governance.Tests/ContentEventTests.cs) |
 | IT-009 | An invalid market definition is rejected before activation | CAP-CFG-006 | 1 | implemented | `IT_009_an_invalid_market_definition_is_rejected_before_activation` (src/Epi.Governance.Tests/MarketConfigurationIntegrationTests.cs) |
 
 ## By requirement
