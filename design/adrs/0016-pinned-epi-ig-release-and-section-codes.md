@@ -1,6 +1,6 @@
 # ADR-016: Pinned ePI IG release and section code systems
 
-Status: proposed
+Status: accepted
 Date: 2026-08-13
 
 Resolves D3 Section 15 open item 3 and D2.1 open item 3. Realises the conformance target

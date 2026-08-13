@@ -22,8 +22,8 @@ set is in [requirements-traceability-matrix.md](requirements-traceability-matrix
 - Scheduled requirements: **15**
 - With at least one design function: **15**
 - With at least one integration test: **15**
-- Design functions awaiting a unit test: **23** of 23
-- Integration tests awaiting implementation: **9** of 9
+- Design functions awaiting a unit test: **21** of 23
+- Integration tests awaiting implementation: **7** of 9
 
 ## Trace
 
@@ -41,9 +41,9 @@ set is in [requirements-traceability-matrix.md](requirements-traceability-matrix
 | CAP-AUD-001 | P0 | 1 | FN-AUD-001 | - | IT-003 | - |
 | CAP-AUD-002 | P0 | 1 | FN-AUD-002, FN-AUD-003 | - | IT-003 | - |
 | CAP-EVT-001 | P2 | 1 | FN-EVT-001, FN-EVT-002 | - | IT-008 | - |
-| CAP-CFG-001 | P0 | 1 | FN-CFG-001, FN-CFG-002 | - | IT-004 | - |
-| CAP-CFG-004 | P0 | 1 | FN-CFG-001 | - | IT-004 | - |
-| CAP-CFG-006 | P0 | 1 | FN-CFG-003 | - | IT-009 | - |
+| CAP-CFG-001 | P0 | 1 | FN-CFG-001, FN-CFG-002 | `FN_CFG_001_an_empty_directory_yields_an_empty_catalogue` (src/Epi.Governance.Tests/MarketCatalogueTests.cs)<br>`FN_CFG_001_exposes_a_market_by_its_code_regardless_of_casing` (src/Epi.Governance.Tests/MarketCatalogueTests.cs)<br>`FN_CFG_001_loads_every_market_definition_in_the_directory` (src/Epi.Governance.Tests/MarketCatalogueTests.cs) | IT-004 | `IT_004_a_new_market_is_added_by_configuration_alone` (src/Epi.Governance.Tests/MarketConfigurationIntegrationTests.cs)<br>`IT_004_the_shipped_market_configuration_loads_and_validates` (src/Epi.Governance.Tests/MarketConfigurationIntegrationTests.cs) |
+| CAP-CFG-004 | P0 | 1 | FN-CFG-001 | `FN_CFG_001_an_empty_directory_yields_an_empty_catalogue` (src/Epi.Governance.Tests/MarketCatalogueTests.cs)<br>`FN_CFG_001_exposes_a_market_by_its_code_regardless_of_casing` (src/Epi.Governance.Tests/MarketCatalogueTests.cs)<br>`FN_CFG_001_loads_every_market_definition_in_the_directory` (src/Epi.Governance.Tests/MarketCatalogueTests.cs) | IT-004 | `IT_004_a_new_market_is_added_by_configuration_alone` (src/Epi.Governance.Tests/MarketConfigurationIntegrationTests.cs)<br>`IT_004_the_shipped_market_configuration_loads_and_validates` (src/Epi.Governance.Tests/MarketConfigurationIntegrationTests.cs) |
+| CAP-CFG-006 | P0 | 1 | FN-CFG-003 | `FN_CFG_003_rejects_a_market_with_a_missing_required_field` (src/Epi.Governance.Tests/MarketCatalogueTests.cs)<br>`FN_CFG_003_rejects_a_market_with_no_languages` (src/Epi.Governance.Tests/MarketCatalogueTests.cs)<br>`FN_CFG_003_rejects_a_missing_directory_rather_than_starting_empty` (src/Epi.Governance.Tests/MarketCatalogueTests.cs)<br>`FN_CFG_003_rejects_an_unknown_property_rather_than_ignoring_it` (src/Epi.Governance.Tests/MarketCatalogueTests.cs)<br>`FN_CFG_003_rejects_malformed_json_naming_the_file` (src/Epi.Governance.Tests/MarketCatalogueTests.cs)<br>`FN_CFG_003_rejects_two_markets_claiming_the_same_code` (src/Epi.Governance.Tests/MarketCatalogueTests.cs)<br>`FN_CFG_003_reports_every_problem_not_only_the_first` (src/Epi.Governance.Tests/MarketCatalogueTests.cs) | IT-009 | `IT_009_an_invalid_market_definition_is_rejected_before_activation` (src/Epi.Governance.Tests/MarketConfigurationIntegrationTests.cs) |
 
 ## Gaps
 
@@ -54,6 +54,6 @@ normal work in progress. Referential errors, by contrast, fail the build.
 
 **Scheduled requirements with no integration test:** none
 
-**Design functions with no unit test:** FN-AUD-001, FN-AUD-002, FN-AUD-003, FN-AUD-004, FN-CC-001, FN-CC-002, FN-CC-003, FN-CC-004, FN-CC-005, FN-CC-006, FN-CC-007, FN-CFG-001, FN-CFG-002, FN-CFG-003, FN-EVT-001, FN-EVT-002, FN-IAM-001, FN-IAM-002, FN-IAM-003, FN-IAM-004, FN-VAL-001, FN-VAL-002, FN-VAL-003
+**Design functions with no unit test:** FN-AUD-001, FN-AUD-002, FN-AUD-003, FN-AUD-004, FN-CC-001, FN-CC-002, FN-CC-003, FN-CC-004, FN-CC-005, FN-CC-006, FN-CC-007, FN-CFG-002, FN-EVT-001, FN-EVT-002, FN-IAM-001, FN-IAM-002, FN-IAM-003, FN-IAM-004, FN-VAL-001, FN-VAL-002, FN-VAL-003
 
-**Integration tests not yet implemented:** IT-001, IT-002, IT-003, IT-004, IT-005, IT-006, IT-007, IT-008, IT-009
+**Integration tests not yet implemented:** IT-001, IT-002, IT-003, IT-005, IT-006, IT-007, IT-008

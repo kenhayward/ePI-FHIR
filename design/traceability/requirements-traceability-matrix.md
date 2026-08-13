@@ -243,12 +243,12 @@ Status values: `planned` (scheduled, not built), `partial` (some aspect delivere
 | CAP-EVT-006 | 20 | S | P2 | Notification & Event Backbone | - | - | - |
 | CAP-EVT-007 | 20 | M | P2 | Notification & Event Backbone | - | - | - |
 | CAP-EVT-008 | 20 | M | P2 | Notification & Event Backbone | - | - | - |
-| CAP-CFG-001 | 21 | M | P0 | Configuration & Rules Service | 1 | planned | iteration-1 PR 3 (markets only) |
+| CAP-CFG-001 | 21 | M | P0 | Configuration & Rules Service | 1 | partial | MarketCatalogue: markets only; lifecycle, workflow, rule and binding config are later iterations |
 | CAP-CFG-002 | 21 | M | P0 | Configuration & Rules Service | - | - | - |
 | CAP-CFG-003 | 21 | M | P0 | Configuration & Rules Service | - | - | - |
-| CAP-CFG-004 | 21 | M | P0 | Configuration & Rules Service | 1 | planned | iteration-1 PR 3 new-market test |
+| CAP-CFG-004 | 21 | M | P0 | Configuration & Rules Service | 1 | partial | IT_004_a_new_market_is_added_by_configuration_alone; a market carries no behaviour until PR 6 consumes it |
 | CAP-CFG-005 | 21 | M | P0 | Configuration & Rules Service | - | - | - |
-| CAP-CFG-006 | 21 | M | P0 | Configuration & Rules Service | 1 | planned | iteration-1 PR 3 (config rejected before activation) |
+| CAP-CFG-006 | 21 | M | P0 | Configuration & Rules Service | 1 | partial | IT_009_an_invalid_market_definition_is_rejected_before_activation; market configuration only |
 | CAP-CFG-007 | 21 | M | P0 | Configuration & Rules Service | - | - | - |
 | CAP-RET-001 | 22 | M | P4 | Retention & Archival Service | - | - | - |
 | CAP-RET-002 | 22 | M | P4 | Retention & Archival Service | - | - | - |

@@ -163,9 +163,20 @@ def discover_tests():
                 if not match:
                     continue
                 identifier = match.group(1).replace("_", "-")
-                where = f"`{token}` ({path.relative_to(ROOT).as_posix()})"
-                found.setdefault(identifier, set()).add(where)
-    return {k: sorted(v) for k, v in found.items()}
+                found.setdefault(identifier, {}).setdefault(
+                    path.relative_to(ROOT).as_posix(), set()).add(token)
+
+    # A file usually mentions an id twice: once in a heading comment and once in the test name
+    # itself. Prefer the descriptive tokens, so the evidence column names tests rather than
+    # comments; fall back to the bare id when that is genuinely all the file contains (an
+    # attribute or trait, for instance).
+    evidence = {}
+    for identifier, by_file in found.items():
+        for file, tokens in by_file.items():
+            named = {t for t in tokens if len(t) > len(identifier)}
+            for token in sorted(named or tokens):
+                evidence.setdefault(identifier, set()).add(f"`{token}` ({file})")
+    return {k: sorted(v) for k, v in evidence.items()}
 
 
 def table(lines, header, rows):
