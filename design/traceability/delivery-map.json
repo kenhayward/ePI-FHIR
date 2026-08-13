@@ -2,7 +2,7 @@
   "_comment": "Hand-maintained delivery evidence, merged into the generated matrix by tools/build-rtm.py. One entry per requirement that an iteration commits to. Evidence should name the test or artifact that proves it, once it exists.",
 
   "CAP-SCM-001": {"iteration": "1", "status": "planned", "evidence": "iteration-1 PR 4"},
-  "CAP-SCM-007": {"iteration": "1", "status": "planned", "evidence": "iteration-1 ADR (identifier and versioning scheme)"},
+  "CAP-SCM-007": {"iteration": "1", "status": "partial", "evidence": "ADR-015 (scheme decided); implementation in iteration-1 PR 4"},
   "CAP-SCM-010": {"iteration": "1", "status": "planned", "evidence": "iteration-1 PR 4 round-trip test"},
 
   "CAP-VAL-003": {"iteration": "1", "status": "planned", "evidence": "iteration-1 PR 5"},

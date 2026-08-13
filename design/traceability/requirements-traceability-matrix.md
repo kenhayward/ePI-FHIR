@@ -72,7 +72,7 @@ Status values: `planned` (scheduled, not built), `partial` (some aspect delivere
 | CAP-SCM-004 | 2 | M | P0 | Content Core (FHIR) | - | - | - |
 | CAP-SCM-005 | 2 | M | P0 | Content Core (FHIR) | - | - | - |
 | CAP-SCM-006 | 2 | M | P0 | Content Core (FHIR) | - | - | - |
-| CAP-SCM-007 | 2 | M | P0 | Content Core (FHIR) | 1 | planned | iteration-1 ADR (identifier and versioning scheme) |
+| CAP-SCM-007 | 2 | M | P0 | Content Core (FHIR) | 1 | partial | ADR-015 (scheme decided); implementation in iteration-1 PR 4 |
 | CAP-SCM-008 | 2 | M | P0 | Content Core (FHIR) | - | - | - |
 | CAP-SCM-009 | 2 | M | P0 | Content Core (FHIR) | - | - | - |
 | CAP-SCM-010 | 2 | M | P0 | Content Core (FHIR) | 1 | planned | iteration-1 PR 4 round-trip test |
