@@ -14,8 +14,8 @@ Name unit tests for the function they verify, for example
 ## Coverage
 
 - Design functions declared: **38**
-- Verified by at least one unit test: **24**
-- Not yet verified: **14**
+- Verified by at least one unit test: **26**
+- Not yet verified: **12**
 
 ## Matrix
 
@@ -44,8 +44,8 @@ Name unit tests for the function they verify, for example
 | FN-IAM-002 | Build an authorisation query from subject, action, and resource | IAM | CAP-IAM-002 | 1 | verified | `FN_IAM_002_the_query_sent_matches_the_policy_input_contract` (src/Epi.Iam.Tests/OpaPolicyDecisionPointTests.cs) |
 | FN-IAM-003 | Evaluate the policy decision and enforce allow or deny | IAM | CAP-IAM-002 | 1 | verified | `FN_IAM_003_a_deny_decision_is_denied_with_a_reason` (src/Epi.Iam.Tests/OpaPolicyDecisionPointTests.cs)<br>`FN_IAM_003_an_allow_decision_is_allowed` (src/Epi.Iam.Tests/OpaPolicyDecisionPointTests.cs)<br>`FN_IAM_003_an_undefined_result_is_denied` (src/Epi.Iam.Tests/OpaPolicyDecisionPointTests.cs)<br>`FN_IAM_003_an_unreachable_or_failing_policy_server_is_denied` (src/Epi.Iam.Tests/OpaPolicyDecisionPointTests.cs) |
 | FN-IAM-004 | Apply affiliate and market scope filtering at data access | IAM | CAP-IAM-007 | 1 | verified | `FN_IAM_004_a_denied_write_never_reaches_the_store` (src/Epi.Iam.Tests/ScopedContentStoreTests.cs)<br>`FN_IAM_004_content_carrying_no_scope_cannot_be_authorised` (src/Epi.Iam.Tests/ScopedContentStoreTests.cs)<br>`FN_IAM_004_content_in_scope_can_be_written_and_read` (src/Epi.Iam.Tests/ScopedContentStoreTests.cs)<br>`FN_IAM_004_out_of_scope_content_is_invisible_rather_than_refused` (src/Epi.Iam.Tests/ScopedContentStoreTests.cs)<br>`FN_IAM_004_reads_are_authorised_as_reads_not_as_writes` (src/Epi.Iam.Tests/ScopedContentStoreTests.cs)<br>`FN_IAM_004_the_decision_carries_the_documents_own_affiliate_and_market` (src/Epi.Iam.Tests/ScopedContentStoreTests.cs) |
-| FN-LCM-001 | Load the lifecycle state model from configuration | Lifecycle & Workflow Service | CAP-LCM-001 | 2 | planned | - |
-| FN-LCM-002 | Reject a transition the state model does not permit | Lifecycle & Workflow Service | CAP-LCM-001 | 2 | planned | - |
+| FN-LCM-001 | Load the lifecycle state model from configuration | Lifecycle & Workflow Service | CAP-LCM-001 | 2 | verified | `FN_LCM_001_carries_the_conditions_a_transition_imposes` (src/Epi.Lifecycle.Tests/LifecycleModelTests.cs)<br>`FN_LCM_001_loads_states_and_transitions_from_configuration` (src/Epi.Lifecycle.Tests/LifecycleModelTests.cs)<br>`FN_LCM_001_rejects_a_model_with_no_states_at_all` (src/Epi.Lifecycle.Tests/LifecycleModelTests.cs)<br>`FN_LCM_001_rejects_a_transition_referring_to_a_state_that_does_not_exist` (src/Epi.Lifecycle.Tests/LifecycleModelTests.cs)<br>`FN_LCM_001_rejects_an_initial_state_that_is_not_among_the_states` (src/Epi.Lifecycle.Tests/LifecycleModelTests.cs)<br>`FN_LCM_001_rejects_two_transitions_claiming_the_same_state_and_action` (src/Epi.Lifecycle.Tests/LifecycleModelTests.cs)<br>`FN_LCM_001_the_shipped_label_model_loads_and_gates_approval` (src/Epi.Lifecycle.Tests/LifecycleModelTests.cs) |
+| FN-LCM-002 | Reject a transition the state model does not permit | Lifecycle & Workflow Service | CAP-LCM-001 | 2 | verified | `FN_LCM_002_a_transition_the_model_does_not_permit_is_not_found` (src/Epi.Lifecycle.Tests/LifecycleModelTests.cs)<br>`FN_LCM_002_states_are_matched_exactly_rather_than_loosely` (src/Epi.Lifecycle.Tests/LifecycleModelTests.cs) |
 | FN-LCM-003 | Record a transition with actor, timestamp and reason | Lifecycle & Workflow Service | CAP-LCM-007 | 2 | planned | - |
 | FN-LCM-004 | Hold per-market approval state separately from internal state | Lifecycle & Workflow Service | CAP-LCM-003 | 2 | planned | - |
 | FN-LCM-005 | Pin the content snapshot and its validating context at approval | Lifecycle & Workflow Service | CAP-LCM-011 | 2 | planned | - |

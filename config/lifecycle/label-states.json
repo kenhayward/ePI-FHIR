@@ -1,0 +1,15 @@
+{
+  "_comment": "The lifecycle state model (ADR-019, capability 7). States and the transitions permitted between them are configuration, so an organisation whose approval process differs is a configuration change and not a code release (ADR-012). The engine knows how to apply a model; it does not know which states exist.",
+
+  "name": "label",
+  "initial": "draft",
+  "states": ["draft", "in-review", "approved", "superseded", "withdrawn"],
+  "transitions": [
+    {"from": "draft", "to": "in-review", "action": "submit"},
+    {"from": "in-review", "to": "draft", "action": "return"},
+    {"from": "in-review", "to": "approved", "action": "approve", "requiresSignature": true, "segregatedFromAuthor": true},
+    {"from": "approved", "to": "superseded", "action": "supersede"},
+    {"from": "approved", "to": "withdrawn", "action": "withdraw", "requiresSignature": true},
+    {"from": "draft", "to": "withdrawn", "action": "withdraw"}
+  ]
+}
