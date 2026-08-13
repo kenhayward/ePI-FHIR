@@ -22,6 +22,29 @@ public abstract class ContentStoreConformance
     private static Bundle MinimalDocument() =>
         EpiBundleReader.Read(File.ReadAllText(TestFixtures.Path("epi", "minimal-epi-document.json")));
 
+    /// <summary>
+    /// Section identifiers are assigned by the platform on write (ADR-015 decision 6), so they
+    /// are bookkeeping rather than submitted content. That they are assigned, distinct, and
+    /// stable across versions is asserted directly by SectionIdentityTests; here they are
+    /// removed so the comparison is about content the author supplied.
+    /// </summary>
+    private static void StripSectionIds(Bundle bundle)
+    {
+        foreach (var composition in bundle.Entry.Select(e => e.Resource).OfType<Composition>())
+        {
+            Strip(composition.Section);
+        }
+
+        static void Strip(IEnumerable<Composition.SectionComponent> sections)
+        {
+            foreach (var section in sections)
+            {
+                section.ElementId = null;
+                Strip(section.Section);
+            }
+        }
+    }
+
     /// <summary>The anchoring Composition, asserted present rather than assumed.</summary>
     private static Composition CompositionOf(Bundle bundle) =>
         Assert.IsType<Composition>(bundle.Entry[0].Resource);
@@ -181,6 +204,8 @@ public abstract class ContentStoreConformance
         expected.Identifier = actual.Identifier = null;   // ours: asserted above
         expected.Meta = actual.Meta = null;               // ours (version tag) and the server's
         expected.Id = actual.Id = null;                   // the server's logical id (ADR-015)
+        StripSectionIds(expected);                        // ours: asserted by SectionIdentityTests
+        StripSectionIds(actual);
 
         // Compared as canonical JSON rather than with IsExactly: both sides are serialised
         // from POCOs by the same writer, so ordering is determined by the model, and a
