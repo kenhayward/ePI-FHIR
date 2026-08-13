@@ -1,9 +1,9 @@
 {
   "_comment": "Hand-maintained delivery evidence, merged into the generated matrix by tools/build-rtm.py. One entry per requirement that an iteration commits to. Evidence should name the test or artifact that proves it, once it exists.",
 
-  "CAP-SCM-001": {"iteration": "1", "status": "partial", "evidence": "EpiBundleReader and the store conformance suite; persistence through the FHIR REST API lands in PR 4b"},
+  "CAP-SCM-001": {"iteration": "1", "status": "partial", "evidence": "EpiBundleReader plus the store conformance suite run against both the in-memory store and HAPI; coded section typing is a later iteration"},
   "CAP-SCM-007": {"iteration": "1", "status": "partial", "evidence": "ADR-015 plus FN-CC-002/003/007 for documents; section and reusable-unit identity are later iterations"},
-  "CAP-SCM-010": {"iteration": "1", "status": "partial", "evidence": "FN_CC_006 and IT_001 against the in-memory store; re-run against HAPI in PR 4b"},
+  "CAP-SCM-010": {"iteration": "1", "status": "partial", "evidence": "FN_CC_006 and IT_001, the latter run against both the in-memory store and a real HAPI server; validation against the pinned profile is PR 5"},
 
   "CAP-VAL-003": {"iteration": "1", "status": "planned", "evidence": "iteration-1 PR 5"},
   "CAP-VAL-005": {"iteration": "1", "status": "planned", "evidence": "iteration-1 PR 5"},

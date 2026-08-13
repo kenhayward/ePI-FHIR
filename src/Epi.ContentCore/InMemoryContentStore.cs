@@ -3,33 +3,31 @@ using Hl7.Fhir.Model;
 namespace Epi.ContentCore;
 
 /// <summary>
-/// An in-memory content store. Real persistence is the FHIR REST adapter; this exists so the
-/// domain can be exercised without a server, and is the reference implementation the
-/// conformance suite holds every store to.
+/// An in-memory content store. Real persistence is <see cref="FhirRestContentStore"/>; this
+/// exists so the domain can be exercised without a server, and is the reference implementation
+/// the conformance suite holds every store to.
 /// </summary>
 public sealed class InMemoryContentStore : IContentStore
 {
     private readonly Dictionary<string, SortedList<int, Bundle>> _documents = [];
     private readonly Lock _gate = new();
 
-    public EpiDocument Create(Bundle bundle)
+    public Task<EpiDocument> CreateAsync(Bundle bundle, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(bundle);
-        RejectClaimedIdentity(bundle);
+        ContentIdentity.RejectClaimedIdentity(bundle);
 
-        // ADR-015: opaque, time-ordered, and minted here rather than derived from content.
-        var identity = new DocumentIdentity(
-            ContentCoreDefaults.DocumentIdentifierSystem,
-            Guid.CreateVersion7().ToString());
+        var identity = ContentIdentity.Mint();
 
         lock (_gate)
         {
             _documents[identity.Value] = [];
-            return Store(identity, 1, bundle);
+            return Task.FromResult(Store(identity, 1, bundle));
         }
     }
 
-    public EpiDocument CreateVersion(DocumentIdentity identity, Bundle bundle)
+    public Task<EpiDocument> CreateVersionAsync(
+        DocumentIdentity identity, Bundle bundle, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(identity);
         ArgumentNullException.ThrowIfNull(bundle);
@@ -41,11 +39,12 @@ public sealed class InMemoryContentStore : IContentStore
                 throw new UnknownDocumentException(identity);
             }
 
-            return Store(identity, versions.Count == 0 ? 1 : versions.Keys[^1] + 1, bundle);
+            return Task.FromResult(Store(identity, versions.Count == 0 ? 1 : versions.Keys[^1] + 1, bundle));
         }
     }
 
-    public EpiDocument? Get(DocumentIdentity identity, int version)
+    public Task<EpiDocument?> GetAsync(
+        DocumentIdentity identity, int version, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(identity);
 
@@ -54,14 +53,16 @@ public sealed class InMemoryContentStore : IContentStore
             if (_documents.TryGetValue(identity.Value, out var versions)
                 && versions.TryGetValue(version, out var stored))
             {
-                return new EpiDocument(identity, version, EpiBundleReader.Copy(stored));
+                return Task.FromResult<EpiDocument?>(
+                    new EpiDocument(identity, version, EpiBundleReader.Copy(stored)));
             }
 
-            return null;
+            return Task.FromResult<EpiDocument?>(null);
         }
     }
 
-    public EpiDocument? GetLatest(DocumentIdentity identity)
+    public Task<EpiDocument?> GetLatestAsync(
+        DocumentIdentity identity, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(identity);
 
@@ -70,22 +71,25 @@ public sealed class InMemoryContentStore : IContentStore
             if (_documents.TryGetValue(identity.Value, out var versions) && versions.Count > 0)
             {
                 var latest = versions.Keys[^1];
-                return new EpiDocument(identity, latest, EpiBundleReader.Copy(versions[latest]));
+                return Task.FromResult<EpiDocument?>(
+                    new EpiDocument(identity, latest, EpiBundleReader.Copy(versions[latest])));
             }
 
-            return null;
+            return Task.FromResult<EpiDocument?>(null);
         }
     }
 
-    public IReadOnlyList<int> Versions(DocumentIdentity identity)
+    public Task<IReadOnlyList<int>> VersionsAsync(
+        DocumentIdentity identity, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(identity);
 
         lock (_gate)
         {
-            return _documents.TryGetValue(identity.Value, out var versions)
-                ? [.. versions.Keys]
+            IReadOnlyList<int> versions = _documents.TryGetValue(identity.Value, out var stored)
+                ? [.. stored.Keys]
                 : [];
+            return Task.FromResult(versions);
         }
     }
 
@@ -93,23 +97,9 @@ public sealed class InMemoryContentStore : IContentStore
     {
         // Copy on the way in as well as on the way out: the caller keeps their instance and
         // may go on editing it.
-        var snapshot = EpiBundleReader.Copy(bundle);
-        snapshot.Identifier = new Identifier(identity.System, identity.Value);
+        var snapshot = ContentIdentity.Stamp(EpiBundleReader.Copy(bundle), identity, version);
 
         _documents[identity.Value][version] = snapshot;
         return new EpiDocument(identity, version, EpiBundleReader.Copy(snapshot));
-    }
-
-    private static void RejectClaimedIdentity(Bundle bundle)
-    {
-        if (string.Equals(bundle.Identifier?.System,
-                ContentCoreDefaults.DocumentIdentifierSystem, StringComparison.OrdinalIgnoreCase))
-        {
-            throw new InvalidEpiBundleException([
-                "Submitted content must not carry an identifier in the platform's own identifier "
-                + "system: identity is minted by the platform (ADR-015). A legacy or external "
-                + "identifier belongs in a secondary identifier with provenance to its source."
-            ]);
-        }
     }
 }

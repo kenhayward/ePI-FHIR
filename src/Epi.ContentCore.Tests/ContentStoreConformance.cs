@@ -27,11 +27,11 @@ public abstract class ContentStoreConformance
         Assert.IsType<Composition>(bundle.Entry[0].Resource);
 
     [Fact]
-    public void FN_CC_002_assigns_a_canonical_identifier_the_caller_did_not_supply()
+    public async Task FN_CC_002_assigns_a_canonical_identifier_the_caller_did_not_supply()
     {
         var store = CreateStore();
 
-        var stored = store.Create(MinimalDocument());
+        var stored = await store.CreateAsync(MinimalDocument());
 
         Assert.False(string.IsNullOrWhiteSpace(stored.Identity.Value));
         Assert.False(string.IsNullOrWhiteSpace(stored.Identity.System));
@@ -40,48 +40,48 @@ public abstract class ContentStoreConformance
     }
 
     [Fact]
-    public void FN_CC_002_mints_a_distinct_identifier_for_every_document()
+    public async Task FN_CC_002_mints_a_distinct_identifier_for_every_document()
     {
         var store = CreateStore();
 
-        var first = store.Create(MinimalDocument());
-        var second = store.Create(MinimalDocument());
+        var first = await store.CreateAsync(MinimalDocument());
+        var second = await store.CreateAsync(MinimalDocument());
 
         Assert.NotEqual(first.Identity, second.Identity);
     }
 
     [Fact]
-    public void FN_CC_002_encodes_no_business_meaning_in_the_identifier()
+    public async Task FN_CC_002_encodes_no_business_meaning_in_the_identifier()
     {
         // ADR-015: product, market, and language are searchable metadata, never identifier
         // substrings, because every one of them is mutable.
         var store = CreateStore();
 
-        var stored = store.Create(MinimalDocument());
+        var stored = await store.CreateAsync(MinimalDocument());
 
         Assert.DoesNotContain("Examplinum", stored.Identity.Value, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("leaflet", stored.Identity.Value, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
-    public void FN_CC_003_starts_at_version_one_and_increments_monotonically()
+    public async Task FN_CC_003_starts_at_version_one_and_increments_monotonically()
     {
         var store = CreateStore();
 
-        var first = store.Create(MinimalDocument());
-        var second = store.CreateVersion(first.Identity, MinimalDocument());
+        var first = await store.CreateAsync(MinimalDocument());
+        var second = await store.CreateVersionAsync(first.Identity, MinimalDocument());
 
         Assert.Equal(1, first.Version);
         Assert.Equal(2, second.Version);
-        Assert.Equal([1, 2], store.Versions(first.Identity));
+        Assert.Equal([1, 2], await store.VersionsAsync(first.Identity));
     }
 
     [Fact]
-    public void FN_CC_003_records_the_identifier_on_the_stored_bundle()
+    public async Task FN_CC_003_records_the_identifier_on_the_stored_bundle()
     {
         var store = CreateStore();
 
-        var stored = store.Create(MinimalDocument());
+        var stored = await store.CreateAsync(MinimalDocument());
 
         var identifier = stored.Bundle.Identifier;
         Assert.NotNull(identifier);
@@ -90,57 +90,57 @@ public abstract class ContentStoreConformance
     }
 
     [Fact]
-    public void FN_CC_005_retrieves_a_specific_version_and_the_latest()
+    public async Task FN_CC_005_retrieves_a_specific_version_and_the_latest()
     {
         var store = CreateStore();
-        var first = store.Create(MinimalDocument());
-        store.CreateVersion(first.Identity, MinimalDocument());
+        var first = await store.CreateAsync(MinimalDocument());
+        await store.CreateVersionAsync(first.Identity, MinimalDocument());
 
-        Assert.Equal(1, store.Get(first.Identity, 1)!.Version);
-        Assert.Equal(2, store.GetLatest(first.Identity)!.Version);
+        Assert.Equal(1, (await store.GetAsync(first.Identity, 1))!.Version);
+        Assert.Equal(2, (await store.GetLatestAsync(first.Identity))!.Version);
     }
 
     [Fact]
-    public void FN_CC_005_returns_nothing_for_an_unknown_document_or_version()
+    public async Task FN_CC_005_returns_nothing_for_an_unknown_document_or_version()
     {
         var store = CreateStore();
-        var stored = store.Create(MinimalDocument());
+        var stored = await store.CreateAsync(MinimalDocument());
 
-        Assert.Null(store.Get(stored.Identity, 99));
-        Assert.Null(store.GetLatest(new DocumentIdentity(stored.Identity.System, Guid.NewGuid().ToString())));
+        Assert.Null(await store.GetAsync(stored.Identity, 99));
+        Assert.Null(await store.GetLatestAsync(new DocumentIdentity(stored.Identity.System, Guid.NewGuid().ToString())));
     }
 
     [Fact]
-    public void FN_CC_007_creating_a_new_version_leaves_the_previous_one_untouched()
+    public async Task FN_CC_007_creating_a_new_version_leaves_the_previous_one_untouched()
     {
         var store = CreateStore();
-        var first = store.Create(MinimalDocument());
+        var first = await store.CreateAsync(MinimalDocument());
         var originalTitle = CompositionOf(first.Bundle).Title;
 
         var amended = MinimalDocument();
         CompositionOf(amended).Title = "AMENDED SYNTHETIC TEST LABEL";
-        store.CreateVersion(first.Identity, amended);
+        await store.CreateVersionAsync(first.Identity, amended);
 
-        var reread = store.Get(first.Identity, 1)!;
+        var reread = (await store.GetAsync(first.Identity, 1))!;
         Assert.Equal(originalTitle, CompositionOf(reread.Bundle).Title);
     }
 
     [Fact]
-    public void FN_CC_007_a_caller_mutating_a_retrieved_document_does_not_change_the_store()
+    public async Task FN_CC_007_a_caller_mutating_a_retrieved_document_does_not_change_the_store()
     {
         // Handing out a reference to stored content would make immutability a convention
         // rather than a guarantee.
         var store = CreateStore();
-        var stored = store.Create(MinimalDocument());
+        var stored = await store.CreateAsync(MinimalDocument());
 
         CompositionOf(stored.Bundle).Title = "TAMPERED";
 
-        var reread = store.Get(stored.Identity, 1)!;
+        var reread = (await store.GetAsync(stored.Identity, 1))!;
         Assert.NotEqual("TAMPERED", CompositionOf(reread.Bundle).Title);
     }
 
     [Fact]
-    public void FN_CC_007_rejects_a_bundle_that_already_claims_an_identifier_in_our_namespace()
+    public async Task FN_CC_007_rejects_a_bundle_that_already_claims_an_identifier_in_our_namespace()
     {
         // ADR-015: identity is minted by the platform. A submitted bundle cannot claim one,
         // or an external system could collide with, or overwrite, our identity space.
@@ -148,56 +148,59 @@ public abstract class ContentStoreConformance
         var claimed = MinimalDocument();
         claimed.Identifier = new Identifier(ContentCoreDefaults.DocumentIdentifierSystem, Guid.NewGuid().ToString());
 
-        Assert.Throws<InvalidEpiBundleException>(() => store.Create(claimed));
+        await Assert.ThrowsAsync<InvalidEpiBundleException>(() => store.CreateAsync(claimed));
     }
 
     [Fact]
-    public void FN_CC_003_rejects_a_new_version_of_a_document_that_does_not_exist()
+    public async Task FN_CC_003_rejects_a_new_version_of_a_document_that_does_not_exist()
     {
         var store = CreateStore();
         var unknown = new DocumentIdentity(ContentCoreDefaults.DocumentIdentifierSystem, Guid.NewGuid().ToString());
 
-        Assert.Throws<UnknownDocumentException>(() => store.CreateVersion(unknown, MinimalDocument()));
+        await Assert.ThrowsAsync<UnknownDocumentException>(() => store.CreateVersionAsync(unknown, MinimalDocument()));
     }
 
     [Fact]
-    public void IT_001_a_conformant_bundle_round_trips_through_create_and_read_without_content_loss()
+    public async Task IT_001_a_conformant_bundle_round_trips_through_create_and_read_without_content_loss()
     {
         // The acceptance criterion the canonical-model premise rests on (CAP-SCM-010).
         var store = CreateStore();
         var submitted = MinimalDocument();
 
-        var created = store.Create(submitted);
-        var retrieved = store.Get(created.Identity, created.Version)!;
+        var created = await store.CreateAsync(submitted);
+        var retrieved = (await store.GetAsync(created.Identity, created.Version))!;
 
-        // Everything except the identity the platform stamps on must survive untouched.
+        // The platform stamps identity and version, and a FHIR server adds its own meta
+        // (lastUpdated, versionId). Assert those separately, then compare everything else -
+        // the content - byte for byte in structure.
+        Assert.Equal(created.Identity.Value, retrieved.Bundle.Identifier?.Value);
+        Assert.Equal(1, retrieved.Version);
+
         var expected = MinimalDocument();
-        expected.Identifier = retrieved.Bundle.Identifier;
-        Assert.True(expected.IsExactly(retrieved.Bundle),
+        var actual = (Bundle)retrieved.Bundle.DeepCopy();
+        expected.Identifier = actual.Identifier = null;
+        expected.Meta = actual.Meta = null;
+
+        Assert.True(expected.IsExactly(actual),
             "Content submitted and content retrieved are not structurally identical.");
     }
 
     [Fact]
-    public void IT_006_an_attempt_to_mutate_an_existing_version_is_rejected_and_history_is_reconstructable()
+    public async Task IT_006_an_attempt_to_mutate_an_existing_version_is_rejected_and_history_is_reconstructable()
     {
         var store = CreateStore();
-        var first = store.Create(MinimalDocument());
+        var first = await store.CreateAsync(MinimalDocument());
 
         var amended = MinimalDocument();
         CompositionOf(amended).Title = "SECOND VERSION";
-        store.CreateVersion(first.Identity, amended);
+        await store.CreateVersionAsync(first.Identity, amended);
 
         // There is no update operation to call: a correction is a new version, and every
         // prior version remains retrievable exactly as it was (CAP-LCM-006).
-        Assert.Equal([1, 2], store.Versions(first.Identity));
+        Assert.Equal([1, 2], await store.VersionsAsync(first.Identity));
         Assert.Equal("SYNTHETIC TEST LABEL - Examplinum 10 mg film-coated tablets",
-            CompositionOf(store.Get(first.Identity, 1)!.Bundle).Title);
+            CompositionOf((await store.GetAsync(first.Identity, 1))!.Bundle).Title);
         Assert.Equal("SECOND VERSION",
-            CompositionOf(store.Get(first.Identity, 2)!.Bundle).Title);
+            CompositionOf((await store.GetAsync(first.Identity, 2))!.Bundle).Title);
     }
-}
-
-public sealed class InMemoryContentStoreConformanceTests : ContentStoreConformance
-{
-    protected override IContentStore CreateStore() => new InMemoryContentStore();
 }

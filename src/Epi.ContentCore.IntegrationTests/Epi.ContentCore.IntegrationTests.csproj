@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>Epi.ContentCore.IntegrationTests</RootNamespace>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <!-- Testcontainers is MIT, compatible with the Apache-2.0 rule in CLAUDE.md. -->
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
+    <PackageReference Include="Testcontainers" Version="4.13.0" />
+    <PackageReference Include="xunit" Version="2.9.2" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.8.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../Epi.ContentCore/Epi.ContentCore.csproj" />
+  </ItemGroup>
+
+  <!-- The conformance suite is shared source rather than a shipped test package: these are
+       the same assertions the in-memory store satisfies, run against a real FHIR server. -->
+  <ItemGroup>
+    <Compile Include="../Epi.ContentCore.Tests/ContentStoreConformance.cs" Link="ContentStoreConformance.cs" />
+    <Compile Include="../Epi.ContentCore.Tests/TestFixtures.cs" Link="TestFixtures.cs" />
+    <Compile Include="../Epi.ContentCore.Tests/GlobalUsings.cs" Link="GlobalUsings.cs" />
+  </ItemGroup>
+
+</Project>
