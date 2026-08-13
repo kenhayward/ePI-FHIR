@@ -14,8 +14,8 @@ Name unit tests for the function they verify, for example
 ## Coverage
 
 - Design functions declared: **23**
-- Verified by at least one unit test: **12**
-- Not yet verified: **11**
+- Verified by at least one unit test: **15**
+- Not yet verified: **8**
 
 ## Matrix
 
@@ -37,9 +37,9 @@ Name unit tests for the function they verify, for example
 | FN-CFG-003 | Reject a market definition that fails schema validation | Configuration & Rules Service | CAP-CFG-006 | 1 | verified | `FN_CFG_003_rejects_a_market_with_a_missing_required_field` (src/Epi.Governance.Tests/MarketCatalogueTests.cs)<br>`FN_CFG_003_rejects_a_market_with_no_languages` (src/Epi.Governance.Tests/MarketCatalogueTests.cs)<br>`FN_CFG_003_rejects_a_missing_directory_rather_than_starting_empty` (src/Epi.Governance.Tests/MarketCatalogueTests.cs)<br>`FN_CFG_003_rejects_an_unknown_property_rather_than_ignoring_it` (src/Epi.Governance.Tests/MarketCatalogueTests.cs)<br>`FN_CFG_003_rejects_malformed_json_naming_the_file` (src/Epi.Governance.Tests/MarketCatalogueTests.cs)<br>`FN_CFG_003_rejects_two_markets_claiming_the_same_code` (src/Epi.Governance.Tests/MarketCatalogueTests.cs)<br>`FN_CFG_003_reports_every_problem_not_only_the_first` (src/Epi.Governance.Tests/MarketCatalogueTests.cs) |
 | FN-EVT-001 | Build a content event from a persisted document | Notification & Event Backbone | CAP-EVT-001 | 1 | planned | - |
 | FN-EVT-002 | Publish a content event to the event backbone | Notification & Event Backbone | CAP-EVT-001 | 1 | planned | - |
-| FN-IAM-001 | Validate an OIDC access token and extract subject claims | IAM | CAP-IAM-001 | 1 | planned | - |
-| FN-IAM-002 | Build an authorisation query from subject, action, and resource | IAM | CAP-IAM-002 | 1 | planned | - |
-| FN-IAM-003 | Evaluate the policy decision and enforce allow or deny | IAM | CAP-IAM-002 | 1 | planned | - |
+| FN-IAM-001 | Validate an OIDC access token and extract subject claims | IAM | CAP-IAM-001 | 1 | verified | `FN_IAM_001_a_token_carrying_no_scope_yields_empty_scope_not_unrestricted_access` (src/Epi.Iam.Tests/SubjectFactoryTests.cs)<br>`FN_IAM_001_a_token_without_a_subject_identifier_is_nobody` (src/Epi.Iam.Tests/SubjectFactoryTests.cs)<br>`FN_IAM_001_accepts_sub_as_the_identifier_when_the_mapped_claim_is_absent` (src/Epi.Iam.Tests/SubjectFactoryTests.cs)<br>`FN_IAM_001_an_unauthenticated_principal_is_nobody` (src/Epi.Iam.Tests/SubjectFactoryTests.cs)<br>`FN_IAM_001_reads_identity_roles_and_scope_from_an_authenticated_principal` (src/Epi.Iam.Tests/SubjectFactoryTests.cs) |
+| FN-IAM-002 | Build an authorisation query from subject, action, and resource | IAM | CAP-IAM-002 | 1 | verified | `FN_IAM_002_the_query_sent_matches_the_policy_input_contract` (src/Epi.Iam.Tests/OpaPolicyDecisionPointTests.cs) |
+| FN-IAM-003 | Evaluate the policy decision and enforce allow or deny | IAM | CAP-IAM-002 | 1 | verified | `FN_IAM_003_a_deny_decision_is_denied_with_a_reason` (src/Epi.Iam.Tests/OpaPolicyDecisionPointTests.cs)<br>`FN_IAM_003_an_allow_decision_is_allowed` (src/Epi.Iam.Tests/OpaPolicyDecisionPointTests.cs)<br>`FN_IAM_003_an_undefined_result_is_denied` (src/Epi.Iam.Tests/OpaPolicyDecisionPointTests.cs)<br>`FN_IAM_003_an_unreachable_or_failing_policy_server_is_denied` (src/Epi.Iam.Tests/OpaPolicyDecisionPointTests.cs) |
 | FN-IAM-004 | Apply affiliate and market scope filtering at data access | IAM | CAP-IAM-007 | 1 | planned | - |
 | FN-VAL-001 | Check structural well-formedness against the pinned profile | Validation Service | CAP-VAL-003 | 1 | verified | `FN_VAL_001_a_conformant_document_produces_no_errors` (src/Epi.Validation.Tests/StructuralValidatorTests.cs)<br>`FN_VAL_001_a_missing_required_element_is_an_error` (src/Epi.Validation.Tests/StructuralValidatorTests.cs) |
 | FN-VAL-002 | Check reference integrity, rejecting dangling references | Validation Service | CAP-VAL-003 | 1 | verified | `FN_VAL_002_a_reference_satisfied_within_the_document_is_accepted` (src/Epi.Validation.Tests/StructuralValidatorTests.cs)<br>`FN_VAL_002_a_reference_to_something_absent_from_the_document_is_an_error` (src/Epi.Validation.Tests/StructuralValidatorTests.cs)<br>`FN_VAL_002_an_external_reference_is_not_treated_as_dangling` (src/Epi.Validation.Tests/StructuralValidatorTests.cs) |

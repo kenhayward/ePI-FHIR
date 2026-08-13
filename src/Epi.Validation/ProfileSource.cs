@@ -49,9 +49,15 @@ public static class ProfileSource
             Mask = "*.json",
         });
 
+        // Index before publishing. The directory scan is lazy, and two callers arriving at an
+        // unindexed source at the same time can each get a resolution failure - which this
+        // gate would report as a validation error, rejecting content that is perfectly valid.
+        // A write gate that rejects on a race is worse than a slow one.
+        _ = vendored.ListSummaries().Count();
+
         // Vendored profiles take precedence over core, so an IG constraint wins where both
         // define the same canonical.
-        return new CachedResolver(new MultiResolver(vendored, core));
+        return new SerialisedResolver(new CachedResolver(new MultiResolver(vendored, core)));
     }
 
     /// <summary>Expands each vendored tarball once into a per-user cache directory.</summary>

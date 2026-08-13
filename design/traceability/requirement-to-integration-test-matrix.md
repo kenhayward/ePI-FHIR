@@ -13,7 +13,7 @@ Name integration tests for the case they validate, for example
 ## Coverage
 
 - Integration tests declared: **9**
-- Implemented in code: **5**
+- Implemented in code: **6**
 - Requirements validated by at least one integration test: **15**
 - Scheduled requirements still without one: **0**
 
@@ -22,7 +22,7 @@ Name integration tests for the case they validate, for example
 | Test | Scenario | Verifies | Iteration | Status | Implementation |
 |---|---|---|---|---|---|
 | IT-001 | A conformant ePI Bundle round-trips through create and read with no content loss | CAP-SCM-010, CAP-SCM-001 | 1 | implemented | `IT_001_a_conformant_bundle_round_trips_through_create_and_read_without_content_loss` (src/Epi.ContentCore.Tests/ContentStoreConformance.cs) |
-| IT-002 | A caller outside the resource affiliate or market is denied and sees nothing | CAP-IAM-002, CAP-IAM-007 | 1 | planned | - |
+| IT-002 | A caller outside the resource affiliate or market is denied and sees nothing | CAP-IAM-002, CAP-IAM-007 | 1 | implemented | `IT_002_a_role_without_the_action_is_denied` (src/Epi.Iam.IntegrationTests/AuthorizationTests.cs)<br>`IT_002_a_subject_from_another_affiliate_is_denied` (src/Epi.Iam.IntegrationTests/AuthorizationTests.cs)<br>`IT_002_a_subject_in_scope_with_the_right_role_is_allowed` (src/Epi.Iam.IntegrationTests/AuthorizationTests.cs)<br>`IT_002_a_subject_without_the_market_in_scope_is_denied` (src/Epi.Iam.IntegrationTests/AuthorizationTests.cs)<br>`IT_002_an_independent_approver_is_allowed` (src/Epi.Iam.IntegrationTests/AuthorizationTests.cs)<br>`IT_002_segregation_of_duties_denies_an_author_approving_their_own_label` (src/Epi.Iam.IntegrationTests/AuthorizationTests.cs) |
 | IT-003 | A content write and an access decision each produce an immutable audit record | CAP-AUD-001, CAP-AUD-002, CAP-IAM-009 | 1 | planned | - |
 | IT-004 | A second market is served by adding configuration alone, with no code change | CAP-CFG-004, CAP-CFG-001 | 1 | implemented | `IT_004_a_new_market_is_added_by_configuration_alone` (src/Epi.Governance.Tests/MarketConfigurationIntegrationTests.cs)<br>`IT_004_the_shipped_market_configuration_loads_and_validates` (src/Epi.Governance.Tests/MarketConfigurationIntegrationTests.cs) |
 | IT-005 | Malformed content is rejected with itemised located errors and leaves no partial state | CAP-VAL-003, CAP-VAL-005 | 1 | implemented | `IT_005_a_rejected_new_version_leaves_the_previous_version_intact` (src/Epi.Validation.Tests/ValidatingContentStoreTests.cs)<br>`IT_005_malformed_content_is_rejected_with_itemised_located_errors` (src/Epi.Validation.Tests/ValidatingContentStoreTests.cs)<br>`IT_005_rejected_content_leaves_no_partial_state` (src/Epi.Validation.Tests/ValidatingContentStoreTests.cs)<br>`IT_005_valid_content_passes_the_gate_and_is_stored` (src/Epi.Validation.Tests/ValidatingContentStoreTests.cs) |
