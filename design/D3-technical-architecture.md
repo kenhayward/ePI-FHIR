@@ -408,6 +408,11 @@ Each ADR: decision, rationale, alternatives, consequences. Summarised here; main
 - **ADR-013 Object storage + WORM = MinIO with object-lock (primary), Azure Blob immutable (future).** Rationale: single S3-compatible storage abstraction across all environments; MinIO object-lock provides tamper-evident WORM and legal hold for audit exports (cap 19) and long-term retention (cap 22) with no cloud dependency. Consequence: audit/archival immutability delivered by object-lock plus append-only design; migrating to Azure Blob immutable is configuration, not redesign.
 - **ADR-014 Deployment progression = Docker Compose (dev) -> Kubernetes (test/prod) -> optional Azure/AKS.** Rationale: fastest local onboarding; production-grade orchestration; portability to managed cloud later. Consequence: no component is adopted unless it has a maintained container image (Section 12 confirms); IaC via OpenTofu; GitOps (Argo CD/Tekton) delivery.
 
+ADR-015 onward are maintained as individual records under `design/adrs/`, linked below.
+
+- **[ADR-015 Identifier and versioning scheme](adrs/0015-identifier-and-versioning-scheme.md).** Identity is a business identifier the platform mints, not the FHIR server's logical id; opaque UUIDv7 with no business meaning encoded; monotonic integer versions over immutable snapshots; market and language variants are separate document identities linked to a label family; section identifiers are stable across versions and translations. Realises CAP-SCM-007 and keeps ADR-003 reversible.
+- **[ADR-016 Pinned ePI IG release and section code systems](adrs/0016-pinned-epi-ig-release-and-section-codes.md).** FHIR R5; a pinned, published Global Core ePI IG release vendored under `profiles/` and resolved offline; section codes bound through the IG's value sets; every approved version records the profile version it was validated against; upgrades are governed, effective-dated, and never retroactive. Resolves Section 15 open item 3.
+
 ---
 
 ## 15. Open items to confirm

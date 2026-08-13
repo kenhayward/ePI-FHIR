@@ -157,13 +157,15 @@ keeps ADR-003 genuinely reversible (see Section 10).
 
 Each becomes an ADR in `design/adrs/`:
 
-1. **Identifier and versioning scheme** - globally stable identifiers and version semantics for
-   documents, sections, and reusable units across languages and markets. The most consequential
-   artefact of this iteration; it underpins traceability, cross-references, and supersession.
-2. **Pinned ePI IG release and section code systems** - D3 Section 15 open item 3. Validation has
-   no yardstick until this is fixed.
+1. **[ADR-015 Identifier and versioning scheme](adrs/0015-identifier-and-versioning-scheme.md)** -
+   globally stable identifiers and version semantics for documents, sections, and reusable units
+   across languages and markets. The most consequential artefact of this iteration; it underpins
+   traceability, cross-references, and supersession. Delivered in PR 2.
+2. **[ADR-016 Pinned ePI IG release and section code systems](adrs/0016-pinned-epi-ig-release-and-section-codes.md)** -
+   D3 Section 15 open item 3. Validation has no yardstick until this is fixed. Delivered in PR 2;
+   the exact package version string is confirmed before PR 5.
 3. **Audit event contract** - one uniform event shape that every capability writes, per the D2.5
-   cross-capability note on keeping the audit contract uniform.
+   cross-capability note on keeping the audit contract uniform. Due with PR 7.
 
 ## 10. Risks and open items
 
