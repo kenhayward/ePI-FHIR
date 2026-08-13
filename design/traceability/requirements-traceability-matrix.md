@@ -227,7 +227,7 @@ Status values: `planned` (scheduled, not built), `partial` (some aspect delivere
 | CAP-SEC-006 | 18 | S | P0 | Security | - | - | - |
 | CAP-SEC-007 | 18 | S | P0 | Security | - | - | - |
 | CAP-AUD-001 | 19 | M | P0 | Audit & e-Signature | 1 | partial | FN_AUD_001 and IT_003 for content writes and access decisions; other capabilities write as they arrive |
-| CAP-AUD-002 | 19 | M | P0 | Audit & e-Signature | 1 | partial | FN_AUD_002 and FN_AUD_003: append-only by interface; the durable WORM-backed sink is a later iteration |
+| CAP-AUD-002 | 19 | M | P0 | Audit & e-Signature | 1 | partial | FN_AUD_002 and FN_AUD_003: append-only by interface, and enforced by the database in the PostgreSQL sink; sealed WORM export is capability 22 |
 | CAP-AUD-003 | 19 | M | P0 | Audit & e-Signature | - | - | - |
 | CAP-AUD-004 | 19 | M | P0 | Audit & e-Signature | - | - | - |
 | CAP-AUD-005 | 19 | M | P0 | Audit & e-Signature | - | - | - |
