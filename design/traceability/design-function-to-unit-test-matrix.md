@@ -14,17 +14,17 @@ Name unit tests for the function they verify, for example
 ## Coverage
 
 - Design functions declared: **23**
-- Verified by at least one unit test: **17**
-- Not yet verified: **6**
+- Verified by at least one unit test: **20**
+- Not yet verified: **3**
 
 ## Matrix
 
 | Function | Name | Component | Satisfies | Iteration | Status | Unit tests |
 |---|---|---|---|---|---|---|
 | FN-AUD-001 | Compose an audit record with actor, action, target, before and after values | Audit & e-Signature | CAP-AUD-001 | 1 | planned | - |
-| FN-AUD-002 | Append an audit record to the append-only store | Audit & e-Signature | CAP-AUD-002 | 1 | planned | - |
-| FN-AUD-003 | Reject update or delete of an existing audit record | Audit & e-Signature | CAP-AUD-002 | 1 | planned | - |
-| FN-AUD-004 | Record every access-control decision to the audit sink | Audit & e-Signature | CAP-IAM-009 | 1 | planned | - |
+| FN-AUD-002 | Append an audit record to the append-only store | Audit & e-Signature | CAP-AUD-002 | 1 | verified | `FN_AUD_002_the_sink_stamps_the_time_rather_than_trusting_the_caller` (src/Epi.Governance.Tests/AuditTests.cs) |
+| FN-AUD-003 | Reject update or delete of an existing audit record | Audit & e-Signature | CAP-AUD-002 | 1 | verified | `FN_AUD_003_a_reader_cannot_change_history_through_the_list_it_is_given` (src/Epi.Governance.Tests/AuditTests.cs)<br>`FN_AUD_003_the_sink_offers_no_way_to_change_or_remove_a_record` (src/Epi.Governance.Tests/AuditTests.cs) |
+| FN-AUD-004 | Record every access-control decision to the audit sink | Audit & e-Signature | CAP-IAM-009 | 1 | verified | `FN_AUD_004_access_decisions_are_recorded_whether_allowed_or_denied` (src/Epi.Governance.Tests/AuditTests.cs) |
 | FN-CC-001 | Parse an ePI document Bundle anchored by a Composition | Content Core (FHIR) | CAP-SCM-001 | 1 | verified | `FN_CC_001_reads_a_document_bundle_anchored_by_a_composition` (src/Epi.ContentCore.Tests/EpiBundleReaderTests.cs)<br>`FN_CC_001_rejects_a_bundle_that_is_not_of_type_document` (src/Epi.ContentCore.Tests/EpiBundleReaderTests.cs)<br>`FN_CC_001_rejects_a_bundle_with_no_entries` (src/Epi.ContentCore.Tests/EpiBundleReaderTests.cs)<br>`FN_CC_001_rejects_a_document_bundle_whose_first_entry_is_not_a_composition` (src/Epi.ContentCore.Tests/EpiBundleReaderTests.cs)<br>`FN_CC_001_rejects_content_carrying_elements_that_are_not_in_the_model` (src/Epi.ContentCore.Tests/EpiBundleReaderTests.cs)<br>`FN_CC_001_rejects_content_that_is_not_a_bundle` (src/Epi.ContentCore.Tests/EpiBundleReaderTests.cs)<br>`FN_CC_001_rejects_malformed_json_without_leaking_a_parser_stack_trace` (src/Epi.ContentCore.Tests/EpiBundleReaderTests.cs) |
 | FN-CC-002 | Assign a canonical identifier to a document | Content Core (FHIR) | CAP-SCM-007 | 1 | verified | `FN_CC_002_assigns_a_canonical_identifier_the_caller_did_not_supply` (src/Epi.ContentCore.Tests/ContentStoreConformance.cs)<br>`FN_CC_002_encodes_no_business_meaning_in_the_identifier` (src/Epi.ContentCore.Tests/ContentStoreConformance.cs)<br>`FN_CC_002_mints_a_distinct_identifier_for_every_document` (src/Epi.ContentCore.Tests/ContentStoreConformance.cs) |
 | FN-CC-003 | Create an immutable version snapshot and record its lineage | Content Core (FHIR) | CAP-SCM-007 | 1 | verified | `FN_CC_003_records_the_identifier_on_the_stored_bundle` (src/Epi.ContentCore.Tests/ContentStoreConformance.cs)<br>`FN_CC_003_rejects_a_new_version_of_a_document_that_does_not_exist` (src/Epi.ContentCore.Tests/ContentStoreConformance.cs)<br>`FN_CC_003_starts_at_version_one_and_increments_monotonically` (src/Epi.ContentCore.Tests/ContentStoreConformance.cs) |

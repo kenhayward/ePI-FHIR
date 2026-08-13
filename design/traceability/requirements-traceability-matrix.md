@@ -218,7 +218,7 @@ Status values: `planned` (scheduled, not built), `partial` (some aspect delivere
 | CAP-IAM-006 | 17 | M | P0 | IAM | - | - | - |
 | CAP-IAM-007 | 17 | M | P0 | IAM | 1 | partial | FN_IAM_004 on every store operation, reached through the API; physical partitioning for residency markets is ADR-004, later |
 | CAP-IAM-008 | 17 | M | P0 | IAM | - | - | - |
-| CAP-IAM-009 | 17 | M | P0 | IAM | 1 | planned | iteration-1 PR 7 |
+| CAP-IAM-009 | 17 | M | P0 | IAM | 1 | partial | FN_AUD_004: decisions recorded whether allowed or denied; administration changes are recorded when that surface exists |
 | CAP-SEC-001 | 18 | M | P0 | Security | - | - | - |
 | CAP-SEC-002 | 18 | M | P0 | Security | - | - | - |
 | CAP-SEC-003 | 18 | M | P0 | Security | - | - | - |
@@ -226,8 +226,8 @@ Status values: `planned` (scheduled, not built), `partial` (some aspect delivere
 | CAP-SEC-005 | 18 | S | P0 | Security | - | - | - |
 | CAP-SEC-006 | 18 | S | P0 | Security | - | - | - |
 | CAP-SEC-007 | 18 | S | P0 | Security | - | - | - |
-| CAP-AUD-001 | 19 | M | P0 | Audit & e-Signature | 1 | planned | iteration-1 PR 7 |
-| CAP-AUD-002 | 19 | M | P0 | Audit & e-Signature | 1 | planned | iteration-1 PR 7 |
+| CAP-AUD-001 | 19 | M | P0 | Audit & e-Signature | 1 | partial | FN_AUD_001 and IT_003 for content writes and access decisions; other capabilities write as they arrive |
+| CAP-AUD-002 | 19 | M | P0 | Audit & e-Signature | 1 | partial | FN_AUD_002 and FN_AUD_003: append-only by interface; the durable WORM-backed sink is a later iteration |
 | CAP-AUD-003 | 19 | M | P0 | Audit & e-Signature | - | - | - |
 | CAP-AUD-004 | 19 | M | P0 | Audit & e-Signature | - | - | - |
 | CAP-AUD-005 | 19 | M | P0 | Audit & e-Signature | - | - | - |
