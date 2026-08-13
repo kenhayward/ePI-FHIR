@@ -4,6 +4,10 @@
     <ProjectReference Include="..\Epi.ContentCore\Epi.ContentCore.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Include="Npgsql" Version="10.0.3" />
+  </ItemGroup>
+
   <PropertyGroup>
     <RootNamespace>Epi.Governance</RootNamespace>
   </PropertyGroup>

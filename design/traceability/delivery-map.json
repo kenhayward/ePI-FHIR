@@ -14,7 +14,7 @@
   "CAP-IAM-009": {"iteration": "1", "status": "partial", "evidence": "FN_AUD_004: decisions recorded whether allowed or denied; administration changes are recorded when that surface exists"},
 
   "CAP-AUD-001": {"iteration": "1", "status": "partial", "evidence": "FN_AUD_001 and IT_003 for content writes and access decisions; other capabilities write as they arrive"},
-  "CAP-AUD-002": {"iteration": "1", "status": "partial", "evidence": "FN_AUD_002 and FN_AUD_003: append-only by interface; the durable WORM-backed sink is a later iteration"},
+  "CAP-AUD-002": {"iteration": "1", "status": "partial", "evidence": "FN_AUD_002 and FN_AUD_003: append-only by interface, and enforced by the database in the PostgreSQL sink; sealed WORM export is capability 22"},
 
   "CAP-CFG-001": {"iteration": "1", "status": "partial", "evidence": "MarketCatalogue with FN_CFG_002 profile binding; lifecycle, workflow and rule config are later iterations"},
   "CAP-CFG-004": {"iteration": "1", "status": "partial", "evidence": "IT_004_a_new_market_is_added_by_configuration_alone; a market carries no behaviour until PR 6 consumes it"},
