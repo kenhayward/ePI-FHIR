@@ -1,0 +1,56 @@
+{
+  "_comment": "Pinned FHIR conformance packages, vendored for offline resolution (ADR-016). Digests are verified in CI by tools/verify-profile-packages.py. Adding or changing a pin is a governed configuration change, never a silent update.",
+  "retrieved": "2026-08-13",
+  "registry": "https://packages.fhir.org",
+  "packages": {
+    "hl7.fhir.uv.emedicinal-product-info": {
+      "version": "1.0.0",
+      "file": "hl7.fhir.uv.emedicinal-product-info-1.0.0.tgz",
+      "sha256": "c997673388d2c53bd7dad43777a7589443e4d27f56a661a90aa0638bbce1cf3a",
+      "bytes": 319165,
+      "fhirVersions": [
+        "5.0.0"
+      ],
+      "license": "CC0-1.0",
+      "dependencies": {
+        "hl7.terminology.r5": "5.0.0",
+        "hl7.fhir.uv.extensions.r5": "1.0.0"
+      },
+      "source": "https://packages.fhir.org/hl7.fhir.uv.emedicinal-product-info/1.0.0"
+    },
+    "hl7.fhir.uv.extensions.r5": {
+      "version": "1.0.0",
+      "file": "hl7.fhir.uv.extensions.r5-1.0.0.tgz",
+      "sha256": "b60edfadff29ef16a5a253083f33b1c6f83646b3cda1691745453162edbd86b9",
+      "bytes": 2855764,
+      "fhirVersions": [
+        "5.0.0"
+      ],
+      "license": "CC0-1.0",
+      "dependencies": {
+        "hl7.fhir.r5.core": "5.0.0"
+      },
+      "source": "https://packages.fhir.org/hl7.fhir.uv.extensions.r5/1.0.0"
+    },
+    "hl7.terminology.r5": {
+      "version": "5.0.0",
+      "file": "hl7.terminology.r5-5.0.0.tgz",
+      "sha256": "0716450a0ee1fc452794c163c395782f5ebe4ecf177b426e20782dcfe3250906",
+      "bytes": 5057377,
+      "fhirVersions": [
+        "5.0.0"
+      ],
+      "license": "CC0-1.0",
+      "dependencies": {
+        "hl7.fhir.r5.core": "5.0.0"
+      },
+      "source": "https://packages.fhir.org/hl7.terminology.r5/5.0.0"
+    }
+  },
+  "notProvidedHere": {
+    "hl7.fhir.r5.core": {
+      "version": "5.0.0",
+      "reason": "The FHIR R5 core definitions arrive with the validator as the NuGet package Hl7.Fhir.Specification.Data.R5, which carries specification.zip. Vendoring a second 17 MB copy would duplicate it and risk the two disagreeing with the SDK version in use. See ADR-016."
+    }
+  }
+}
