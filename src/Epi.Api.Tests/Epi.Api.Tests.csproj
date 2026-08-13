@@ -17,6 +17,8 @@
 
   <ItemGroup>
     <ProjectReference Include="../Epi.Api/Epi.Api.csproj" />
+    <ProjectReference Include="..\Epi.ContentCore\Epi.ContentCore.csproj" />
+    <ProjectReference Include="..\Epi.Iam\Epi.Iam.csproj" />
   </ItemGroup>
 
 </Project>
