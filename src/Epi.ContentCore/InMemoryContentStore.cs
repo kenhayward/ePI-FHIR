@@ -93,6 +93,13 @@ public sealed class InMemoryContentStore : IContentStore
         }
     }
 
+    /// <summary>Every document identity the store holds. Used by tests asserting that a
+    /// rejected write left nothing behind.</summary>
+    public IReadOnlyCollection<string> KnownIdentities
+    {
+        get { lock (_gate) { return [.. _documents.Keys]; } }
+    }
+
     private EpiDocument Store(DocumentIdentity identity, int version, Bundle bundle)
     {
         // Copy on the way in as well as on the way out: the caller keeps their instance and
