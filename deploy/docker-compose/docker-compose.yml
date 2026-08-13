@@ -1,0 +1,261 @@
+# FHIR ePI Enterprise System - local development stack (open-source)
+# Purpose: bring up all OSS backing services on a single host for development.
+# Same container images deploy to Kubernetes unchanged (see README).
+#
+# Usage:
+#   cp .env.example .env
+#   docker compose up -d              # core services
+#   docker compose --profile observability up -d
+#   docker compose --profile gateway up -d
+#   docker compose down               # stop (add -v to wipe volumes)
+#
+# NOTE: this is a development scaffold - dev-mode security (open ports, default
+# creds, TLS off). Do NOT use these settings in test/prod; production runs on
+# Kubernetes with hardened config, secrets, and network policy.
+
+name: epi-dev
+
+networks:
+  epi:
+    driver: bridge
+
+volumes:
+  pg_data:
+  es_data:
+  opensearch_data:
+  minio_data:
+  kafka_data:
+  grafana_data:
+
+services:
+
+  # ---- Relational database (shared; separate DBs per component) ----
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_MULTIPLE_DATABASES: hapi,keycloak,epi_operational
+    ports:
+      - "5432:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+      - ./init/postgres-multi-db.sh:/docker-entrypoint-initdb.d/10-multi-db.sh:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks: [epi]
+
+  # ---- FHIR content core (canonical store, FHIR REST API) ----
+  hapi-fhir:
+    image: hapiproject/hapi:latest
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/hapi
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
+      SPRING_DATASOURCE_DRIVERCLASSNAME: org.postgresql.Driver
+      SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT: ca.uhn.fhir.jpa.model.dialect.HapiFhirPostgres94Dialect
+      HAPI_FHIR_FHIR_VERSION: R5
+    ports:
+      - "8090:8080"   # FHIR API at http://localhost:8090/fhir
+    networks: [epi]
+
+  # ---- Terminology: Snowstorm requires Elasticsearch 8.x ----
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.1
+    environment:
+      discovery.type: single-node
+      xpack.security.enabled: "false"
+      ES_JAVA_OPTS: "-Xms2g -Xmx4g"
+    ulimits:
+      memlock: { soft: -1, hard: -1 }
+    volumes:
+      - es_data:/usr/share/elasticsearch/data
+    ports:
+      - "9200:9200"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s http://localhost:9200/_cluster/health | grep -q '\"status\"'"]
+      interval: 15s
+      timeout: 10s
+      retries: 20
+    networks: [epi]
+
+  snowstorm:
+    image: snomedinternational/snowstorm:latest
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    entrypoint: java -Xms2g -Xmx4g -jar app.jar --elasticsearch.urls=http://elasticsearch:9200
+    ports:
+      - "8091:8080"   # Snowstorm FHIR terminology at http://localhost:8091/fhir
+    networks: [epi]
+
+  # ---- Content search index (cap 15) ----
+  opensearch:
+    image: opensearchproject/opensearch:2.17.1
+    environment:
+      discovery.type: single-node
+      DISABLE_SECURITY_PLUGIN: "true"
+      OPENSEARCH_JAVA_OPTS: "-Xms1g -Xmx1g"
+    ulimits:
+      memlock: { soft: -1, hard: -1 }
+    volumes:
+      - opensearch_data:/usr/share/opensearch/data
+    ports:
+      - "9201:9200"
+    networks: [epi]
+
+  # ---- Object store with WORM (object-lock) for assets, audit exports, archive ----
+  minio:
+    image: minio/minio:latest
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    ports:
+      - "9000:9000"   # S3 API
+      - "9001:9001"   # console
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "mc ready local || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+    networks: [epi]
+
+  # One-shot: create buckets WITH object-lock (WORM) enabled
+  minio-init:
+    image: minio/mc:latest
+    depends_on:
+      minio:
+        condition: service_started
+    entrypoint: >
+      /bin/sh -c "
+      until mc alias set local http://minio:9000 ${MINIO_ROOT_USER} ${MINIO_ROOT_PASSWORD}; do sleep 2; done;
+      mc mb --with-lock --ignore-existing local/epi-content;
+      mc mb --with-lock --ignore-existing local/epi-artwork;
+      mc mb --with-lock --ignore-existing local/epi-rendered;
+      mc mb --with-lock --ignore-existing local/epi-audit;
+      mc mb --with-lock --ignore-existing local/epi-archive;
+      mc retention set --default COMPLIANCE 3650d local/epi-audit;
+      mc retention set --default COMPLIANCE 3650d local/epi-archive;
+      echo 'MinIO buckets created with object-lock (WORM).';
+      "
+    networks: [epi]
+
+  # ---- Event backbone (KRaft mode, single node) ----
+  kafka:
+    image: apache/kafka:3.8.0
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+    ports:
+      - "9092:9092"
+    volumes:
+      - kafka_data:/var/lib/kafka/data
+    networks: [epi]
+
+  # ---- Identity provider (OIDC/SAML) ----
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.0
+    command: start-dev
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: ${KEYCLOAK_ADMIN}
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://postgres:5432/keycloak
+      KC_DB_USERNAME: ${POSTGRES_USER}
+      KC_DB_PASSWORD: ${POSTGRES_PASSWORD}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "8081:8080"   # admin console at http://localhost:8081
+    networks: [epi]
+
+  # ---- Policy decision point (RBAC/ABAC) ----
+  opa:
+    image: openpolicyagent/opa:latest-rootless
+    command: ["run", "--server", "--addr", ":8181", "--log-level", "info"]
+    ports:
+      - "8181:8181"
+    networks: [epi]
+
+  # ---- Rendering: HTML -> PDF (rendered lineage; distinct from artwork) ----
+  gotenberg:
+    image: gotenberg/gotenberg:8
+    command: ["gotenberg", "--api-port=3000"]
+    ports:
+      - "3000:3000"
+    networks: [epi]
+
+  # ============ optional profile: observability ============
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:latest
+    profiles: ["observability"]
+    command: ["--config=/etc/otel/config.yaml"]
+    volumes:
+      - ./init/otel-collector.yaml:/etc/otel/config.yaml:ro
+    ports:
+      - "4317:4317"   # OTLP gRPC
+      - "4318:4318"   # OTLP HTTP
+    networks: [epi]
+
+  prometheus:
+    image: prom/prometheus:latest
+    profiles: ["observability"]
+    volumes:
+      - ./init/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    ports:
+      - "9090:9090"
+    networks: [epi]
+
+  grafana:
+    image: grafana/grafana:latest
+    profiles: ["observability"]
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD}
+    volumes:
+      - grafana_data:/var/lib/grafana
+    ports:
+      - "3001:3000"
+    networks: [epi]
+
+  # ============ optional profile: gateway ============
+  kong:
+    image: kong:latest
+    profiles: ["gateway"]
+    environment:
+      KONG_DATABASE: "off"
+      KONG_DECLARATIVE_CONFIG: /kong/kong.yml
+      KONG_PROXY_LISTEN: "0.0.0.0:8000"
+      KONG_ADMIN_LISTEN: "0.0.0.0:8001"
+    volumes:
+      - ./init/kong.yml:/kong/kong.yml:ro
+    ports:
+      - "8000:8000"   # proxy
+      - "8001:8001"   # admin API
+    networks: [epi]
+
+  # ============ optional profile: messaging ============
+  rabbitmq:
+    image: rabbitmq:3-management
+    profiles: ["messaging"]
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    networks: [epi]

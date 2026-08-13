@@ -1,0 +1,45 @@
+# Environment / secrets
+.env
+*.local
+*.pem
+*.key
+
+# Generated document exports (regenerate via tools/export-docx.sh)
+docs/exports/
+
+# Source material (may be large or licensed; keep local)
+docs/source-material/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+
+# Build output
+bin/
+obj/
+dist/
+build/
+out/
+node_modules/
+*.log
+
+# .NET
+project.lock.json
+*.user
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Terraform / OpenTofu
+.terraform/
+*.tfstate
+*.tfstate.*
+
+# Docker volumes (if bind-mounted locally)
+**/data/

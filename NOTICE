@@ -1,0 +1,16 @@
+ePI Platform - FHIR electronic Product Information Enterprise System
+Copyright 2026 The ePI Platform Authors
+
+This product includes software developed by the ePI Platform Authors.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+This repository references and interoperates with third-party standards and
+software that are subject to their own licenses and terms, including but not
+limited to HL7 FHIR, SNOMED CT, MedDRA, EDQM, LOINC, and the various
+open-source components listed in the technical architecture (design/). Use of
+those standards and components is governed by their respective licenses.

@@ -1,0 +1,11 @@
+# Kong DB-less declarative config (dev stub).
+# Example route fronting the HAPI FHIR API; extend per API-management design (ADR-008).
+_format_version: "3.0"
+
+services:
+  - name: fhir-api
+    url: http://hapi-fhir:8080/fhir
+    routes:
+      - name: fhir
+        paths:
+          - /fhir
