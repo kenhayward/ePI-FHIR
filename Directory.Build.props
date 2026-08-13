@@ -1,0 +1,24 @@
+<Project>
+
+  <!-- Settings shared by every project in the solution. Kept central so the build is
+       deterministic and consistent, which GxP/CSV controlled release depends on
+       (D3 Section 10.3). -->
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+
+    <!-- A warning left in the tree is a defect nobody has triaged yet. -->
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+
+    <!-- Regulated content is multilingual, but the code that handles it is not
+         locale-dependent. See CLAUDE.md on ASCII-only source. -->
+    <InvariantGlobalization>true</InvariantGlobalization>
+
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+  </PropertyGroup>
+
+</Project>
