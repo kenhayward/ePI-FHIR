@@ -60,7 +60,11 @@ jobs:
         run: |
           fail=0
           while IFS= read -r f; do
-            case "$f" in *.md|*.yml|*.yaml|*.rego|*.sh|*.json) ;; *) continue ;; esac
+            case "$f" in
+              *.md|*.yml|*.yaml|*.rego|*.sh|*.json|*.py) ;;
+              *.cs|*.csproj|*.props|*.targets|*.sln) ;;   # .editorconfig mandates LF here too
+              *) continue ;;
+            esac
             [ -s "$f" ] || continue
             if [ -n "$(tail -c 1 "$f")" ]; then
               echo "::error file=$f::missing final newline"; fail=1
