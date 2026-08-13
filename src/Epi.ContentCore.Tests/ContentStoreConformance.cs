@@ -178,8 +178,9 @@ public abstract class ContentStoreConformance
 
         var expected = MinimalDocument();
         var actual = (Bundle)retrieved.Bundle.DeepCopy();
-        expected.Identifier = actual.Identifier = null;
-        expected.Meta = actual.Meta = null;
+        expected.Identifier = actual.Identifier = null;   // ours: asserted above
+        expected.Meta = actual.Meta = null;               // ours (version tag) and the server's
+        expected.Id = actual.Id = null;                   // the server's logical id (ADR-015)
 
         // Compared as canonical JSON rather than with IsExactly: both sides are serialised
         // from POCOs by the same writer, so ordering is determined by the model, and a
