@@ -1,5 +1,16 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
 
+  <ItemGroup>
+    <ProjectReference Include="..\Epi.ContentCore\Epi.ContentCore.csproj" />
+    <ProjectReference Include="..\Epi.Validation\Epi.Validation.csproj" />
+    <ProjectReference Include="..\Epi.Iam\Epi.Iam.csproj" />
+    <ProjectReference Include="..\Epi.Governance\Epi.Governance.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.0" />
+  </ItemGroup>
+
   <PropertyGroup>
     <RootNamespace>Epi.Api</RootNamespace>
   </PropertyGroup>
