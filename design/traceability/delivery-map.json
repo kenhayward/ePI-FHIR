@@ -6,9 +6,9 @@
     "evidence": "EpiBundleReader plus the store conformance suite run against both the in-memory store and HAPI; coded section typing is a later iteration"
   },
   "CAP-SCM-007": {
-    "iteration": "1",
+    "iteration": "1-2",
     "status": "partial",
-    "evidence": "ADR-015 plus FN-CC-002/003/007 for documents; section and reusable-unit identity are later iterations"
+    "evidence": "ADR-015 plus FN-CC-002/003/007 for documents and FN-CC-008/009 for sections; reusable-unit identity is a later iteration"
   },
   "CAP-SCM-010": {
     "iteration": "1",

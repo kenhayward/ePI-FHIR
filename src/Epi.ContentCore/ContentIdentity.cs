@@ -26,6 +26,10 @@ public static class ContentIdentity
         var systems = authority ?? IdentifierAuthority.Demonstration;
         bundle.Identifier = new Identifier(identity.System, identity.Value);
 
+        // Sections are identified as part of stamping, so every stored version has them and no
+        // write path can produce content without them (ADR-015 decision 6).
+        SectionIdentity.AssignMissing(bundle);
+
         // The version travels with the content rather than relying on the server's own
         // versioning, which ADR-015 keeps us independent of.
         bundle.Meta ??= new Meta();

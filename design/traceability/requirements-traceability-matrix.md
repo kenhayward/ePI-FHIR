@@ -72,7 +72,7 @@ Status values: `planned` (scheduled, not built), `partial` (some aspect delivere
 | CAP-SCM-004 | 2 | M | P0 | Content Core (FHIR) | - | - | - |
 | CAP-SCM-005 | 2 | M | P0 | Content Core (FHIR) | - | - | - |
 | CAP-SCM-006 | 2 | M | P0 | Content Core (FHIR) | - | - | - |
-| CAP-SCM-007 | 2 | M | P0 | Content Core (FHIR) | 1 | partial | ADR-015 plus FN-CC-002/003/007 for documents; section and reusable-unit identity are later iterations |
+| CAP-SCM-007 | 2 | M | P0 | Content Core (FHIR) | 1-2 | partial | ADR-015 plus FN-CC-002/003/007 for documents and FN-CC-008/009 for sections; reusable-unit identity is a later iteration |
 | CAP-SCM-008 | 2 | M | P0 | Content Core (FHIR) | - | - | - |
 | CAP-SCM-009 | 2 | M | P0 | Content Core (FHIR) | - | - | - |
 | CAP-SCM-010 | 2 | M | P0 | Content Core (FHIR) | 1 | partial | FN_CC_006 and IT_001, the latter run against both the in-memory store and a real HAPI server; validation against the pinned profile is PR 5 |
