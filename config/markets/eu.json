@@ -1,0 +1,7 @@
+{
+  "code": "EU",
+  "name": "European Union (centrally authorised)",
+  "regulator": "EMA",
+  "languages": ["en-GB"],
+  "affiliates": ["eu-central"]
+}

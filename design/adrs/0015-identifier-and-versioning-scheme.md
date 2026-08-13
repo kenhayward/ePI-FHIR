@@ -1,6 +1,6 @@
 # ADR-015: Identifier and versioning scheme
 
-Status: proposed
+Status: accepted
 Date: 2026-08-13
 
 Realises CAP-SCM-007, and underpins CAP-SCM-005, CAP-LCM-002, CAP-LCM-006, CAP-LCM-011,

@@ -1,0 +1,9 @@
+# Everything is stored and checked out with LF, whatever the contributor's platform.
+# The .editorconfig states the same rule for editors; this states it for git, so a Windows
+# checkout cannot commit CRLF by accident. Binary files are detected and left alone.
+* text=auto eol=lf
+
+# Tooling that writes CRLF regardless: "dotnet sln add" rewrites the solution file with a
+# UTF-8 BOM and CRLF endings every time a project is added. Git normalises the endings here;
+# the BOM is caught by the ASCII check in CI (see .github/workflows/ci.yml).
+*.sln text eol=lf

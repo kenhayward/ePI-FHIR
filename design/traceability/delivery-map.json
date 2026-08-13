@@ -16,9 +16,9 @@
   "CAP-AUD-001": {"iteration": "1", "status": "planned", "evidence": "iteration-1 PR 7"},
   "CAP-AUD-002": {"iteration": "1", "status": "planned", "evidence": "iteration-1 PR 7"},
 
-  "CAP-CFG-001": {"iteration": "1", "status": "planned", "evidence": "iteration-1 PR 3 (markets only)"},
-  "CAP-CFG-004": {"iteration": "1", "status": "planned", "evidence": "iteration-1 PR 3 new-market test"},
-  "CAP-CFG-006": {"iteration": "1", "status": "planned", "evidence": "iteration-1 PR 3 (config rejected before activation)"},
+  "CAP-CFG-001": {"iteration": "1", "status": "partial", "evidence": "MarketCatalogue: markets only; lifecycle, workflow, rule and binding config are later iterations"},
+  "CAP-CFG-004": {"iteration": "1", "status": "partial", "evidence": "IT_004_a_new_market_is_added_by_configuration_alone; a market carries no behaviour until PR 6 consumes it"},
+  "CAP-CFG-006": {"iteration": "1", "status": "partial", "evidence": "IT_009_an_invalid_market_definition_is_rejected_before_activation; market configuration only"},
 
   "CAP-EVT-001": {"iteration": "1", "status": "planned", "evidence": "iteration-1 PR 8 (emit only)"}
 }

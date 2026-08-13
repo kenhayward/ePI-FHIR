@@ -14,8 +14,8 @@ Name unit tests for the function they verify, for example
 ## Coverage
 
 - Design functions declared: **23**
-- Verified by at least one unit test: **0**
-- Not yet verified: **23**
+- Verified by at least one unit test: **2**
+- Not yet verified: **21**
 
 ## Matrix
 
@@ -32,9 +32,9 @@ Name unit tests for the function they verify, for example
 | FN-CC-005 | Retrieve a document by canonical identifier and version | Content Core (FHIR) | CAP-SCM-001 | 1 | planned | - |
 | FN-CC-006 | Serialise and deserialise a Bundle without content loss | Content Core (FHIR) | CAP-SCM-010 | 1 | planned | - |
 | FN-CC-007 | Reject any mutation of an existing version | Content Core (FHIR) | CAP-SCM-007 | 1 | planned | - |
-| FN-CFG-001 | Load market definitions from configuration data | Configuration & Rules Service | CAP-CFG-001, CAP-CFG-004 | 1 | planned | - |
+| FN-CFG-001 | Load market definitions from configuration data | Configuration & Rules Service | CAP-CFG-001, CAP-CFG-004 | 1 | verified | `FN_CFG_001_an_empty_directory_yields_an_empty_catalogue` (src/Epi.Governance.Tests/MarketCatalogueTests.cs)<br>`FN_CFG_001_exposes_a_market_by_its_code_regardless_of_casing` (src/Epi.Governance.Tests/MarketCatalogueTests.cs)<br>`FN_CFG_001_loads_every_market_definition_in_the_directory` (src/Epi.Governance.Tests/MarketCatalogueTests.cs) |
 | FN-CFG-002 | Resolve the active profile version for a market | Configuration & Rules Service | CAP-CFG-001 | 1 | planned | - |
-| FN-CFG-003 | Reject a market definition that fails schema validation | Configuration & Rules Service | CAP-CFG-006 | 1 | planned | - |
+| FN-CFG-003 | Reject a market definition that fails schema validation | Configuration & Rules Service | CAP-CFG-006 | 1 | verified | `FN_CFG_003_rejects_a_market_with_a_missing_required_field` (src/Epi.Governance.Tests/MarketCatalogueTests.cs)<br>`FN_CFG_003_rejects_a_market_with_no_languages` (src/Epi.Governance.Tests/MarketCatalogueTests.cs)<br>`FN_CFG_003_rejects_a_missing_directory_rather_than_starting_empty` (src/Epi.Governance.Tests/MarketCatalogueTests.cs)<br>`FN_CFG_003_rejects_an_unknown_property_rather_than_ignoring_it` (src/Epi.Governance.Tests/MarketCatalogueTests.cs)<br>`FN_CFG_003_rejects_malformed_json_naming_the_file` (src/Epi.Governance.Tests/MarketCatalogueTests.cs)<br>`FN_CFG_003_rejects_two_markets_claiming_the_same_code` (src/Epi.Governance.Tests/MarketCatalogueTests.cs)<br>`FN_CFG_003_reports_every_problem_not_only_the_first` (src/Epi.Governance.Tests/MarketCatalogueTests.cs) |
 | FN-EVT-001 | Build a content event from a persisted document | Notification & Event Backbone | CAP-EVT-001 | 1 | planned | - |
 | FN-EVT-002 | Publish a content event to the event backbone | Notification & Event Backbone | CAP-EVT-001 | 1 | planned | - |
 | FN-IAM-001 | Validate an OIDC access token and extract subject claims | IAM | CAP-IAM-001 | 1 | planned | - |
