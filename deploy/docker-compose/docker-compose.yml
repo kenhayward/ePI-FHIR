@@ -37,7 +37,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_MULTIPLE_DATABASES: hapi,keycloak,epi_operational
     ports:
-      - "5432:5432"
+      - "${POSTGRES_PORT:-5432}:5432"
     volumes:
       - pg_data:/var/lib/postgresql/data
       - ./init/postgres-multi-db.sh:/docker-entrypoint-initdb.d/10-multi-db.sh:ro
@@ -62,7 +62,7 @@ services:
       SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT: ca.uhn.fhir.jpa.model.dialect.HapiFhirPostgres94Dialect
       HAPI_FHIR_FHIR_VERSION: R5
     ports:
-      - "8090:8080"   # FHIR API at http://localhost:8090/fhir
+      - "${HAPI_PORT:-8090}:8080"   # FHIR API at http://localhost:8090/fhir
     networks: [epi]
 
   # ---- Terminology: Snowstorm requires Elasticsearch 8.x ----
@@ -77,7 +77,7 @@ services:
     volumes:
       - es_data:/usr/share/elasticsearch/data
     ports:
-      - "9200:9200"
+      - "${ELASTICSEARCH_PORT:-9200}:9200"
     healthcheck:
       test: ["CMD-SHELL", "curl -s http://localhost:9200/_cluster/health | grep -q '\"status\"'"]
       interval: 15s
@@ -86,13 +86,25 @@ services:
     networks: [epi]
 
   snowstorm:
-    image: snomedinternational/snowstorm:latest
+    # Pinned by digest. This image is published only as :latest, and its layout changed
+    # underneath us: it is now built with Jib and ships exploded classes rather than an
+    # app.jar, so the entrypoint that used to work stopped working with no version to
+    # blame. A digest is the only pin the publisher offers (ADR-014).
+    image: snomedinternational/snowstorm@sha256:2516354dd157bfce5f420d9d4317426061b2df58516b0dfe5769e43eca50b581
     depends_on:
       elasticsearch:
         condition: service_healthy
-    entrypoint: java -Xms2g -Xmx4g -jar app.jar --elasticsearch.urls=http://elasticsearch:9200
+    # The image's own entrypoint is left alone - it carries the classpath and main class
+    # that Jib generated. Heap size goes through the JVM's own environment variable, and
+    # the Elasticsearch URL is an argument to the application rather than to java.
+    environment:
+      # --add-opens for java.util is the image's omission, not ours: its own entrypoint
+      # opens java.lang only, and Spring Data's mapping context reflects over
+      # java.util.TimeZone, so the application cannot start without it on a modern JDK.
+      JAVA_TOOL_OPTIONS: "-Xms2g -Xmx4g --add-opens=java.base/java.util=ALL-UNNAMED"
+    command: ["--elasticsearch.urls=http://elasticsearch:9200"]
     ports:
-      - "8091:8080"   # Snowstorm FHIR terminology at http://localhost:8091/fhir
+      - "${SNOWSTORM_PORT:-8091}:8080"   # Snowstorm FHIR terminology at http://localhost:8091/fhir
     networks: [epi]
 
   # ---- Content search index (cap 15) ----
@@ -107,7 +119,7 @@ services:
     volumes:
       - opensearch_data:/usr/share/opensearch/data
     ports:
-      - "9201:9200"
+      - "${OPENSEARCH_PORT:-9201}:9200"
     networks: [epi]
 
   # ---- Object store with WORM (object-lock) for assets, audit exports, archive ----
@@ -118,8 +130,8 @@ services:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
     ports:
-      - "9000:9000"   # S3 API
-      - "9001:9001"   # console
+      - "${MINIO_PORT:-9000}:9000"   # S3 API
+      - "${MINIO_CONSOLE_PORT:-9001}:9001"   # console
     volumes:
       - minio_data:/data
     healthcheck:
@@ -164,7 +176,7 @@ services:
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
     ports:
-      - "9092:9092"
+      - "${KAFKA_PORT:-9092}:9092"
     volumes:
       - kafka_data:/var/lib/kafka/data
     networks: [epi]
@@ -184,7 +196,7 @@ services:
       postgres:
         condition: service_healthy
     ports:
-      - "8081:8080"   # admin console at http://localhost:8081
+      - "${KEYCLOAK_PORT:-8081}:8080"   # admin console at http://localhost:8081
     networks: [epi]
 
   # ---- Policy decision point (RBAC/ABAC) ----
@@ -192,7 +204,7 @@ services:
     image: openpolicyagent/opa:latest-rootless
     command: ["run", "--server", "--addr", ":8181", "--log-level", "info"]
     ports:
-      - "8181:8181"
+      - "${OPA_PORT:-8181}:8181"
     networks: [epi]
 
   # ---- Rendering: HTML -> PDF (rendered lineage; distinct from artwork) ----
@@ -200,7 +212,7 @@ services:
     image: gotenberg/gotenberg:8
     command: ["gotenberg", "--api-port=3000"]
     ports:
-      - "3000:3000"
+      - "${GOTENBERG_PORT:-3000}:3000"
     networks: [epi]
 
   # ---- The platform itself: the walking skeleton of design/iteration-1.md ----
@@ -229,7 +241,7 @@ services:
       - ../../config:/config:ro
       - ../../profiles/packages:/app/profiles/packages:ro
     ports:
-      - "8080:8080"
+      - "${EPI_API_PORT:-8080}:8080"
     networks: [epi]
 
   # ============ optional profile: observability ============
@@ -240,8 +252,8 @@ services:
     volumes:
       - ./init/otel-collector.yaml:/etc/otel/config.yaml:ro
     ports:
-      - "4317:4317"   # OTLP gRPC
-      - "4318:4318"   # OTLP HTTP
+      - "${OTEL_GRPC_PORT:-4317}:4317"   # OTLP gRPC
+      - "${OTEL_HTTP_PORT:-4318}:4318"   # OTLP HTTP
     networks: [epi]
 
   prometheus:
@@ -250,7 +262,7 @@ services:
     volumes:
       - ./init/prometheus.yml:/etc/prometheus/prometheus.yml:ro
     ports:
-      - "9090:9090"
+      - "${PROMETHEUS_PORT:-9090}:9090"
     networks: [epi]
 
   grafana:
@@ -261,7 +273,7 @@ services:
     volumes:
       - grafana_data:/var/lib/grafana
     ports:
-      - "3001:3000"
+      - "${GRAFANA_PORT:-3001}:3000"
     networks: [epi]
 
   # ============ optional profile: gateway ============
@@ -276,8 +288,8 @@ services:
     volumes:
       - ./init/kong.yml:/kong/kong.yml:ro
     ports:
-      - "8000:8000"   # proxy
-      - "8001:8001"   # admin API
+      - "${KONG_PROXY_PORT:-8000}:8000"   # proxy
+      - "${KONG_ADMIN_PORT:-8001}:8001"   # admin API
     networks: [epi]
 
   # ============ optional profile: messaging ============
@@ -285,6 +297,6 @@ services:
     image: rabbitmq:3-management
     profiles: ["messaging"]
     ports:
-      - "5672:5672"
-      - "15672:15672"
+      - "${RABBITMQ_PORT:-5672}:5672"
+      - "${RABBITMQ_CONSOLE_PORT:-15672}:15672"
     networks: [epi]
