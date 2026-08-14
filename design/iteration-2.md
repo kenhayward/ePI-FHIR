@@ -48,7 +48,8 @@ when it was found, and each has a natural home in this iteration or a named late
 | ~~The compose stack has never been run end to end outside CI~~ - **paid**, PR 32: three faults found, all invisible to a `docker compose config` check | PR 9b | Done |
 | Nine dev-stack images run on `:latest` - `hapi-fhir`, `minio`, `minio/mc`, `opa`, `otel-collector`, `prometheus`, `grafana`, `kong`. Snowstorm is the demonstrated cost: its layout changed under the tag and the stack broke with no version to roll back to | PR 32 | **Before any demonstration** - D3 Section 10.3 wants deterministic release, and ADR-014 arguably implies pinning already |
 | Snowstorm serves FHIR R4 (`4.0.1`) while the platform is pinned to R5 (ADR-016). Terminology operations are largely version-agnostic in practice, so this may be a non-issue - but it should be a recorded decision rather than a surprise | PR 32 | **Before capability 6 work starts** - an ADR note, or an amendment to ADR-016 |
-| The durable stores are built and proven but nothing composes them: `Epi.Api` still wires the in-memory ones | PR 10 review notes | **Iteration 2** - with the configuration flag that selects them |
+| ~~The durable stores are built and proven but nothing composes them~~ - **paid**, PR 34 | PR 10 review notes | Done |
+| Lifecycle registration is not transactional with the content write. If the write succeeds and registration fails there is content nobody is recorded as having authored, and the author is what segregation of duties is checked against. Narrower than registering later, and still real | PR 12 review notes | **Before any demonstration** - needs a transaction across two stores, or a reconciling read that registers what it finds unmanaged |
 
 ### 2.3 The boundary iteration 1 drew, and why it matters here
 
