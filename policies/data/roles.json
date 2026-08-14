@@ -1,0 +1,16 @@
+{
+  "roles": {
+    "author": {
+      "actions": ["read", "author"]
+    },
+    "approver": {
+      "actions": ["read", "approve"]
+    },
+    "regulatory": {
+      "actions": ["read", "submit-to-regulator", "record-decision"]
+    },
+    "reader": {
+      "actions": ["read"]
+    }
+  }
+}
