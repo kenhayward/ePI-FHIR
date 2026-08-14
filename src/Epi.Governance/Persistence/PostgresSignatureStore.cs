@@ -19,44 +19,6 @@ public sealed class PostgresSignatureStore(string connectionString)
     private readonly Lazy<NpgsqlDataSource> _source =
         new(() => new NpgsqlDataSourceBuilder(connectionString).Build());
 
-    /// <summary>Creates the table and the trigger that makes it append-only.</summary>
-    /// <remarks>
-    /// Idempotent, so it is safe to run at start-up. In a qualified environment this belongs in
-    /// a controlled migration (D3 Section 10.3) rather than at application start; it is here so
-    /// the demonstration stands up unattended.
-    /// </remarks>
-    public async Task InitialiseAsync(CancellationToken cancellationToken = default)
-    {
-        await using var command = _source.Value.CreateCommand("""
-            CREATE TABLE IF NOT EXISTS signature_manifest (
-                reference            TEXT        PRIMARY KEY,
-                signer_identifier    TEXT        NOT NULL,
-                signer_printed_name  TEXT        NOT NULL,
-                meaning              TEXT        NOT NULL,
-                document_system      TEXT        NOT NULL,
-                document_value       TEXT        NOT NULL,
-                document_version     INTEGER     NOT NULL,
-                content_hash         TEXT        NOT NULL,
-                signed_at            TIMESTAMPTZ NOT NULL,
-                reason               TEXT        NULL
-            );
-
-            CREATE OR REPLACE FUNCTION signature_manifest_is_append_only() RETURNS TRIGGER AS $$
-            BEGIN
-                RAISE EXCEPTION 'signature_manifest is append-only: % is not permitted', TG_OP
-                    USING ERRCODE = 'restrict_violation';
-            END;
-            $$ LANGUAGE plpgsql;
-
-            DROP TRIGGER IF EXISTS signature_manifest_no_change ON signature_manifest;
-            CREATE TRIGGER signature_manifest_no_change
-                BEFORE UPDATE OR DELETE ON signature_manifest
-                FOR EACH ROW EXECUTE FUNCTION signature_manifest_is_append_only();
-            """);
-
-        await command.ExecuteNonQueryAsync(cancellationToken);
-    }
-
     public async Task AppendAsync(
         SignatureManifest manifest, CancellationToken cancellationToken = default)
     {

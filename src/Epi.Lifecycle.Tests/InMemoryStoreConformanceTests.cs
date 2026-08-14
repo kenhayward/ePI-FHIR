@@ -19,9 +19,9 @@ public sealed class InMemoryMarketApprovalStoreConformanceTests : MarketApproval
         Task.FromResult<IMarketApprovalStore>(new InMemoryMarketApprovalStore());
 }
 
-/// <summary>The in-memory pinned-context store, held to the same contract.</summary>
+/// <summary>The in-memory store, held to the pinned-context contract as well.</summary>
 public sealed class InMemoryPinnedContextStoreConformanceTests : PinnedContextStoreConformance
 {
-    protected override Task<IPinnedContextStore> CreateStoreAsync() =>
-        Task.FromResult<IPinnedContextStore>(new InMemoryPinnedContextStore());
+    protected override Task<ILifecycleStore> CreateStoreAsync() =>
+        Task.FromResult<ILifecycleStore>(new InMemoryLifecycleStore());
 }

@@ -57,7 +57,17 @@ public interface ILifecycleStore : ISpentSignatures
     Task<IReadOnlyList<StateTransition>> HistoryAsync(VersionRef version,
         CancellationToken cancellationToken = default);
 
-    Task AppendAsync(StateTransition transition, CancellationToken cancellationToken = default);
+    /// <summary>
+    /// Records a transition and, where one is supplied, the context it pinned - atomically
+    /// (ADR-024 decisions 1 and 2).
+    /// </summary>
+    /// <exception cref="ContextAlreadyPinnedException">
+    /// If a context is supplied for a version that already has one. Neither the transition nor
+    /// the pin is written in that case: an approval happens once.
+    /// </exception>
+    Task AppendAsync(
+        StateTransition transition, PinnedContext? pin = null,
+        CancellationToken cancellationToken = default);
 }
 
 /// <summary>Raised when a transition is refused. Carries why, because the caller must be told.</summary>

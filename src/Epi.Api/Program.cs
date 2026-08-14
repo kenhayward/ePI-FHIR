@@ -126,10 +126,9 @@ var marketApprovalStore = string.IsNullOrWhiteSpace(governanceConnection)
 var signatureStore = string.IsNullOrWhiteSpace(governanceConnection)
     ? new InMemorySignatureStore()
     : (ISignatureStore)new PostgresSignatureStore(governanceConnection);
-var pinnedContexts = string.IsNullOrWhiteSpace(governanceConnection)
-    ? new InMemoryPinnedContextStore()
-    : (IPinnedContextStore)new PostgresPinnedContextStore(governanceConnection);
-builder.Services.AddSingleton(pinnedContexts);
+// The same object behind both ports: a pin is written by the append that records the
+// transition it belongs to, so they are one store (ADR-024 decision 2).
+builder.Services.AddSingleton((IPinnedContextStore)lifecycleStore);
 
 // What the platform validates against, read once and recorded at every approval (ADR-023).
 // Lazy for the same reason the state models are: a host that never approves anything need not
@@ -226,34 +225,21 @@ if (string.IsNullOrWhiteSpace(signingAuthority) || string.IsNullOrWhiteSpace(sig
         + "are set.");
 }
 
-// The audit table and its append-only trigger must exist before the first record. In a
-// qualified environment this belongs in a controlled migration (D3 Section 10.3).
-if (app.Services.GetRequiredService<IAuditSink>() is PostgresAuditSink durableAudit)
+// The governance schema is applied as ordered, recorded migrations rather than as a
+// per-store bootstrap. CREATE TABLE IF NOT EXISTS does nothing to a table that already
+// exists, so the old arrangement could not add a column to a database that predated it -
+// and CI, which starts empty every time, could not see the difference (ADR-024 decision 5).
+// A failed migration is a start-up failure: a service running against a schema it could not
+// fully apply is a service whose writes may or may not land.
+if (!string.IsNullOrWhiteSpace(governanceConnection))
 {
-    await durableAudit.InitialiseAsync();
+    await GovernanceSchema.ApplyAsync(governanceConnection);
 }
 
-// Resolved from the local rather than the container: the registered lifecycle store is now the
-// projecting decorator, and asking the container for it would find a wrapper that is not a
-// PostgreSQL store - so the schema would silently never be created.
-if (lifecycleStore is PostgresLifecycleStore durableLifecycle)
+if (!string.IsNullOrWhiteSpace(auditConnection) && auditConnection != governanceConnection)
 {
-    await durableLifecycle.InitialiseAsync();
-}
-
-if (app.Services.GetRequiredService<IMarketApprovalStore>() is PostgresMarketApprovalStore durableMarkets)
-{
-    await durableMarkets.InitialiseAsync();
-}
-
-if (app.Services.GetRequiredService<ISignatureStore>() is PostgresSignatureStore durableSignatures)
-{
-    await durableSignatures.InitialiseAsync();
-}
-
-if (pinnedContexts is PostgresPinnedContextStore durablePins)
-{
-    await durablePins.InitialiseAsync();
+    // The audit trail may be held apart from the rest of the governance records.
+    await GovernanceSchema.ApplyAsync(auditConnection);
 }
 
 app.UseAuthentication();
@@ -514,15 +500,16 @@ app.MapPost("/labels/{id}/versions/{version:int}/transitions", async (
 
     try
     {
-        var transition = await lifecycle.TransitionAsync(
-            new VersionRef(id, version), body.Action, subject.Id, body.Reason,
-            body.SignatureReference, cancellationToken);
-
         // Approval is the moment the organisation commits to a version, and the moment what it
         // was approved against has to be written down: every part of that is configuration, and
-        // configuration moves (CAP-LCM-011, ADR-023 decision 1).
-        await Pinning.PinIfApprovedAsync(
-            transition, document, pins, conformance, labelModel, authority, cancellationToken);
+        // configuration moves (CAP-LCM-011, ADR-023 decision 1). The ingredients are supplied
+        // here and the engine decides whether a pin is due, so the pin lands in the same
+        // transaction as the transition (ADR-024 decision 3).
+        var transition = await lifecycle.TransitionAsync(
+            new VersionRef(id, version), body.Action, subject.Id, body.Reason,
+            body.SignatureReference,
+            Pinning.ContextFor(document, conformance, authority),
+            cancellationToken);
 
         return Results.Ok(new
         {
@@ -905,54 +892,26 @@ static object Describe(SearchHit hit) => new
 };
 
 /// <summary>
-/// Records what a version was approved against, at the moment it is approved (ADR-023).
+/// The ingredients an approval is pinned from (ADR-023, ADR-024 decision 3).
 /// </summary>
 /// <remarks>
-/// Here rather than inside the lifecycle engine because the engine knows nothing about content
-/// bytes or conformance packages, and this is where content and lifecycle already meet. That
-/// leaves the same non-transactional seam already recorded for lifecycle registration: a
-/// transition that succeeds and a pin that fails leaves an approved version with no record of
-/// what it was approved against. Recorded in iteration-2 Section 2.2 rather than assumed away.
+/// Assembled here because this is where content and configuration meet; the decision about
+/// whether a pin is due belongs to the lifecycle engine, which is the thing that knows the
+/// transition lands on the approved state. Supplied on every transition rather than only on
+/// approvals, so no caller has to work out which ones are approvals - getting that wrong is
+/// how the pin would go missing.
 /// </remarks>
 static class Pinning
 {
-    public static async Task PinIfApprovedAsync(
-        StateTransition transition,
+    public static ApprovalContext ContextFor(
         EpiDocument document,
-        IPinnedContextStore pins,
         Lazy<ConformanceManifest> conformance,
-        Lazy<LifecycleModel> model,
-        IdentifierAuthority authority,
-        CancellationToken cancellationToken)
-    {
-        if (!string.Equals(transition.To, model.Value.ApprovedState, StringComparison.Ordinal))
-        {
-            return;
-        }
-
-        try
-        {
-            await pins.PinAsync(
-                new PinnedContext(
-                    transition.Version,
-                    ContentHash.Of(document.Bundle),
-                    model.Value.Name,
-                    transition.To,
-                    [.. conformance.Value.Packages.Select(
-                        p => new PinnedPackage(p.Name, p.Version, p.Sha256))],
-                    authority.DocumentSystem,
-                    transition.At,
-                    TemplateInstantiation.TemplateOf(document.Bundle, authority),
-                    TemplateInstantiation.TemplateVersionOf(document.Bundle, authority)),
-                cancellationToken);
-        }
-        catch (ContextAlreadyPinnedException)
-        {
-            // A version approved, withdrawn and approved again keeps the pin made the first
-            // time. The state model permits no second approval of the same version, so this is
-            // a race rather than a workflow, and the first record is the one that stands.
-        }
-    }
+        IdentifierAuthority authority) =>
+        new(ContentHash.Of(document.Bundle),
+            [.. conformance.Value.Packages.Select(p => new PinnedPackage(p.Name, p.Version, p.Sha256))],
+            authority.DocumentSystem,
+            TemplateInstantiation.TemplateOf(document.Bundle, authority),
+            TemplateInstantiation.TemplateVersionOf(document.Bundle, authority));
 }
 
 /// <summary>What a caller asks for when signing. The signer is the token, never the body.</summary>

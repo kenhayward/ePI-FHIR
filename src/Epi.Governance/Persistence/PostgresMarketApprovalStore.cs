@@ -18,47 +18,6 @@ public sealed class PostgresMarketApprovalStore(string connectionString)
     private readonly Lazy<NpgsqlDataSource> _source =
         new(() => new NpgsqlDataSourceBuilder(connectionString).Build());
 
-    /// <summary>Creates the table and the trigger that makes it append-only.</summary>
-    public async Task InitialiseAsync(CancellationToken cancellationToken = default)
-    {
-        await using var command = _source.Value.CreateCommand("""
-            CREATE TABLE IF NOT EXISTS market_approval_transition (
-                id                  BIGINT      GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-                document_identifier TEXT        NOT NULL,
-                document_version    INTEGER     NOT NULL,
-                market              TEXT        NOT NULL,
-                from_state          TEXT        NOT NULL,
-                to_state            TEXT        NOT NULL,
-                action              TEXT        NOT NULL,
-                actor               TEXT        NOT NULL,
-                occurred_at         TIMESTAMPTZ NOT NULL,
-                reason              TEXT        NULL,
-                signature_reference TEXT        NULL
-            );
-
-            CREATE INDEX IF NOT EXISTS market_approval_by_subject
-                ON market_approval_transition (document_identifier, document_version, market, id);
-
-            CREATE INDEX IF NOT EXISTS market_approval_by_signature
-                ON market_approval_transition (signature_reference)
-                WHERE signature_reference IS NOT NULL;
-
-            CREATE OR REPLACE FUNCTION market_approval_is_append_only() RETURNS TRIGGER AS $$
-            BEGIN
-                RAISE EXCEPTION 'market_approval_transition is append-only: % is not permitted',
-                    TG_OP USING ERRCODE = 'restrict_violation';
-            END;
-            $$ LANGUAGE plpgsql;
-
-            DROP TRIGGER IF EXISTS market_approval_no_change ON market_approval_transition;
-            CREATE TRIGGER market_approval_no_change
-                BEFORE UPDATE OR DELETE ON market_approval_transition
-                FOR EACH ROW EXECUTE FUNCTION market_approval_is_append_only();
-            """);
-
-        await command.ExecuteNonQueryAsync(cancellationToken);
-    }
-
     public async Task<string?> CurrentStateAsync(
         MarketVersion subject, CancellationToken cancellationToken = default)
     {

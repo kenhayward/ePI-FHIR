@@ -200,6 +200,16 @@
     "iteration": "1",
     "status": "planned"
   },
+  "FN-CFG-004": {
+    "name": "Apply the governance schema as ordered, recorded migrations",
+    "component": "Configuration & Rules Service",
+    "satisfies": [
+      "CAP-CFG-007",
+      "CAP-AUD-002"
+    ],
+    "iteration": "3",
+    "status": "planned"
+  },
   "FN-EVT-001": {
     "name": "Build a content event from a persisted document",
     "component": "Notification & Event Backbone",

@@ -15,6 +15,16 @@ public sealed class MarketSubmissionSignatureTests
 {
     private static readonly VersionRef Version = new("doc-1", 1);
 
+    /// <summary>
+    /// What an approval is pinned against. Supplied on every approving transition because the
+    /// engine refuses one without it - an approval that silently records no context looks
+    /// exactly like one that recorded a context (ADR-024 decision 4).
+    /// </summary>
+    private static readonly ApprovalContext Approved = new(
+        "sha-256:abc123",
+        [new PinnedPackage("hl7.fhir.uv.emedicinal-product-info", "1.0.0", "c99767")],
+        "https://epi.example.org/identifier/document");
+
     private static readonly IReadOnlySet<string> Markets =
         new HashSet<string>(["GB", "EU"], StringComparer.Ordinal);
 
@@ -166,7 +176,7 @@ public sealed class MarketSubmissionSignatureTests
             Model("label-states.json"), lifecycle, signatureCheck: new Signatures());
         await internalState.RegisterAsync(Version, "user-anna");
         await internalState.TransitionAsync(Version, "submit", "user-anna");
-        await internalState.TransitionAsync(Version, "approve", "user-ben", signatureReference: "sig-1");
+        await internalState.TransitionAsync(Version, "approve", "user-ben", signatureReference: "sig-1", approvalContext: Approved);
 
         var market = new InMemoryMarketApprovalStore();
         var service = new MarketApprovalService(
@@ -198,7 +208,7 @@ public sealed class MarketSubmissionSignatureTests
         await internalState.TransitionAsync(Version, "submit", "user-anna");
 
         var refused = await Assert.ThrowsAsync<TransitionRefusedException>(
-            () => internalState.TransitionAsync(Version, "approve", "user-ben", signatureReference: "sig-1"));
+            () => internalState.TransitionAsync(Version, "approve", "user-ben", signatureReference: "sig-1", approvalContext: Approved));
 
         Assert.Contains("already", refused.Reason);
     }

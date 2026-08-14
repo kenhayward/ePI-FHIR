@@ -33,43 +33,6 @@ public sealed class PostgresAuditSink(string connectionString, TimeProvider? tim
     private readonly Lazy<NpgsqlDataSource> _source =
         new(() => new NpgsqlDataSourceBuilder(connectionString).Build());
 
-    /// <summary>Creates the table and the trigger that makes it append-only.</summary>
-    /// <remarks>
-    /// Idempotent, so it is safe to run at start-up. In a qualified environment this belongs in
-    /// a controlled migration (D3 Section 10.3) rather than at application start; it is here so
-    /// the demonstration stands up unattended.
-    /// </remarks>
-    public async Task InitialiseAsync(CancellationToken cancellationToken = default)
-    {
-        await using var command = _source.Value.CreateCommand("""
-            CREATE TABLE IF NOT EXISTS audit_record (
-                id            BIGINT      GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-                actor         TEXT        NOT NULL,
-                action        TEXT        NOT NULL,
-                target        TEXT        NOT NULL,
-                outcome       TEXT        NOT NULL,
-                recorded_at   TIMESTAMPTZ NOT NULL,
-                before_state  TEXT        NULL,
-                after_state   TEXT        NULL,
-                reason        TEXT        NULL
-            );
-
-            CREATE OR REPLACE FUNCTION audit_record_is_append_only() RETURNS TRIGGER AS $$
-            BEGIN
-                RAISE EXCEPTION 'audit_record is append-only: % is not permitted', TG_OP
-                    USING ERRCODE = 'restrict_violation';
-            END;
-            $$ LANGUAGE plpgsql;
-
-            DROP TRIGGER IF EXISTS audit_record_no_change ON audit_record;
-            CREATE TRIGGER audit_record_no_change
-                BEFORE UPDATE OR DELETE ON audit_record
-                FOR EACH ROW EXECUTE FUNCTION audit_record_is_append_only();
-            """);
-
-        await command.ExecuteNonQueryAsync(cancellationToken);
-    }
-
     public async Task AppendAsync(AuditRecord record, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(record);

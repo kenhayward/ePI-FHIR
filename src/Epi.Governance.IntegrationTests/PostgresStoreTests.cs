@@ -16,8 +16,9 @@ public sealed class PostgresLifecycleStoreConformanceTests(PostgresServer server
 {
     protected override async Task<ILifecycleStore> CreateStoreAsync()
     {
-        var store = new PostgresLifecycleStore(await server.CreateDatabaseAsync());
-        await store.InitialiseAsync();
+        var connectionString = await server.CreateDatabaseAsync();
+        await GovernanceSchema.ApplyAsync(connectionString);
+        var store = new PostgresLifecycleStore(connectionString);
         return store;
     }
 }
@@ -30,8 +31,9 @@ public sealed class PostgresMarketApprovalStoreConformanceTests(PostgresServer s
 {
     protected override async Task<IMarketApprovalStore> CreateStoreAsync()
     {
-        var store = new PostgresMarketApprovalStore(await server.CreateDatabaseAsync());
-        await store.InitialiseAsync();
+        var connectionString = await server.CreateDatabaseAsync();
+        await GovernanceSchema.ApplyAsync(connectionString);
+        var store = new PostgresMarketApprovalStore(connectionString);
         return store;
     }
 }
@@ -44,8 +46,9 @@ public sealed class PostgresSignatureStoreConformanceTests(PostgresServer server
 {
     protected override async Task<ISignatureStore> CreateStoreAsync()
     {
-        var store = new PostgresSignatureStore(await server.CreateDatabaseAsync());
-        await store.InitialiseAsync();
+        var connectionString = await server.CreateDatabaseAsync();
+        await GovernanceSchema.ApplyAsync(connectionString);
+        var store = new PostgresSignatureStore(connectionString);
         return store;
     }
 }
@@ -56,11 +59,11 @@ public sealed class PostgresSignatureStoreConformanceTests(PostgresServer server
 public sealed class PostgresPinnedContextStoreConformanceTests(PostgresServer server)
     : PinnedContextStoreConformance
 {
-    protected override async Task<IPinnedContextStore> CreateStoreAsync()
+    protected override async Task<ILifecycleStore> CreateStoreAsync()
     {
-        var store = new PostgresPinnedContextStore(await server.CreateDatabaseAsync());
-        await store.InitialiseAsync();
-        return store;
+        var connectionString = await server.CreateDatabaseAsync();
+        await GovernanceSchema.ApplyAsync(connectionString);
+        return new PostgresLifecycleStore(connectionString);
     }
 }
 
@@ -85,31 +88,30 @@ public sealed class PostgresGovernanceRecordsAreAppendOnlyTests(PostgresServer s
     private async Task<string> PopulatedAsync()
     {
         var connectionString = await server.CreateDatabaseAsync();
+        await GovernanceSchema.ApplyAsync(connectionString);
 
         var lifecycle = new PostgresLifecycleStore(connectionString);
-        await lifecycle.InitialiseAsync();
         await lifecycle.RegisterAsync(Version, "user-anna", "draft", DateTimeOffset.UtcNow);
         await lifecycle.AppendAsync(new StateTransition(
             Version, "draft", "in-review", "submit", "user-anna", DateTimeOffset.UtcNow));
 
         var markets = new PostgresMarketApprovalStore(connectionString);
-        await markets.InitialiseAsync();
         await markets.AppendAsync(new MarketStateTransition(
             new MarketVersion(Version, "GB"), "not-submitted", "submitted", "submit",
             "user-rae", DateTimeOffset.UtcNow, SignatureReference: "sig-GB"));
 
         var signatures = new PostgresSignatureStore(connectionString);
-        await signatures.InitialiseAsync();
         await signatures.AppendAsync(new SignatureManifest(
             "sig-GB", "user-rae", "Rae Lindqvist", SignatureMeaning.Responsibility,
             Document, 1, "sha-256:abc", DateTimeOffset.UtcNow));
 
-        var pins = new PostgresPinnedContextStore(connectionString);
-        await pins.InitialiseAsync();
-        await pins.PinAsync(new PinnedContext(
-            Version, "sha-256:abc", "label", "approved",
-            [new PinnedPackage("hl7.fhir.uv.emedicinal-product-info", "1.0.0", "c99767")],
-            "https://epi.example.org/identifier/document", DateTimeOffset.UtcNow, "smpc-gb", 3));
+        await lifecycle.AppendAsync(
+            new StateTransition(
+                Version, "in-review", "approved", "approve", "user-ben", DateTimeOffset.UtcNow),
+            new PinnedContext(
+                Version, "sha-256:abc", "label", "approved",
+                [new PinnedPackage("hl7.fhir.uv.emedicinal-product-info", "1.0.0", "c99767")],
+                "https://epi.example.org/identifier/document", DateTimeOffset.UtcNow, "smpc-gb", 3));
 
         return connectionString;
     }
@@ -161,7 +163,7 @@ public sealed class PostgresGovernanceRecordsAreAppendOnlyTests(PostgresServer s
         foreach (var table in new[]
                  {
                      "lifecycle_version", "lifecycle_transition",
-                     "market_approval_transition", "signature_manifest",
+                     "market_approval_transition", "signature_manifest", "pinned_context",
                  })
         {
             await using var source = new NpgsqlDataSourceBuilder(connectionString).Build();
@@ -171,7 +173,9 @@ public sealed class PostgresGovernanceRecordsAreAppendOnlyTests(PostgresServer s
 
         var lifecycle = new PostgresLifecycleStore(connectionString);
         Assert.Equal("user-anna", await lifecycle.AuthorOfAsync(Version));
-        Assert.Single(await lifecycle.HistoryAsync(Version));
+        Assert.Equal(["submit", "approve"],
+            (await lifecycle.HistoryAsync(Version)).Select(t => t.Action));
+        Assert.NotNull(await lifecycle.ForAsync(Version));
 
         var markets = new PostgresMarketApprovalStore(connectionString);
         Assert.Equal("submitted", await markets.CurrentStateAsync(new MarketVersion(Version, "GB")));

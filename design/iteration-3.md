@@ -86,7 +86,7 @@ iteration or a stated reason for waiting. Nothing is dropped by omission.
 | Search parameter `product` binds to what the content names as its subject | PR 40 | With capability 5, when there is master data to bind to |
 | The EMRN EU IG is a preview release and absent from the package registry | ADR-016 | P2, before capability 10 (regulatory mapping), which is not in this iteration |
 | Image tags pinned independently in three places | PR 4b, PR 6a | Housekeeping, any iteration |
-| Capabilities 5 and 6 deferred despite being P0 | iteration-1 Section 4.3 | **Partly paid here** - the binding points, not the integrations. A SNOMED CT licence is still not ours to control, and the full capability waits on it |
+| Capabilities 5 and 6 deferred despite being P0 | iteration-1 Section 4.3 | **Partly paid here** - the binding points, not the integrations. Which terminology sources the platform actually needs is reopened in Section 8 question 3, so the binding points are built source-agnostic and the integrations wait on that answer |
 
 ## 3. The principle for this iteration
 
@@ -222,9 +222,26 @@ Each becomes an ADR.
 2. **How many languages does the demonstration need?** Three is enough to show the mechanism;
    twenty-four is what the EU actually means. The difference is fixture volume, not design, but
    it changes what the demonstration feels like.
-3. **Is a SNOMED CT licence being pursued?** Asked in iteration 2 and unanswered. Capability 6
-   cannot be demonstrated properly without one, the lead time is not ours to control, and this
-   iteration builds the binding points that will sit empty until it arrives.
+3. **Which terminology does ePI labelling actually need? - reopened.** Iteration 2 asked
+   whether a SNOMED CT licence was being pursued. The answer, so far, is that **SNOMED may be
+   the wrong source for this domain** and the choice is to be reviewed rather than assumed.
+
+   That is worth taking seriously rather than treating as a delay. D2.2 binds ePI content to
+   several vocabularies, and the ones a leaflet actually leans on - **EDQM standard terms** for
+   pharmaceutical dose forms, routes and containers, **UCUM** for units, **ISO 639/3166** for
+   language and country, **MedDRA** for adverse reactions, and the EMA and FDA controlled
+   vocabularies - are not SNOMED. SNOMED CT earns its place where clinical concepts are being
+   *reasoned over*; much of what an ePI needs is a controlled list, and a licensed clinical
+   ontology is a heavy and expensive way to hold one.
+
+   The decision is deferred deliberately, not dropped. What matters for this iteration is that
+   **the binding points must not assume a particular source**: an element binds to a value set
+   and a binding strength (CAP-TRM-005), and which server resolves that value set is a
+   configuration and an ADR-006 question, not a shape in the content model. Built that way,
+   answering this question later costs a configuration change rather than a migration.
+
+   ADR-006 names Snowstorm as the primary terminology server. It should be revisited alongside
+   this, together with the R4-against-R5 note carried from PR 32.
 4. **Who owns render templates?** They have a lifecycle and an approver in every regulated
    organisation that has them. If the answer is "regulatory", they are content and follow
    ADR-021's reasoning; if "IT", they are configuration. The answer changes decision 5.
@@ -235,7 +252,8 @@ Provisional, and dependent on Section 8. Each row is a pull request, test-first,
 
 | # | Pull request | Size |
 |---|---|---|
-| 1 | The registration and pinning transaction, and a migration path for governance schema changes | M |
+| 1a | Governance schema migrations, and the transition-and-pin transaction | M |
+| 1b | ADR and mechanism: register a version before its content is written, so a failure leaves an inert record rather than ungoverned content | M |
 | 2 | ADR: reusable unit representation; the unit as a versioned resource with its own lifecycle | L |
 | 3 | Pinned resolution at read time, and track-latest as an explicit, audited propagation | L |
 | 4 | Cross-references between sections and documents, resolved within the version that names them | M |
@@ -249,9 +267,15 @@ Provisional, and dependent on Section 8. Each row is a pull request, test-first,
 | 12 | Master-data and terminology binding points; terminology version in the pinned context; ADR-016 amendment | M |
 | 13 | ADR: tags as code systems; secondary identifiers | S |
 
-Rows 1 and 13 are deliberately unglamorous and deliberately early and late respectively: the
+Rows 1a and 13 are deliberately unglamorous and deliberately early and late respectively: the
 first is a debt that has been marked "before any demonstration" for two iterations, and the
 last is cheap only while the content model is still open.
+
+**Row 1 was split into 1a and 1b during delivery**, and is recorded here rather than absorbed
+quietly. The two halves of that debt turn out to need different mechanisms: the transition and
+its pinned context live in one database and can be one transaction, while registration crosses
+the content store and the governance store and cannot. Section 10 asks for scope to be
+delivered or explicitly renegotiated, and this is what that looks like.
 
 ## 10. Exit criteria
 
