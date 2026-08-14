@@ -1,8 +1,7 @@
-using DotNet.Testcontainers.Builders;
-using DotNet.Testcontainers.Containers;
 using Epi.Governance.Audit;
 using Epi.Governance.Tests;
 using Npgsql;
+using Testcontainers.PostgreSql;
 using Xunit;
 
 namespace Epi.Governance.IntegrationTests;
@@ -10,23 +9,26 @@ namespace Epi.Governance.IntegrationTests;
 /// <summary>A real PostgreSQL, the same image the development stack runs.</summary>
 public sealed class PostgresServer : IAsyncLifetime
 {
+    /// <summary>The image the development stack runs (deploy/docker-compose).</summary>
     private const string Image = "postgres:16";
-    private const int Port = 5432;
 
-    private readonly IContainer _container = new ContainerBuilder(Image)
-        .WithEnvironment("POSTGRES_USER", "epi")
-        .WithEnvironment("POSTGRES_PASSWORD", "devpassword")
-        .WithEnvironment("POSTGRES_DB", "epi_audit")
-        .WithPortBinding(Port, assignRandomHostPort: true)
+    /// <remarks>
+    /// The Testcontainers PostgreSQL module rather than a hand-built container, for its
+    /// readiness check. The official image runs a temporary server so initdb can create the
+    /// database, then stops it and starts the real one - and pg_isready answers happily during
+    /// that first phase. Tests began against the temporary server and were cut off mid-restart,
+    /// which arrived as "connection reset by peer" rather than as anything about readiness.
+    /// </remarks>
+    private readonly PostgreSqlContainer _container = new PostgreSqlBuilder(Image)
+        .WithUsername("epi")
+        .WithPassword("devpassword")
+        .WithDatabase("epi_audit")
         // The default of 100 is generous for an application and thin for a suite that gives
         // every case its own database, and so its own pool.
-        .WithCommand("postgres", "-c", "max_connections=300")
-        .WithWaitStrategy(Wait.ForUnixContainer().UntilCommandIsCompleted("pg_isready", "-U", "epi"))
+        .WithCommand("-c", "max_connections=300")
         .Build();
 
-    public string ConnectionString =>
-        $"Host={_container.Hostname};Port={_container.GetMappedPublicPort(Port)};"
-        + "Username=epi;Password=devpassword;Database=epi_audit";
+    public string ConnectionString => _container.GetConnectionString();
 
     /// <summary>A database of its own, so tests sharing the container cannot see each other.</summary>
     /// <remarks>
