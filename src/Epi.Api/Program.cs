@@ -259,6 +259,7 @@ app.MapPost("/fhir/Bundle", async (
     IAuditSink audit,
     IEventPublisher events,
     LifecycleService lifecycle,
+    IdentifierAuthority authority,
     CancellationToken cancellationToken) =>
 {
     var subject = SubjectFactory.From(principal);
@@ -274,26 +275,28 @@ app.MapPost("/fhir/Bundle", async (
     {
         var bundle = EpiBundleReader.Read(json);
 
+        // Identity is minted before anything is written, so the version can be registered
+        // under lifecycle management before its content exists (ADR-025 decision 1).
+        var identity = ContentIdentity.Mint(authority);
+
         // Composed here so no endpoint can reach the raw store by accident: scope on every
         // operation, validation on the way in.
         // Auditing outermost so a rejected write is recorded, then events after a successful
-        // one, then scope, then validation closest to the store.
+        // one, then scope, then validation, then registration closest to the store - so
+        // content that is invalid or out of scope never reaches registration, and nothing is
+        // stored that was not registered first (ADR-025 decision 3).
         var gated = new AuditingContentStore(
             new PublishingContentStore(
                 new ValidatingContentStore(
-                    new ScopedContentStore(store, policy, subject), validator),
+                    new ScopedContentStore(
+                        new RegisteringContentStore(store, lifecycle, subject.Id),
+                        policy, subject),
+                    validator),
                 events),
             audit,
             subject.Id);
 
-        var stored = await gated.CreateAsync(bundle, cancellationToken);
-
-        // Placed under lifecycle management the moment it exists. A stored version with no
-        // state has no author either, and the author is what segregation of duties is checked
-        // against - so a window where content exists unmanaged is a window where nobody wrote
-        // it (CAP-LCM-001, CAP-IAM-006).
-        await lifecycle.RegisterAsync(
-            new VersionRef(stored.Identity.Value, stored.Version), subject.Id, cancellationToken);
+        var stored = await gated.CreateAsync(identity, bundle, cancellationToken);
 
         return Results.Created($"/fhir/Bundle/{stored.Identity.Value}", new
         {
@@ -701,17 +704,23 @@ app.MapPost("/fhir/Bundle/{id}/versions", async (
             return Results.NotFound();
         }
 
+        // The version this write believes it is creating. Stated rather than assigned, so two
+        // authors racing to create the same next version get a refusal that names the conflict
+        // rather than a silent interleave (ADR-025 decision 4).
+        var next = (await scoped.VersionsAsync(identity, cancellationToken))[^1] + 1;
+
         var gated = new AuditingContentStore(
             new PublishingContentStore(
-                new ValidatingContentStore(scoped, validator),
+                new ValidatingContentStore(
+                    new ScopedContentStore(
+                        new RegisteringContentStore(store, lifecycle, subject.Id),
+                        policy, subject),
+                    validator),
                 events),
             audit,
             subject.Id);
 
-        var stored = await gated.CreateVersionAsync(identity, bundle, cancellationToken);
-
-        await lifecycle.RegisterAsync(
-            new VersionRef(stored.Identity.Value, stored.Version), subject.Id, cancellationToken);
+        var stored = await gated.CreateVersionAsync(identity, next, bundle, cancellationToken);
 
         return Results.Created(
             $"/fhir/Bundle/{stored.Identity.Value}/versions/{stored.Version}",
@@ -745,6 +754,12 @@ app.MapPost("/fhir/Bundle/{id}/versions", async (
     catch (UnknownDocumentException)
     {
         return Results.NotFound();
+    }
+    catch (VersionConflictException conflict)
+    {
+        // 409, and the caller is told which version was taken: the request was well formed and
+        // somebody else got there first.
+        return Results.Problem(conflict.Message, statusCode: StatusCodes.Status409Conflict);
     }
 }).RequireAuthorization();
 

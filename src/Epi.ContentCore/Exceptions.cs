@@ -20,3 +20,20 @@ public sealed class UnknownDocumentException(DocumentIdentity identity)
 {
     public DocumentIdentity Identity { get; } = identity;
 }
+
+/// <summary>
+/// Raised when a caller creates a version that already exists (ADR-025 decision 4).
+/// </summary>
+/// <remarks>
+/// Two authors both reading version 3 and both writing version 4 is a conflict, not a queue.
+/// Silently assigning the second one version 5 would keep both, in an order neither intended,
+/// with the later one appearing to have been written knowing the earlier - which is what a
+/// version lineage is supposed to mean.
+/// </remarks>
+public sealed class VersionConflictException(DocumentIdentity identity, int version)
+    : Exception($"Version {version} of {identity} already exists.")
+{
+    public DocumentIdentity Identity { get; } = identity;
+
+    public int Version { get; } = version;
+}

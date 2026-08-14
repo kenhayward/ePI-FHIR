@@ -76,9 +76,9 @@
     "evidence": "FN_EVT_001, FN_EVT_002 and IT_008: emission only, against an in-memory publisher; the broker adapter and delivery guarantees are later"
   },
   "CAP-LCM-001": {
-    "iteration": "2",
+    "iteration": "2-3",
     "status": "partial",
-    "evidence": "FN_LCM_001/002 and IT_010: model loaded from configuration and unpermitted transitions refused"
+    "evidence": "IT_010 for the state model, plus CAP_LCM_001 on the registering decorator: a version is registered under lifecycle management before its content is written, so a failed write leaves an inert record rather than ungoverned content (ADR-025)"
   },
   "CAP-TPL-004": {
     "iteration": "2",
@@ -136,9 +136,9 @@
     "evidence": "ADR-020 plus FN_AUD_005, FN_WFL_003 and IT_012: the manifest binds signer, printed name, meaning, time and a SHA-256 hash of the version, every signing attempt is audited, and the approval gate accepts only a valid, unspent signature by the transitioning actor. Signatures are held in a durable append-only table, with UPDATE and DELETE refused by a database trigger"
   },
   "CAP-IAM-006": {
-    "iteration": "2",
+    "iteration": "2-3",
     "status": "partial",
-    "evidence": "IT_011: the author of a version cannot approve it, enforced in the one path every transition takes"
+    "evidence": "IT_011 on every route into a transition, plus CAP_IAM_006 on the registering decorator: content cannot be stored without an author recorded first, because the author is what segregation of duties is checked against"
   },
   "CAP-SCH-001": {
     "iteration": "2",

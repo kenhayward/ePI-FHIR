@@ -74,6 +74,7 @@ iteration or a stated reason for waiting. Nothing is dropped by omission.
 | `InitialiseAsync` is a bootstrap, not a migration - `CREATE TABLE IF NOT EXISTS` does nothing to a table that already exists, and CI cannot see the difference because it starts empty | PR 41 | It has bitten once. This iteration adds columns to every governance table, so it will bite again |
 | Search parameter `effective date` matches nothing because effective dating does not exist | PR 40 | Effective dating arrives here, so the parameter becomes real |
 | Snowstorm serves FHIR R4 while the platform is pinned to R5 (ADR-016) | PR 32 | Recorded as "before capability 6 work starts". Capability 6's binding points are in scope, so it is settled first, as an amendment to ADR-016 |
+| Inert registrations accumulate at whatever rate a content write fails after its registration, and nothing surfaces them | ADR-025 | Delivery row 1c. They are harmless individually and invisible in aggregate, which is the wrong pair of properties to leave together |
 | Terminology versions are absent from the pinned validating context | ADR-023 | With the terminology binding points. A context that omits the terminology a version was validated against is incomplete in exactly the way ADR-023 exists to prevent |
 | Validation is serialised outright, a correctness-first stopgap | PR 6a | Rendering and translation multiply validations per label by the number of languages. Measured here, and fixed if the measurement says so |
 
@@ -254,6 +255,7 @@ Provisional, and dependent on Section 8. Each row is a pull request, test-first,
 |---|---|---|
 | 1a | Governance schema migrations, and the transition-and-pin transaction | M |
 | 1b | ADR and mechanism: register a version before its content is written, so a failure leaves an inert record rather than ungoverned content | M |
+| 1c | A reconciliation report for inert registrations - registered versions with no content at any version | S |
 | 2 | ADR: reusable unit representation; the unit as a versioned resource with its own lifecycle | L |
 | 3 | Pinned resolution at read time, and track-latest as an explicit, audited propagation | L |
 | 4 | Cross-references between sections and documents, resolved within the version that names them | M |

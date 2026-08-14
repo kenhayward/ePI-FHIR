@@ -18,7 +18,8 @@ public sealed class ProjectingStoreTests
         var index = new InMemorySearchIndex();
         var store = new ProjectingContentStore(new InMemoryContentStore(), index, "draft");
 
-        var stored = await store.CreateAsync(SearchFixtures.Document("ignored", 1, SearchFixtures.Uk).Bundle);
+        var stored = await store.CreateAsync(
+            ContentIdentity.Mint(), SearchFixtures.Document("ignored", 1, SearchFixtures.Uk).Bundle);
 
         var results = await index.SearchAsync(
             new ScopedSearchQuery(new SearchCriteria(), [SearchFixtures.Uk]));
@@ -34,9 +35,10 @@ public sealed class ProjectingStoreTests
         var index = new InMemorySearchIndex();
         var store = new ProjectingContentStore(new InMemoryContentStore(), index, "draft");
 
-        var first = await store.CreateAsync(SearchFixtures.Document("ignored", 1, SearchFixtures.Uk).Bundle);
+        var first = await store.CreateAsync(
+            ContentIdentity.Mint(), SearchFixtures.Document("ignored", 1, SearchFixtures.Uk).Bundle);
         await store.CreateVersionAsync(
-            first.Identity, SearchFixtures.Document("ignored", 2, SearchFixtures.Uk).Bundle);
+            first.Identity, 2, SearchFixtures.Document("ignored", 2, SearchFixtures.Uk).Bundle);
 
         var results = await index.SearchAsync(
             new ScopedSearchQuery(new SearchCriteria(), [SearchFixtures.Uk]));

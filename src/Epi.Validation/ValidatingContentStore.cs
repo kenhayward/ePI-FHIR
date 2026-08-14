@@ -18,17 +18,17 @@ public sealed class ValidatingContentStore(IContentStore inner, StructuralValida
     private readonly StructuralValidator _validator =
         validator ?? throw new ArgumentNullException(nameof(validator));
 
-    public Task<EpiDocument> CreateAsync(Bundle bundle, CancellationToken cancellationToken = default)
+    public Task<EpiDocument> CreateAsync(DocumentIdentity identity, Bundle bundle, CancellationToken cancellationToken = default)
     {
         Gate(bundle);
-        return _inner.CreateAsync(bundle, cancellationToken);
+        return _inner.CreateAsync(identity, bundle, cancellationToken);
     }
 
     public Task<EpiDocument> CreateVersionAsync(
-        DocumentIdentity identity, Bundle bundle, CancellationToken cancellationToken = default)
+        DocumentIdentity identity, int version, Bundle bundle, CancellationToken cancellationToken = default)
     {
         Gate(bundle);
-        return _inner.CreateVersionAsync(identity, bundle, cancellationToken);
+        return _inner.CreateVersionAsync(identity, version, bundle, cancellationToken);
     }
 
     public Task<EpiDocument?> GetAsync(

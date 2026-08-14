@@ -18,17 +18,23 @@ public sealed class FhirRestContentStore(FhirClient client) : IContentStore
     private readonly FhirClient _client = client ?? throw new ArgumentNullException(nameof(client));
 
     public async Task<EpiDocument> CreateAsync(
-        Bundle bundle, CancellationToken cancellationToken = default)
+        DocumentIdentity identity, Bundle bundle, CancellationToken cancellationToken = default)
     {
+        ArgumentNullException.ThrowIfNull(identity);
         ArgumentNullException.ThrowIfNull(bundle);
         ContentIdentity.RejectClaimedIdentity(bundle);
 
-        var identity = ContentIdentity.Mint();
+        if ((await VersionsAsync(identity, cancellationToken)).Count > 0)
+        {
+            throw new VersionConflictException(identity, 1);
+        }
+
         return await StoreAsync(identity, 1, bundle, cancellationToken);
     }
 
     public async Task<EpiDocument> CreateVersionAsync(
-        DocumentIdentity identity, Bundle bundle, CancellationToken cancellationToken = default)
+        DocumentIdentity identity, int version, Bundle bundle,
+        CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(identity);
         ArgumentNullException.ThrowIfNull(bundle);
@@ -39,7 +45,15 @@ public sealed class FhirRestContentStore(FhirClient client) : IContentStore
             throw new UnknownDocumentException(identity);
         }
 
-        return await StoreAsync(identity, existing[^1] + 1, bundle, cancellationToken);
+        // A read-then-write check, which is what a FHIR REST API affords: it narrows the window
+        // rather than closing it. The in-memory store closes it under a lock, and a server-side
+        // conditional create would close it here - recorded rather than claimed.
+        if (existing.Contains(version))
+        {
+            throw new VersionConflictException(identity, version);
+        }
+
+        return await StoreAsync(identity, version, bundle, cancellationToken);
     }
 
     public async Task<EpiDocument?> GetAsync(

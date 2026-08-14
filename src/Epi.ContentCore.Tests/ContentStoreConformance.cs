@@ -50,11 +50,42 @@ public abstract class ContentStoreConformance
         Assert.IsType<Composition>(bundle.Entry[0].Resource);
 
     [Fact]
+    public async Task CAP_SCM_007_a_version_that_already_exists_is_refused_rather_than_renumbered()
+    {
+        // Two authors both reading version 1 and both writing version 2 is a conflict, not a
+        // queue. Silently giving the second one version 3 keeps both, in an order neither
+        // intended, with the later appearing to have been written knowing the earlier - which
+        // is what a version lineage is supposed to mean (ADR-025 decision 4).
+        var store = CreateStore();
+        var first = await store.CreateAsync(ContentIdentity.Mint(), MinimalDocument());
+        await store.CreateVersionAsync(first.Identity, 2, MinimalDocument());
+
+        var conflict = await Assert.ThrowsAsync<VersionConflictException>(
+            () => store.CreateVersionAsync(first.Identity, 2, MinimalDocument()));
+
+        Assert.Equal(2, conflict.Version);
+        Assert.Equal([1, 2], await store.VersionsAsync(first.Identity));
+    }
+
+    [Fact]
+    public async Task CAP_SCM_007_creating_under_an_identity_that_already_holds_content_is_refused()
+    {
+        var store = CreateStore();
+        var identity = ContentIdentity.Mint();
+        await store.CreateAsync(identity, MinimalDocument());
+
+        await Assert.ThrowsAsync<VersionConflictException>(
+            () => store.CreateAsync(identity, MinimalDocument()));
+
+        Assert.Equal([1], await store.VersionsAsync(identity));
+    }
+
+    [Fact]
     public async Task FN_CC_002_assigns_a_canonical_identifier_the_caller_did_not_supply()
     {
         var store = CreateStore();
 
-        var stored = await store.CreateAsync(MinimalDocument());
+        var stored = await store.CreateAsync(ContentIdentity.Mint(), MinimalDocument());
 
         Assert.False(string.IsNullOrWhiteSpace(stored.Identity.Value));
         Assert.False(string.IsNullOrWhiteSpace(stored.Identity.System));
@@ -67,8 +98,8 @@ public abstract class ContentStoreConformance
     {
         var store = CreateStore();
 
-        var first = await store.CreateAsync(MinimalDocument());
-        var second = await store.CreateAsync(MinimalDocument());
+        var first = await store.CreateAsync(ContentIdentity.Mint(), MinimalDocument());
+        var second = await store.CreateAsync(ContentIdentity.Mint(), MinimalDocument());
 
         Assert.NotEqual(first.Identity, second.Identity);
     }
@@ -80,7 +111,7 @@ public abstract class ContentStoreConformance
         // substrings, because every one of them is mutable.
         var store = CreateStore();
 
-        var stored = await store.CreateAsync(MinimalDocument());
+        var stored = await store.CreateAsync(ContentIdentity.Mint(), MinimalDocument());
 
         Assert.DoesNotContain("Examplinum", stored.Identity.Value, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("leaflet", stored.Identity.Value, StringComparison.OrdinalIgnoreCase);
@@ -91,8 +122,8 @@ public abstract class ContentStoreConformance
     {
         var store = CreateStore();
 
-        var first = await store.CreateAsync(MinimalDocument());
-        var second = await store.CreateVersionAsync(first.Identity, MinimalDocument());
+        var first = await store.CreateAsync(ContentIdentity.Mint(), MinimalDocument());
+        var second = await store.CreateVersionAsync(first.Identity, 2, MinimalDocument());
 
         Assert.Equal(1, first.Version);
         Assert.Equal(2, second.Version);
@@ -104,7 +135,7 @@ public abstract class ContentStoreConformance
     {
         var store = CreateStore();
 
-        var stored = await store.CreateAsync(MinimalDocument());
+        var stored = await store.CreateAsync(ContentIdentity.Mint(), MinimalDocument());
 
         var identifier = stored.Bundle.Identifier;
         Assert.NotNull(identifier);
@@ -116,8 +147,8 @@ public abstract class ContentStoreConformance
     public async Task FN_CC_005_retrieves_a_specific_version_and_the_latest()
     {
         var store = CreateStore();
-        var first = await store.CreateAsync(MinimalDocument());
-        await store.CreateVersionAsync(first.Identity, MinimalDocument());
+        var first = await store.CreateAsync(ContentIdentity.Mint(), MinimalDocument());
+        await store.CreateVersionAsync(first.Identity, 2, MinimalDocument());
 
         Assert.Equal(1, (await store.GetAsync(first.Identity, 1))!.Version);
         Assert.Equal(2, (await store.GetLatestAsync(first.Identity))!.Version);
@@ -127,7 +158,7 @@ public abstract class ContentStoreConformance
     public async Task FN_CC_005_returns_nothing_for_an_unknown_document_or_version()
     {
         var store = CreateStore();
-        var stored = await store.CreateAsync(MinimalDocument());
+        var stored = await store.CreateAsync(ContentIdentity.Mint(), MinimalDocument());
 
         Assert.Null(await store.GetAsync(stored.Identity, 99));
         Assert.Null(await store.GetLatestAsync(new DocumentIdentity(stored.Identity.System, Guid.NewGuid().ToString())));
@@ -137,12 +168,12 @@ public abstract class ContentStoreConformance
     public async Task FN_CC_007_creating_a_new_version_leaves_the_previous_one_untouched()
     {
         var store = CreateStore();
-        var first = await store.CreateAsync(MinimalDocument());
+        var first = await store.CreateAsync(ContentIdentity.Mint(), MinimalDocument());
         var originalTitle = CompositionOf(first.Bundle).Title;
 
         var amended = MinimalDocument();
         CompositionOf(amended).Title = "AMENDED SYNTHETIC TEST LABEL";
-        await store.CreateVersionAsync(first.Identity, amended);
+        await store.CreateVersionAsync(first.Identity, 2, amended);
 
         var reread = (await store.GetAsync(first.Identity, 1))!;
         Assert.Equal(originalTitle, CompositionOf(reread.Bundle).Title);
@@ -154,7 +185,7 @@ public abstract class ContentStoreConformance
         // Handing out a reference to stored content would make immutability a convention
         // rather than a guarantee.
         var store = CreateStore();
-        var stored = await store.CreateAsync(MinimalDocument());
+        var stored = await store.CreateAsync(ContentIdentity.Mint(), MinimalDocument());
 
         CompositionOf(stored.Bundle).Title = "TAMPERED";
 
@@ -171,7 +202,7 @@ public abstract class ContentStoreConformance
         var claimed = MinimalDocument();
         claimed.Identifier = new Identifier(ContentCoreDefaults.DocumentIdentifierSystem, Guid.NewGuid().ToString());
 
-        await Assert.ThrowsAsync<InvalidEpiBundleException>(() => store.CreateAsync(claimed));
+        await Assert.ThrowsAsync<InvalidEpiBundleException>(() => store.CreateAsync(ContentIdentity.Mint(), claimed));
     }
 
     [Fact]
@@ -180,7 +211,7 @@ public abstract class ContentStoreConformance
         var store = CreateStore();
         var unknown = new DocumentIdentity(ContentCoreDefaults.DocumentIdentifierSystem, Guid.NewGuid().ToString());
 
-        await Assert.ThrowsAsync<UnknownDocumentException>(() => store.CreateVersionAsync(unknown, MinimalDocument()));
+        await Assert.ThrowsAsync<UnknownDocumentException>(() => store.CreateVersionAsync(unknown, 2, MinimalDocument()));
     }
 
     [Fact]
@@ -190,7 +221,7 @@ public abstract class ContentStoreConformance
         var store = CreateStore();
         var submitted = MinimalDocument();
 
-        var created = await store.CreateAsync(submitted);
+        var created = await store.CreateAsync(ContentIdentity.Mint(), submitted);
         var retrieved = (await store.GetAsync(created.Identity, created.Version))!;
 
         // The platform stamps identity and version, and a FHIR server adds its own meta
@@ -217,11 +248,11 @@ public abstract class ContentStoreConformance
     public async Task IT_006_an_attempt_to_mutate_an_existing_version_is_rejected_and_history_is_reconstructable()
     {
         var store = CreateStore();
-        var first = await store.CreateAsync(MinimalDocument());
+        var first = await store.CreateAsync(ContentIdentity.Mint(), MinimalDocument());
 
         var amended = MinimalDocument();
         CompositionOf(amended).Title = "SECOND VERSION";
-        await store.CreateVersionAsync(first.Identity, amended);
+        await store.CreateVersionAsync(first.Identity, 2, amended);
 
         // There is no update operation to call: a correction is a new version, and every
         // prior version remains retrievable exactly as it was (CAP-LCM-006).

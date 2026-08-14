@@ -34,7 +34,7 @@ public sealed class ContentEventTests
     {
         var (store, events) = Build();
 
-        var stored = await store.CreateAsync(Document());
+        var stored = await store.CreateAsync(ContentIdentity.Mint(), Document());
 
         var published = Assert.Single(events.Published);
         Assert.Equal(ContentEvent.Created, published.Type);
@@ -50,7 +50,7 @@ public sealed class ContentEventTests
         // an attribute the event does not carry.
         var (store, events) = Build();
 
-        await store.CreateAsync(Document());
+        await store.CreateAsync(ContentIdentity.Mint(), Document());
 
         var published = Assert.Single(events.Published);
         Assert.Equal("uk-affiliate", published.Affiliate);
@@ -64,7 +64,7 @@ public sealed class ContentEventTests
         // being entitled to hear that a label changed is not being entitled to read it.
         var (store, events) = Build();
 
-        await store.CreateAsync(Document());
+        await store.CreateAsync(ContentIdentity.Mint(), Document());
 
         var published = Assert.Single(events.Published);
         var everything = string.Join(" ", typeof(ContentEvent).GetProperties().Select(p => p.GetValue(published)));
@@ -75,9 +75,9 @@ public sealed class ContentEventTests
     public async Task FN_EVT_002_a_new_version_is_announced_as_a_version_rather_than_a_creation()
     {
         var (store, events) = Build();
-        var first = await store.CreateAsync(Document());
+        var first = await store.CreateAsync(ContentIdentity.Mint(), Document());
 
-        await store.CreateVersionAsync(first.Identity, Document());
+        await store.CreateVersionAsync(first.Identity, 2, Document());
 
         Assert.Equal([ContentEvent.Created, ContentEvent.VersionCreated],
             events.Published.Select(e => e.Type));
@@ -92,7 +92,7 @@ public sealed class ContentEventTests
         var (store, events) = Build();
         var unknown = new DocumentIdentity(ContentCoreDefaults.DocumentIdentifierSystem, Guid.NewGuid().ToString());
 
-        await Assert.ThrowsAsync<UnknownDocumentException>(() => store.CreateVersionAsync(unknown, Document()));
+        await Assert.ThrowsAsync<UnknownDocumentException>(() => store.CreateVersionAsync(unknown, 2, Document()));
 
         Assert.Empty(events.Published);
     }
@@ -104,7 +104,7 @@ public sealed class ContentEventTests
         // schema is versioned from the start rather than from the first breaking change.
         var (store, events) = Build();
 
-        await store.CreateAsync(Document());
+        await store.CreateAsync(ContentIdentity.Mint(), Document());
 
         Assert.Equal(ContentEvent.CurrentSchemaVersion, Assert.Single(events.Published).SchemaVersion);
     }

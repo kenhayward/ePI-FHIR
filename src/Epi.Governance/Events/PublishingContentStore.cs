@@ -21,17 +21,17 @@ public sealed class PublishingContentStore(
     private readonly IEventPublisher _publisher = publisher ?? throw new ArgumentNullException(nameof(publisher));
     private readonly TimeProvider _time = time ?? TimeProvider.System;
 
-    public async Task<EpiDocument> CreateAsync(Bundle bundle, CancellationToken cancellationToken = default)
+    public async Task<EpiDocument> CreateAsync(DocumentIdentity identity, Bundle bundle, CancellationToken cancellationToken = default)
     {
-        var stored = await _inner.CreateAsync(bundle, cancellationToken);
+        var stored = await _inner.CreateAsync(identity, bundle, cancellationToken);
         await Announce(ContentEvent.Created, stored, cancellationToken);
         return stored;
     }
 
     public async Task<EpiDocument> CreateVersionAsync(
-        DocumentIdentity identity, Bundle bundle, CancellationToken cancellationToken = default)
+        DocumentIdentity identity, int version, Bundle bundle, CancellationToken cancellationToken = default)
     {
-        var stored = await _inner.CreateVersionAsync(identity, bundle, cancellationToken);
+        var stored = await _inner.CreateVersionAsync(identity, version, bundle, cancellationToken);
         await Announce(ContentEvent.VersionCreated, stored, cancellationToken);
         return stored;
     }

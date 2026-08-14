@@ -16,11 +16,11 @@ public sealed class AuditingContentStore(IContentStore inner, IAuditSink audit, 
     private readonly IContentStore _inner = inner ?? throw new ArgumentNullException(nameof(inner));
     private readonly IAuditSink _audit = audit ?? throw new ArgumentNullException(nameof(audit));
 
-    public async Task<EpiDocument> CreateAsync(Bundle bundle, CancellationToken cancellationToken = default)
+    public async Task<EpiDocument> CreateAsync(DocumentIdentity identity, Bundle bundle, CancellationToken cancellationToken = default)
     {
         try
         {
-            var stored = await _inner.CreateAsync(bundle, cancellationToken);
+            var stored = await _inner.CreateAsync(identity, bundle, cancellationToken);
             await Record("content.create", $"{stored.Identity}@{stored.Version}", AuditOutcome.Succeeded,
                 before: null, after: EpiBundleReader.Write(stored.Bundle), cancellationToken: cancellationToken);
             return stored;
@@ -33,7 +33,7 @@ public sealed class AuditingContentStore(IContentStore inner, IAuditSink audit, 
     }
 
     public async Task<EpiDocument> CreateVersionAsync(
-        DocumentIdentity identity, Bundle bundle, CancellationToken cancellationToken = default)
+        DocumentIdentity identity, int version, Bundle bundle, CancellationToken cancellationToken = default)
     {
         // Read the prior version first: the before value is the point of the record, and it
         // cannot be recovered after the fact if the write fails midway.
@@ -41,7 +41,7 @@ public sealed class AuditingContentStore(IContentStore inner, IAuditSink audit, 
 
         try
         {
-            var stored = await _inner.CreateVersionAsync(identity, bundle, cancellationToken);
+            var stored = await _inner.CreateVersionAsync(identity, version, bundle, cancellationToken);
             await Record("content.version", $"{stored.Identity}@{stored.Version}", AuditOutcome.Succeeded,
                 previous is null ? null : EpiBundleReader.Write(previous.Bundle),
                 EpiBundleReader.Write(stored.Bundle), cancellationToken: cancellationToken);

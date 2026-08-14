@@ -44,8 +44,8 @@ public sealed class AuditTests
         var sink = new InMemoryAuditSink();
         var store = new AuditingContentStore(new InMemoryContentStore(), sink, "user-anna");
 
-        var first = await store.CreateAsync(Document());
-        await store.CreateVersionAsync(first.Identity, Document("AMENDED"));
+        var first = await store.CreateAsync(ContentIdentity.Mint(), Document());
+        await store.CreateVersionAsync(first.Identity, 2, Document("AMENDED"));
 
         var records = await sink.ReadAsync();
         Assert.Equal(2, records.Count);
@@ -73,7 +73,7 @@ public sealed class AuditTests
         var unknown = new DocumentIdentity(ContentCoreDefaults.DocumentIdentifierSystem, Guid.NewGuid().ToString());
 
         await Assert.ThrowsAsync<UnknownDocumentException>(
-            () => store.CreateVersionAsync(unknown, Document()));
+            () => store.CreateVersionAsync(unknown, 2, Document()));
 
         var record = Assert.Single(await sink.ReadAsync());
         Assert.Equal(AuditOutcome.Failed, record.Outcome);

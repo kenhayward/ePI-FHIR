@@ -22,7 +22,7 @@ public sealed class FhirPersistenceTests(HapiFhirServer server)
         // Write with one client, read with another. Nothing in the process can be holding the
         // content: if this passes, it crossed the network and came back.
         var writer = new FhirRestContentStore(server.CreateClient());
-        var stored = await writer.CreateAsync(MinimalDocument());
+        var stored = await writer.CreateAsync(ContentIdentity.Mint(), MinimalDocument());
 
         var reader = new FhirRestContentStore(server.CreateClient());
         var retrieved = await reader.GetAsync(stored.Identity, stored.Version);
@@ -40,7 +40,7 @@ public sealed class FhirPersistenceTests(HapiFhirServer server)
         // and our identity is neither of them. This is what keeps ADR-003 reversible.
         var store = new FhirRestContentStore(server.CreateClient());
 
-        var stored = await store.CreateAsync(MinimalDocument());
+        var stored = await store.CreateAsync(ContentIdentity.Mint(), MinimalDocument());
 
         Assert.NotNull(stored.Bundle.Id);
         Assert.NotEqual(stored.Bundle.Id, stored.Identity.Value);
@@ -52,11 +52,11 @@ public sealed class FhirPersistenceTests(HapiFhirServer server)
     {
         // A correction must never destroy what it corrects (CAP-LCM-002, CAP-LCM-006).
         var store = new FhirRestContentStore(server.CreateClient());
-        var first = await store.CreateAsync(MinimalDocument());
+        var first = await store.CreateAsync(ContentIdentity.Mint(), MinimalDocument());
 
         var amended = MinimalDocument();
         Assert.IsType<Composition>(amended.Entry[0].Resource).Title = "SECOND VERSION";
-        var second = await store.CreateVersionAsync(first.Identity, amended);
+        var second = await store.CreateVersionAsync(first.Identity, 2, amended);
 
         Assert.NotEqual(first.Bundle.Id, second.Bundle.Id);
         Assert.Equal([1, 2], await store.VersionsAsync(first.Identity));
