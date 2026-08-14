@@ -48,6 +48,12 @@ public sealed class ContentEndpointTests : IClassFixture<WebApplicationFactory<P
         _factory.WithWebHostBuilder(host =>
         {
             host.UseSetting("Epi:MarketsPath", TestFixtures.RepositoryPath("config", "markets"));
+            host.UseSetting("Epi:IdentifiersPath",
+                TestFixtures.RepositoryPath("config", "identifiers.json"));
+            host.UseSetting("Epi:Lifecycle:StatesPath",
+                TestFixtures.RepositoryPath("config", "lifecycle", "label-states.json"));
+            host.UseSetting("Epi:Lifecycle:MarketStatesPath",
+                TestFixtures.RepositoryPath("config", "lifecycle", "market-approval-states.json"));
             host.ConfigureTestServices(configure);
         });
 

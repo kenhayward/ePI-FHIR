@@ -247,6 +247,28 @@ public sealed class LifecycleServiceTests
     }
 
     [Fact]
+    public async Task FN_LCM_003_the_service_reports_the_state_and_author_it_is_holding()
+    {
+        // Reads go through the service for the same reason writes do: a caller reaching past
+        // it to the store would be reading a different notion of state from the one enforced.
+        var (service, _, _) = await InReviewAsync(author: "user-anna");
+
+        Assert.Equal("in-review", await service.CurrentStateAsync(Version));
+        Assert.Equal("user-anna", await service.AuthorOfAsync(Version));
+    }
+
+    [Fact]
+    public async Task FN_LCM_003_a_version_nobody_registered_has_no_state_to_report()
+    {
+        // Null rather than the initial state. A version the platform has never seen is not a
+        // draft, and reporting one would invent a document.
+        var service = Service(new InMemoryLifecycleStore());
+
+        Assert.Null(await service.CurrentStateAsync(new VersionRef("never-registered", 1)));
+        Assert.Null(await service.AuthorOfAsync(new VersionRef("never-registered", 1)));
+    }
+
+    [Fact]
     public async Task FN_LCM_003_a_version_not_under_management_cannot_transition()
     {
         var service = Service(new InMemoryLifecycleStore());

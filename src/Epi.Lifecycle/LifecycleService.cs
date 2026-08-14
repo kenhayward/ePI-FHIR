@@ -57,6 +57,26 @@ public sealed class LifecycleService(
     public Task RegisterAsync(VersionRef version, string author, CancellationToken cancellationToken = default) =>
         _store.RegisterAsync(version, author, _model.Initial, cancellationToken);
 
+    /// <summary>The state this version holds now, or null if it is not under management.</summary>
+    /// <remarks>
+    /// Reads go through the service for the same reason writes do: a caller that reached past
+    /// it to the store would be reading a different notion of state from the one the engine
+    /// enforces. Null rather than an initial state, because a version nobody registered has no
+    /// state to report - unlike a market, where every version starts unsubmitted.
+    /// </remarks>
+    public Task<string?> CurrentStateAsync(VersionRef version, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(version);
+        return _store.CurrentStateAsync(version, cancellationToken);
+    }
+
+    /// <summary>Who authored this version, or null if it is unknown.</summary>
+    public Task<string?> AuthorOfAsync(VersionRef version, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(version);
+        return _store.AuthorOfAsync(version, cancellationToken);
+    }
+
     /// <summary>Moves a version to a new state, or explains why it may not move.</summary>
     public async Task<StateTransition> TransitionAsync(
         VersionRef version,

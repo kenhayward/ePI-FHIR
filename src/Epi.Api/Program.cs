@@ -4,7 +4,10 @@ using Epi.Contracts;
 using Epi.Governance.Audit;
 using Epi.Governance.Configuration;
 using Epi.Governance.Events;
+using Epi.Governance.Persistence;
 using Epi.Iam;
+using Epi.Lifecycle;
+using Epi.Signature;
 using Epi.Validation;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 
@@ -65,17 +68,65 @@ builder.Services.AddSingleton<IContentStore>(_ => string.IsNullOrWhiteSpace(fhir
     : new FhirRestContentStore(FhirContentClient.Create(fhirServer)));
 builder.Services.AddSingleton(_ => new StructuralValidator(ProfileSource.FromPinnedPackages()));
 
+// Governance records - lifecycle, per-market approval, and signatures - share one database.
+// They are separate tables for the reasons ADR-005 and ADR-019 give; they are one connection
+// because they are one operational store.
+var governanceConnection = builder.Configuration["Epi:Governance:ConnectionString"];
+builder.Services.AddSingleton<ILifecycleStore>(_ => string.IsNullOrWhiteSpace(governanceConnection)
+    ? new InMemoryLifecycleStore()
+    : new PostgresLifecycleStore(governanceConnection));
+builder.Services.AddSingleton<IMarketApprovalStore>(_ => string.IsNullOrWhiteSpace(governanceConnection)
+    ? new InMemoryMarketApprovalStore()
+    : new PostgresMarketApprovalStore(governanceConnection));
+builder.Services.AddSingleton<ISignatureStore>(_ => string.IsNullOrWhiteSpace(governanceConnection)
+    ? new InMemorySignatureStore()
+    : new PostgresSignatureStore(governanceConnection));
+
+// A signature is spent platform-wide. Neither store can see the other's records, so both
+// engines are given the pair rather than their own store alone (CAP-LCM-012).
+builder.Services.AddSingleton<ISpentSignatures>(services => new SpentSignatures(
+    services.GetRequiredService<ILifecycleStore>(),
+    services.GetRequiredService<IMarketApprovalStore>()));
+builder.Services.AddSingleton<ISignatureCheck>(services =>
+    new SignatureCheck(services.GetRequiredService<ISignatureStore>()));
+
+// The state models are configuration, loaded and validated at start-up like every other
+// configuration the platform reads (CAP-CFG-006, ADR-019 decision 3).
+var lifecycleStates = builder.Configuration["Epi:Lifecycle:StatesPath"]
+    ?? Path.Combine(builder.Environment.ContentRootPath, "config", "lifecycle", "label-states.json");
+var marketStates = builder.Configuration["Epi:Lifecycle:MarketStatesPath"]
+    ?? Path.Combine(builder.Environment.ContentRootPath, "config", "lifecycle", "market-approval-states.json");
+
+builder.Services.AddSingleton(services => new LifecycleService(
+    LifecycleModelConfiguration.LoadFrom(lifecycleStates),
+    services.GetRequiredService<ILifecycleStore>(),
+    time: null,
+    signatureCheck: services.GetRequiredService<ISignatureCheck>(),
+    spent: services.GetRequiredService<ISpentSignatures>()));
+
+builder.Services.AddSingleton(services => new MarketApprovalService(
+    LifecycleModelConfiguration.LoadFrom(marketStates),
+    services.GetRequiredService<IMarketApprovalStore>(),
+    services.GetRequiredService<MarketCatalogue>().Markets
+        .Select(market => market.Code)
+        .ToHashSet(StringComparer.Ordinal),
+    time: null,
+    signatureCheck: services.GetRequiredService<ISignatureCheck>(),
+    spent: services.GetRequiredService<ISpentSignatures>()));
+
 var app = builder.Build();
 
 if (string.IsNullOrWhiteSpace(auditConnection) || string.IsNullOrWhiteSpace(brokers)
-    || string.IsNullOrWhiteSpace(fhirServer))
+    || string.IsNullOrWhiteSpace(fhirServer) || string.IsNullOrWhiteSpace(governanceConnection))
 {
     app.Logger.LogWarning(
-        "Running with in-memory components (content: {Content}, audit: {Audit}, events: {Events}). "
-        + "Nothing is durable. This is a demonstration default, not a deployment.",
+        "Running with in-memory components (content: {Content}, audit: {Audit}, events: {Events}, "
+        + "governance: {Governance}). Nothing is durable. This is a demonstration default, not a "
+        + "deployment.",
         string.IsNullOrWhiteSpace(fhirServer) ? "in-memory" : "FHIR server",
         string.IsNullOrWhiteSpace(auditConnection) ? "in-memory" : "PostgreSQL",
-        string.IsNullOrWhiteSpace(brokers) ? "in-memory" : "Kafka");
+        string.IsNullOrWhiteSpace(brokers) ? "in-memory" : "Kafka",
+        string.IsNullOrWhiteSpace(governanceConnection) ? "in-memory" : "PostgreSQL");
 }
 
 // The audit table and its append-only trigger must exist before the first record. In a
@@ -83,6 +134,21 @@ if (string.IsNullOrWhiteSpace(auditConnection) || string.IsNullOrWhiteSpace(brok
 if (app.Services.GetRequiredService<IAuditSink>() is PostgresAuditSink durableAudit)
 {
     await durableAudit.InitialiseAsync();
+}
+
+if (app.Services.GetRequiredService<ILifecycleStore>() is PostgresLifecycleStore durableLifecycle)
+{
+    await durableLifecycle.InitialiseAsync();
+}
+
+if (app.Services.GetRequiredService<IMarketApprovalStore>() is PostgresMarketApprovalStore durableMarkets)
+{
+    await durableMarkets.InitialiseAsync();
+}
+
+if (app.Services.GetRequiredService<ISignatureStore>() is PostgresSignatureStore durableSignatures)
+{
+    await durableSignatures.InitialiseAsync();
 }
 
 app.UseAuthentication();
@@ -101,6 +167,7 @@ app.MapPost("/fhir/Bundle", async (
     IPolicyDecisionPoint policy,
     IAuditSink audit,
     IEventPublisher events,
+    LifecycleService lifecycle,
     CancellationToken cancellationToken) =>
 {
     var subject = SubjectFactory.From(principal);
@@ -129,6 +196,14 @@ app.MapPost("/fhir/Bundle", async (
             subject.Id);
 
         var stored = await gated.CreateAsync(bundle, cancellationToken);
+
+        // Placed under lifecycle management the moment it exists. A stored version with no
+        // state has no author either, and the author is what segregation of duties is checked
+        // against - so a window where content exists unmanaged is a window where nobody wrote
+        // it (CAP-LCM-001, CAP-IAM-006).
+        await lifecycle.RegisterAsync(
+            new VersionRef(stored.Identity.Value, stored.Version), subject.Id, cancellationToken);
+
         return Results.Created($"/fhir/Bundle/{stored.Identity.Value}", new
         {
             identifier = stored.Identity.Value,
@@ -163,6 +238,7 @@ app.MapGet("/fhir/Bundle/{id}", async (
     ClaimsPrincipal principal,
     IContentStore store,
     IPolicyDecisionPoint policy,
+    IdentifierAuthority authority,
     CancellationToken cancellationToken) =>
 {
     var subject = SubjectFactory.From(principal);
@@ -173,13 +249,60 @@ app.MapGet("/fhir/Bundle/{id}", async (
 
     var scoped = new ScopedContentStore(store, policy, subject);
     var document = await scoped.GetLatestAsync(
-        new DocumentIdentity(ContentCoreDefaults.DocumentIdentifierSystem, id), cancellationToken);
+        new DocumentIdentity(authority.DocumentSystem, id), cancellationToken);
 
     // Out of scope is indistinguishable from absent, so a caller cannot learn that a document
     // they may not see exists (CAP-SCH-004).
     return document is null
         ? Results.NotFound()
         : Results.Content(EpiBundleReader.Write(document.Bundle), "application/fhir+json");
+}).RequireAuthorization();
+
+app.MapGet("/labels/{id}/versions/{version:int}/state", async (
+    string id,
+    int version,
+    ClaimsPrincipal principal,
+    IContentStore store,
+    IPolicyDecisionPoint policy,
+    LifecycleService lifecycle,
+    MarketApprovalService markets,
+    IdentifierAuthority authority,
+    CancellationToken cancellationToken) =>
+{
+    var subject = SubjectFactory.From(principal);
+    if (subject is null)
+    {
+        return Results.Unauthorized();
+    }
+
+    // Scope is decided on the content, not on the state record: a state record carries no
+    // affiliate or market of its own, and answering from it alone would report on documents
+    // the caller may not see. Out of scope is indistinguishable from absent (CAP-SCH-004).
+    var scoped = new ScopedContentStore(store, policy, subject);
+    var document = await scoped.GetAsync(
+        new DocumentIdentity(authority.DocumentSystem, id), version, cancellationToken);
+
+    if (document is null)
+    {
+        return Results.NotFound();
+    }
+
+    var reference = new VersionRef(id, version);
+    var state = await lifecycle.CurrentStateAsync(reference, cancellationToken);
+
+    return state is null
+        ? Results.NotFound()
+        : Results.Ok(new
+        {
+            identifier = id,
+            version,
+            state,
+            author = await lifecycle.AuthorOfAsync(reference, cancellationToken),
+
+            // Named separately and always, so "approved" can never be read as approved
+            // everywhere (ADR-005).
+            markets = await markets.StatesAsync(reference, cancellationToken),
+        });
 }).RequireAuthorization();
 
 app.Run();
