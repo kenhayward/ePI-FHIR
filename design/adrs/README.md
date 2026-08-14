@@ -24,6 +24,7 @@ of them next needs revising, not as a bulk exercise.
 | [ADR-024](0024-atomic-governance-writes.md) | Atomic governance writes, and a migrated schema to hold them | accepted |
 | [ADR-025](0025-register-before-write.md) | A version is registered before its content is written | accepted |
 | [ADR-026](0026-reusable-content-units.md) | Reusable content units, and how a label refers to one | accepted |
+| [ADR-027](0027-secondary-identifiers-and-platform-code-systems.md) | Secondary identifiers, and the platform's own code systems | accepted |
 
 A record stays `proposed` until the pull request carrying it is merged, at which point it
 becomes `accepted`. Superseding a decision means a new record that says so, never editing the

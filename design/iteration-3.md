@@ -201,9 +201,12 @@ Each becomes an ADR.
    stored document stays self-contained and conformant while still recording what it borrowed
    and from which version. Resolution happens once, at the write gate, not at read time: the
    delivery sequence is corrected to match.
-2. **Secondary identifiers.** Carried from iteration 2: `Bundle.identifier` is 0..1 and ADR-015
-   gives ours the slot. Reuse and translation both produce content arriving with an identifier
-   of its own, so this stops being theoretical.
+2. **Secondary identifiers - settled by
+   [ADR-027](adrs/0027-secondary-identifiers-and-platform-code-systems.md),
+   together with decision 6.** They live on the anchoring `Composition`, because a legacy or
+   submitter identifier identifies the thing the content is about in another system, while
+   `Bundle.identifier` identifies this document as this platform holds it. Different
+   assertions, which is why one slot ever felt like a shortage of space.
 3. **Effective dating semantics.** Whether an effective date is per market (it must be), what
    happens when one passes without anyone acting, and whether "in force" is derived or recorded.
    The lesson from ADR-019 applies: derive it, and never store a state that a clock can
@@ -214,9 +217,13 @@ Each becomes an ADR.
 5. **Render determinism and storage.** What makes two renders identical, what a render-template
    version is, where output lives (asset store, WORM), and how the rendered/artwork distinction
    is enforced by the type system rather than by a naming convention. Extends ADR-010.
-6. **Tags as code systems.** Carried from ADR-017: whether the platform's own tags should be
-   published `CodeSystem` resources or governed extensions. Due now that the content model is
-   open.
+6. **Tags as code systems - settled by
+   [ADR-027](adrs/0027-secondary-identifiers-and-platform-code-systems.md).**
+   The platform does not publish `CodeSystem` resources for its own tags: their codes already
+   have a governing source (markets in configuration, affiliates in the identity provider,
+   templates and units as content), and a published copy would be a second definition that goes
+   stale. Where a value set is needed it is generated from the governing source. Revisited when
+   the platform publishes content outside itself, which is capability 14.
 7. **Snowstorm's FHIR version.** Carried from PR 32: an amendment to ADR-016 recording whether
    an R4 terminology server against an R5 platform is acceptable, and why.
 
@@ -272,7 +279,7 @@ Provisional, and dependent on Section 8. Each row is a pull request, test-first,
 | 10 | ADR and mechanism: deterministic rendering to HTML and PDF, keyed to a render-template version | L |
 | 11 | Render storage in the asset store, with the rendered/artwork lineage enforced by type | M |
 | 12 | Master-data and terminology binding points; terminology version in the pinned context; ADR-016 amendment | M |
-| 13 | ADR: tags as code systems; secondary identifiers | S |
+| 13 | ADR: tags as code systems; secondary identifiers - **delivered early**, while the content model was open | S |
 
 Rows 1a and 13 are deliberately unglamorous and deliberately early and late respectively: the
 first is a debt that has been marked "before any demonstration" for two iterations, and the
