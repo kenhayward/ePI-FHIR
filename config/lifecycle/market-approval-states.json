@@ -1,15 +1,15 @@
 {
-  "_comment": "Per-market regulatory-approval state (ADR-005, ADR-019 decision 2, capability 7). Deliberately a separate model from config/lifecycle/label-states.json: internal lifecycle state says what the organisation has done with a version, this says what a regulator has decided about it in one market. Conflating them cannot express 'approved in Great Britain, under assessment in the European Union' on the same content, which is the normal case and not an edge one. A regulator whose process differs is a different model here, not a code release (ADR-012).",
+  "_comment": "Per-market regulatory-approval state (ADR-005, ADR-019 decision 2, capability 7). Deliberately a separate model from config/lifecycle/label-states.json: internal lifecycle state says what the organisation has done with a version, this says what a regulator has decided about it in one market. Conflating them cannot express 'approved in Great Britain, under assessment in the European Union' on the same content, which is the normal case and not an edge one. A regulator whose process differs is a different model here, not a code release (ADR-012). Note which transitions are signed and which are not (CAP-LCM-012): submitting to a regulator is an act of this organisation by an accountable person and is signed; recording what the regulator then decided is a factual entry about an external event and is not. Both are audited regardless.",
 
   "name": "market-approval",
   "initial": "not-submitted",
   "states": ["not-submitted", "submitted", "under-assessment", "approved", "rejected", "withdrawn"],
   "transitions": [
-    {"from": "not-submitted", "to": "submitted", "action": "submit"},
+    {"from": "not-submitted", "to": "submitted", "action": "submit", "requiresSignature": true, "signatureMeaning": "responsibility"},
     {"from": "submitted", "to": "under-assessment", "action": "begin-assessment"},
     {"from": "under-assessment", "to": "approved", "action": "record-approval"},
     {"from": "under-assessment", "to": "rejected", "action": "record-rejection"},
-    {"from": "rejected", "to": "submitted", "action": "resubmit"},
+    {"from": "rejected", "to": "submitted", "action": "resubmit", "requiresSignature": true, "signatureMeaning": "responsibility"},
     {"from": "submitted", "to": "withdrawn", "action": "withdraw-submission"},
     {"from": "under-assessment", "to": "withdrawn", "action": "withdraw-submission"},
     {"from": "approved", "to": "withdrawn", "action": "withdraw-approval"}

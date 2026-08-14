@@ -299,6 +299,15 @@
     "iteration": "2",
     "status": "planned"
   },
+  "FN-LCM-007": {
+    "name": "Require a signature to submit to a regulator, and none to record its decision",
+    "component": "Lifecycle & Workflow Service",
+    "satisfies": [
+      "CAP-LCM-012"
+    ],
+    "iteration": "2",
+    "status": "planned"
+  },
   "FN-WFL-003": {
     "name": "Require a valid, unused signature at a gate the model says must be signed",
     "component": "Lifecycle & Workflow Service",

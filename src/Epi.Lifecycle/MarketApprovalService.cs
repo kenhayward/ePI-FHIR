@@ -18,28 +18,41 @@ public sealed class MarketApprovalService
     private readonly IReadOnlySet<string> _markets;
     private readonly TimeProvider _time;
 
+    private readonly ISignatureCheck _signatureCheck;
+    private readonly ISpentSignatures _spent;
+
     public MarketApprovalService(
         LifecycleModel model,
         IMarketApprovalStore store,
         IReadOnlySet<string> markets,
-        TimeProvider? time = null)
+        TimeProvider? time = null,
+        ISignatureCheck? signatureCheck = null,
+        ISpentSignatures? spent = null)
     {
         ArgumentNullException.ThrowIfNull(model);
+        ArgumentNullException.ThrowIfNull(store);
         ArgumentNullException.ThrowIfNull(markets);
 
-        // A regulatory-approval transition records what a regulator decided, not an assertion by
-        // the person entering it, so nothing here checks a signature. Refusing a model that asks
-        // for one is the honest response: configuration that is silently ignored reads as a
-        // control while being none. If these transitions should be signed, that is a deliberate
-        // change here rather than a field someone sets hopefully.
-        var gated = model.Transitions.FirstOrDefault(t => t.RequiresSignature || t.SegregatedFromAuthor);
-        if (gated is not null)
+        // Segregation of duties is a control this service cannot enforce: it does not know who
+        // authored a version, and a model asking for it would be configuration that reads as a
+        // control while being none.
+        var segregated = model.Transitions.FirstOrDefault(t => t.SegregatedFromAuthor);
+        if (segregated is not null)
         {
             throw new ArgumentException(
-                $"Transition '{gated.Action}' asks for a signature or segregation of duties, and "
-                + "the market approval service checks neither. Regulatory-approval state records a "
-                + "regulator's decision rather than an assertion by the person recording it.",
+                $"Transition '{segregated.Action}' asks for segregation of duties, which the market "
+                + "approval service cannot enforce because it does not know who authored a version.",
                 nameof(model));
+        }
+
+        // Same reasoning as the internal engine: a signed gate with nothing to check the
+        // signature would accept any reference at all (CAP-LCM-012).
+        if (model.Transitions.Any(t => t.RequiresSignature) && signatureCheck is null)
+        {
+            throw new ArgumentException(
+                "This market approval model has transitions that require an electronic signature, "
+                + "so a signature check must be supplied.",
+                nameof(signatureCheck));
         }
 
         if (markets.Count == 0)
@@ -51,9 +64,27 @@ public sealed class MarketApprovalService
         }
 
         _model = model;
-        _store = store ?? throw new ArgumentNullException(nameof(store));
+        _store = store;
         _markets = markets;
         _time = time ?? TimeProvider.System;
+        _signatureCheck = signatureCheck ?? NoSignedGates.Instance;
+
+        // Defaults to this store alone, which is right when it is the only one. Composition
+        // passes a SpentSignatures over both stores so that a signature spent on an internal
+        // approval cannot then carry a regulatory submission.
+        _spent = spent ?? store;
+    }
+
+    /// <summary>Stands in where a model has no signed gates, so the field need not be nullable.</summary>
+    private sealed class NoSignedGates : ISignatureCheck
+    {
+        public static NoSignedGates Instance { get; } = new();
+
+        public Task<SignatureCheckResult> IsValidAsync(
+            string reference, VersionRef version, string actor, string meaning,
+            CancellationToken cancellationToken = default) =>
+            Task.FromResult(SignatureCheckResult.Invalid(
+                "this deployment has no signature check configured."));
     }
 
     /// <summary>The state this version holds in this market.</summary>
@@ -96,6 +127,7 @@ public sealed class MarketApprovalService
         string action,
         string actor,
         string? reason = null,
+        string? signatureReference = null,
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(version);
@@ -118,8 +150,33 @@ public sealed class MarketApprovalService
             ?? throw new TransitionRefusedException(version, action,
                 $"the market approval model permits no {action} from {current} in {market}.");
 
+        if (permitted.RequiresSignature)
+        {
+            if (string.IsNullOrWhiteSpace(signatureReference))
+            {
+                throw new TransitionRefusedException(version, action,
+                    $"submitting to the regulator for {market} requires an electronic signature.");
+            }
+
+            if (await _spent.IsSignatureUsedAsync(signatureReference, cancellationToken))
+            {
+                throw new TransitionRefusedException(version, action,
+                    "that signature has already been used for another transition.");
+            }
+
+            var signature = await _signatureCheck.IsValidAsync(
+                signatureReference, version, actor, permitted.SignatureMeaning!, cancellationToken);
+
+            if (!signature.IsValid)
+            {
+                throw new TransitionRefusedException(version, action,
+                    $"the signature is not valid for this transition: {signature.Problem}");
+            }
+        }
+
         var transition = new MarketStateTransition(
-            subject, current, permitted.To, action, actor, _time.GetUtcNow(), reason);
+            subject, current, permitted.To, action, actor, _time.GetUtcNow(), reason,
+            permitted.RequiresSignature ? signatureReference : null);
 
         await _store.AppendAsync(transition, cancellationToken);
         return transition;

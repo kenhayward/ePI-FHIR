@@ -33,13 +33,21 @@ public sealed class MarketApprovalServiceTests
     private static (MarketApprovalService Service, InMemoryMarketApprovalStore Store) Approvals()
     {
         var store = new InMemoryMarketApprovalStore();
-        return (new MarketApprovalService(Model(), store, Markets), store);
+        return (
+            new MarketApprovalService(
+                Model(), store, Markets, time: null, signatureCheck: new AlwaysValid()),
+            store);
     }
 
-    /// <summary>Takes a version all the way to approved in one market.</summary>
+    /// <summary>
+    /// Takes a version all the way to approved in one market. Submission is signed and the
+    /// decision is not (CAP-LCM-012); the signature reference differs per market because one
+    /// signature covers one act.
+    /// </summary>
     private static async Task ApproveInAsync(MarketApprovalService service, string market)
     {
-        await service.TransitionAsync(Version, market, "submit", "user-rae");
+        await service.TransitionAsync(
+            Version, market, "submit", "user-rae", signatureReference: $"sig-{market}");
         await service.TransitionAsync(Version, market, "begin-assessment", "user-rae");
         await service.TransitionAsync(Version, market, "record-approval", "user-rae");
     }
@@ -64,7 +72,7 @@ public sealed class MarketApprovalServiceTests
         var (service, _) = Approvals();
 
         await ApproveInAsync(service, "GB");
-        await service.TransitionAsync(Version, "EU", "submit", "user-rae");
+        await service.TransitionAsync(Version, "EU", "submit", "user-rae", signatureReference: "sig-EU");
 
         Assert.Equal("approved", await service.CurrentStateAsync(Version, "GB"));
         Assert.Equal("submitted", await service.CurrentStateAsync(Version, "EU"));
@@ -76,7 +84,7 @@ public sealed class MarketApprovalServiceTests
         var (service, _) = Approvals();
 
         await ApproveInAsync(service, "GB");
-        await service.TransitionAsync(Version, "EU", "submit", "user-rae");
+        await service.TransitionAsync(Version, "EU", "submit", "user-rae", signatureReference: "sig-EU");
         await service.TransitionAsync(Version, "EU", "begin-assessment", "user-rae");
         await service.TransitionAsync(Version, "EU", "record-rejection", "user-rae", reason: "wording query");
 
@@ -148,7 +156,7 @@ public sealed class MarketApprovalServiceTests
     {
         var (service, store) = Approvals();
         await ApproveInAsync(service, "GB");
-        await service.TransitionAsync(Version, "EU", "submit", "user-rae");
+        await service.TransitionAsync(Version, "EU", "submit", "user-rae", signatureReference: "sig-EU");
 
         var gb = await store.HistoryAsync(new MarketVersion(Version, "GB"));
         var eu = await store.HistoryAsync(new MarketVersion(Version, "EU"));
@@ -164,7 +172,7 @@ public sealed class MarketApprovalServiceTests
     public async Task FN_LCM_004_a_transition_records_actor_time_and_reason()
     {
         var (service, _) = Approvals();
-        await service.TransitionAsync(Version, "GB", "submit", "user-rae");
+        await service.TransitionAsync(Version, "GB", "submit", "user-rae", signatureReference: "sig-GB");
         await service.TransitionAsync(Version, "GB", "begin-assessment", "user-rae");
 
         var transition = await service.TransitionAsync(
@@ -178,27 +186,29 @@ public sealed class MarketApprovalServiceTests
     }
 
     [Fact]
-    public void FN_LCM_004_a_market_model_may_not_gate_on_a_signature_nothing_here_checks()
+    public void FN_LCM_004_a_market_model_may_not_gate_on_segregation_nothing_here_checks()
     {
-        // Configuration that is silently ignored is worse than configuration that is refused:
-        // it reads as a control and is not one. If regulatory-approval transitions should be
-        // signed, that is a deliberate change here, not a field someone sets hopefully.
-        var signed = new LifecycleModel(
+        // Signature gating is now supported here (CAP-LCM-012), but segregation of duties is
+        // not: this service does not know who authored a version. Configuration that is
+        // silently ignored reads as a control while being none, so it is refused rather than
+        // accepted and forgotten.
+        var segregated = new LifecycleModel(
             "market-approval", "not-submitted", ["not-submitted", "approved"],
             [new LifecycleTransition("not-submitted", "approved", "record-approval",
-                RequiresSignature: true, SignatureMeaning: "approval")]);
+                SegregatedFromAuthor: true)]);
 
         var error = Assert.Throws<ArgumentException>(
-            () => new MarketApprovalService(signed, new InMemoryMarketApprovalStore(), Markets));
+            () => new MarketApprovalService(segregated, new InMemoryMarketApprovalStore(), Markets));
 
-        Assert.Contains("signature", error.Message, StringComparison.Ordinal);
+        Assert.Contains("segregation", error.Message, StringComparison.Ordinal);
     }
 
     [Fact]
     public void FN_LCM_004_a_service_with_no_markets_configured_refuses_to_start()
     {
         var error = Assert.Throws<ArgumentException>(() => new MarketApprovalService(
-            Model(), new InMemoryMarketApprovalStore(), new HashSet<string>()));
+            Model(), new InMemoryMarketApprovalStore(), new HashSet<string>(),
+            time: null, signatureCheck: new AlwaysValid()));
 
         Assert.Contains("market", error.Message, StringComparison.Ordinal);
     }

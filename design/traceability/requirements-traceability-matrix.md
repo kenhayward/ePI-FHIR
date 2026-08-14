@@ -12,8 +12,8 @@ For the full V model see [v-model-trace.md](v-model-trace.md).
 
 ## Coverage
 
-- Requirements specified: **220** across **24** capabilities
-- Requirements with delivery evidence: **30**
+- Requirements specified: **221** across **24** capabilities
+- Requirements with delivery evidence: **31**
 - Requirements not yet scheduled: **190**
 
 ## Capabilities
@@ -26,7 +26,7 @@ For the full V model see [v-model-trace.md](v-model-trace.md).
 | 4 | Data Migration & Legacy Onboarding | MIG | P4 | - | Migration Service | 12 | [D2.1-content-and-authoring.md](../../specs/capabilities/D2.1-content-and-authoring.md) |
 | 5 | Master Data & Identifiers | MDM | P0 | - | Master Data Service | 10 | [D2.2-reference-and-master-data.md](../../specs/capabilities/D2.2-reference-and-master-data.md) |
 | 6 | Terminology & Code System Management | TRM | P0 | - | Terminology Service | 10 | [D2.2-reference-and-master-data.md](../../specs/capabilities/D2.2-reference-and-master-data.md) |
-| 7 | Lifecycle & Version Management | LCM | P1 | - | Lifecycle & Workflow Service | 11 | [D2.3-lifecycle-change-localisation.md](../../specs/capabilities/D2.3-lifecycle-change-localisation.md) |
+| 7 | Lifecycle & Version Management | LCM | P1 | - | Lifecycle & Workflow Service | 12 | [D2.3-lifecycle-change-localisation.md](../../specs/capabilities/D2.3-lifecycle-change-localisation.md) |
 | 8 | Change Management & Impact Analysis | CHG | P3 | - | Change & Impact Service | 10 | [D2.3-lifecycle-change-localisation.md](../../specs/capabilities/D2.3-lifecycle-change-localisation.md) |
 | 9 | Localisation, Multi-region & Translation Management | LOC | P1 | P3 | Localisation & Translation Service | 9 | [D2.3-lifecycle-change-localisation.md](../../specs/capabilities/D2.3-lifecycle-change-localisation.md) |
 | 10 | Regulatory Mapping & Conformance Profiles | REG | P2 | P3 | Regulatory Profiles Service | 8 | [D2.3-lifecycle-change-localisation.md](../../specs/capabilities/D2.3-lifecycle-change-localisation.md) |
@@ -133,6 +133,7 @@ Status values: `planned` (scheduled, not built), `partial` (some aspect delivere
 | CAP-LCM-009 | 7 | M | P1 | Lifecycle & Workflow Service | - | - | - |
 | CAP-LCM-010 | 7 | M | P1 | Lifecycle & Workflow Service | - | - | - |
 | CAP-LCM-011 | 7 | M | P1 | Lifecycle & Workflow Service | 2 | planned | iteration-2 (see design/iteration-2.md) |
+| CAP-LCM-012 | 7 | M | P1 | Lifecycle & Workflow Service | 2 | partial | FN_LCM_007 and IT_018: submission to a regulator is refused without a valid, unspent signature meaning responsibility; recording the regulator's decision requires none and is audited regardless. Signature on submission of a variation (#8) follows with change management |
 | CAP-CHG-001 | 8 | M | P3 | Change & Impact Service | - | - | - |
 | CAP-CHG-002 | 8 | M | P3 | Change & Impact Service | - | - | - |
 | CAP-CHG-003 | 8 | M | P3 | Change & Impact Service | - | - | - |
@@ -378,6 +379,7 @@ Full text of every requirement, for readers without the specifications to hand.
 - **CAP-LCM-009** (M) Link each version to the change/variation (#8) and, where relevant, submission that produced it.
 - **CAP-LCM-010** (M) Emit lifecycle/state-change events (#20).
 - **CAP-LCM-011** (M) Pin the content snapshot (including reusable-unit versions per policy) at approval.
+- **CAP-LCM-012** (M) Require an electronic signature (#19) to submit a version to a regulator. Recording a regulator's subsequent decision is a factual entry about an external event and is **not** signed.
 
 ### Capability 8 - Change Management & Impact Analysis (CHG)
 
