@@ -45,7 +45,10 @@ when it was found, and each has a natural home in this iteration or a named late
 | Tags assert code systems; whether they should be published `CodeSystem` resources or governed extensions | ADR-017 | Iteration 3, when the content model is next opened |
 | The EMRN EU IG is a preview release and absent from the package registry | ADR-016 | P2, before capability 10 |
 | Image tags pinned independently in three places | PR 4b, PR 6a | Housekeeping, any iteration |
-| The compose stack has never been run end to end outside CI | PR 9b | Before any demonstration |
+| ~~The compose stack has never been run end to end outside CI~~ - **paid**, PR 32: three faults found, all invisible to a `docker compose config` check | PR 9b | Done |
+| Nine dev-stack images run on `:latest` - `hapi-fhir`, `minio`, `minio/mc`, `opa`, `otel-collector`, `prometheus`, `grafana`, `kong`. Snowstorm is the demonstrated cost: its layout changed under the tag and the stack broke with no version to roll back to | PR 32 | **Before any demonstration** - D3 Section 10.3 wants deterministic release, and ADR-014 arguably implies pinning already |
+| Snowstorm serves FHIR R4 (`4.0.1`) while the platform is pinned to R5 (ADR-016). Terminology operations are largely version-agnostic in practice, so this may be a non-issue - but it should be a recorded decision rather than a surprise | PR 32 | **Before capability 6 work starts** - an ADR note, or an amendment to ADR-016 |
+| The durable stores are built and proven but nothing composes them: `Epi.Api` still wires the in-memory ones | PR 10 review notes | **Iteration 2** - with the configuration flag that selects them |
 
 ### 2.3 The boundary iteration 1 drew, and why it matters here
 
