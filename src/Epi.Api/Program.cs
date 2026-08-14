@@ -386,10 +386,12 @@ app.MapPost("/signatures", async (
 
     try
     {
-        // The identifier is the authenticated caller's, never the request body's: a caller
-        // able to name the signer could sign as somebody else (ADR-020 decision 3).
+        // The username is the authenticated caller's, never the request body's: a caller able
+        // to name the signer could sign as somebody else (ADR-020 decision 3). It is the
+        // username rather than the subject because that is what an identity provider
+        // authenticates; the manifest still records the subject the credentials proved.
         var manifest = await signing.SignAsync(
-            document, subject.Id, body.Password, meaning, body.Reason, cancellationToken);
+            document, subject.Username, body.Password, meaning, body.Reason, cancellationToken);
 
         return Results.Ok(new
         {

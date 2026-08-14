@@ -65,4 +65,33 @@ public sealed class SubjectFactoryTests
         Assert.Empty(subject.Markets);
         Assert.Empty(subject.Roles);
     }
+
+    [Fact]
+    public void FN_IAM_001_the_subject_carries_the_name_the_person_signs_in_as()
+    {
+        // Distinct from the subject identifier and needed alongside it: an identity provider
+        // authenticates a username and attributes a subject, so re-checking a password at a
+        // signing gate needs the name they type. Passing the subject there produced a refusal
+        // that read exactly like a wrong password.
+        var principal = new ClaimsPrincipal(new ClaimsIdentity(
+            [
+                new Claim(ClaimTypes.NameIdentifier, "9876db89-eab3-42ff-82b0-a23fa9b296ce"),
+                new Claim("preferred_username", "user-anna"),
+            ],
+            "test"));
+
+        var subject = SubjectFactory.From(principal);
+
+        Assert.Equal("9876db89-eab3-42ff-82b0-a23fa9b296ce", subject!.Id);
+        Assert.Equal("user-anna", subject.Username);
+    }
+
+    [Fact]
+    public void FN_IAM_001_a_provider_that_issues_no_username_falls_back_to_the_subject()
+    {
+        var principal = new ClaimsPrincipal(new ClaimsIdentity(
+            [new Claim(ClaimTypes.NameIdentifier, "018f2a10-anna")], "test"));
+
+        Assert.Equal("018f2a10-anna", SubjectFactory.From(principal)!.Username);
+    }
 }
