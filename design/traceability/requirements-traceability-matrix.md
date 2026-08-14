@@ -13,8 +13,8 @@ For the full V model see [v-model-trace.md](v-model-trace.md).
 ## Coverage
 
 - Requirements specified: **220** across **24** capabilities
-- Requirements with delivery evidence: **29**
-- Requirements not yet scheduled: **191**
+- Requirements with delivery evidence: **30**
+- Requirements not yet scheduled: **190**
 
 ## Capabilities
 
@@ -204,7 +204,7 @@ Status values: `planned` (scheduled, not built), `partial` (some aspect delivere
 | CAP-SCH-008 | 15 | S | P1 | Search Service | - | - | - |
 | CAP-WFL-001 | 16 | M | P1 | Lifecycle & Workflow Service | 2 | planned | iteration-2 (see design/iteration-2.md) |
 | CAP-WFL-002 | 16 | M | P1 | Lifecycle & Workflow Service | - | - | - |
-| CAP-WFL-003 | 16 | M | P1 | Lifecycle & Workflow Service | - | - | - |
+| CAP-WFL-003 | 16 | M | P1 | Lifecycle & Workflow Service | 2 | partial | FN_WFL_003 and IT_012: a gate the model says must be signed accepts only a signature by the transitioning actor, over that version, meaning what the gate requires, and not already spent. Signature at gates other than approval arrives with the workflow routing that owns them |
 | CAP-WFL-004 | 16 | M | P1 | Lifecycle & Workflow Service | - | - | - |
 | CAP-WFL-005 | 16 | M | P1 | Lifecycle & Workflow Service | 2 | partial | IT_011 for the approval gate; routing and escalation are later |
 | CAP-WFL-006 | 16 | S | P1 | Lifecycle & Workflow Service | - | - | - |
@@ -228,7 +228,7 @@ Status values: `planned` (scheduled, not built), `partial` (some aspect delivere
 | CAP-SEC-007 | 18 | S | P0 | Security | - | - | - |
 | CAP-AUD-001 | 19 | M | P0 | Audit & e-Signature | 1 | partial | FN_AUD_001 and IT_003 for content writes and access decisions; other capabilities write as they arrive |
 | CAP-AUD-002 | 19 | M | P0 | Audit & e-Signature | 1 | partial | FN_AUD_002 and FN_AUD_003: append-only by interface, and enforced by the database in the PostgreSQL sink; sealed WORM export is capability 22 |
-| CAP-AUD-003 | 19 | M | P0 | Audit & e-Signature | 2 | partial | ADR-020 plus FN_AUD_005: the manifest binds signer, printed name, meaning, time and a SHA-256 hash of the version, and every signing attempt is audited. Invoking it at the approval gate, and the single-use rule that stops a signature being replayed, are the next pull request; the durable signature store follows |
+| CAP-AUD-003 | 19 | M | P0 | Audit & e-Signature | 2 | partial | ADR-020 plus FN_AUD_005, FN_WFL_003 and IT_012: the manifest binds signer, printed name, meaning, time and a SHA-256 hash of the version, every signing attempt is audited, and the approval gate accepts only a valid, unspent signature by the transitioning actor. The durable signature store is still to come; today they are held in memory |
 | CAP-AUD-004 | 19 | M | P0 | Audit & e-Signature | - | - | - |
 | CAP-AUD-005 | 19 | M | P0 | Audit & e-Signature | - | - | - |
 | CAP-AUD-006 | 19 | M | P0 | Audit & e-Signature | - | - | - |

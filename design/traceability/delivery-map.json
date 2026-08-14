@@ -118,7 +118,7 @@
   "CAP-AUD-003": {
     "iteration": "2",
     "status": "partial",
-    "evidence": "ADR-020 plus FN_AUD_005: the manifest binds signer, printed name, meaning, time and a SHA-256 hash of the version, and every signing attempt is audited. Invoking it at the approval gate, and the single-use rule that stops a signature being replayed, are the next pull request; the durable signature store follows"
+    "evidence": "ADR-020 plus FN_AUD_005, FN_WFL_003 and IT_012: the manifest binds signer, printed name, meaning, time and a SHA-256 hash of the version, every signing attempt is audited, and the approval gate accepts only a valid, unspent signature by the transitioning actor. The durable signature store is still to come; today they are held in memory"
   },
   "CAP-IAM-006": {
     "iteration": "2",

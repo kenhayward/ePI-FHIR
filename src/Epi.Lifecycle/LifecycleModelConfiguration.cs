@@ -84,9 +84,31 @@ public static class LifecycleModelConfiguration
                 continue;
             }
 
+            // A gate that demanded a signature without saying what it must assert would accept
+            // a signature captured as a review in place of an approval, and record assent
+            // nobody gave. The reverse - a meaning on a gate that needs no signature - reads as
+            // though the gate were signed when it is not, which is worse than either honest
+            // state.
+            if (transition.RequiresSignature && string.IsNullOrWhiteSpace(transition.SignatureMeaning))
+            {
+                problems.Add(
+                    $"{file}: transition '{transition.Action}' from '{transition.From}' requires a "
+                    + "signature but declares no 'signatureMeaning'.");
+                continue;
+            }
+
+            if (!transition.RequiresSignature && !string.IsNullOrWhiteSpace(transition.SignatureMeaning))
+            {
+                problems.Add(
+                    $"{file}: transition '{transition.Action}' from '{transition.From}' declares a "
+                    + "'signatureMeaning' but does not require a signature.");
+                continue;
+            }
+
             transitions.Add(new LifecycleTransition(
                 transition.From!, transition.To!, transition.Action,
-                transition.RequiresSignature, transition.SegregatedFromAuthor));
+                transition.RequiresSignature, transition.SegregatedFromAuthor,
+                transition.SignatureMeaning));
         }
 
         return problems.Count > 0

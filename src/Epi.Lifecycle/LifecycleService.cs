@@ -18,7 +18,34 @@ public sealed class LifecycleService(
     private readonly LifecycleModel _model = model ?? throw new ArgumentNullException(nameof(model));
     private readonly ILifecycleStore _store = store ?? throw new ArgumentNullException(nameof(store));
     private readonly TimeProvider _time = time ?? TimeProvider.System;
-    private readonly ISignatureCheck? _signatureCheck = signatureCheck;
+
+    private readonly ISignatureCheck _signatureCheck =
+        signatureCheck ?? (model?.Transitions.Any(t => t.RequiresSignature) == true
+
+            // Refusing to start is the point. The tempting alternative - accept any non-empty
+            // reference when nothing is configured to check it - is a gate that looks like a
+            // control and is not one, and it would deploy silently.
+            ? throw new ArgumentException(
+                "This state model has transitions that require an electronic signature, so a "
+                + "signature check must be supplied. Without one the gate would accept any "
+                + "reference at all.",
+                nameof(signatureCheck))
+            : NoSignedGates.Instance);
+
+    /// <summary>
+    /// Stands in where a model has no signed gates at all, so the field need not be nullable.
+    /// Refuses everything, because reaching it would mean a signed gate appeared unnoticed.
+    /// </summary>
+    private sealed class NoSignedGates : ISignatureCheck
+    {
+        public static NoSignedGates Instance { get; } = new();
+
+        public Task<SignatureCheckResult> IsValidAsync(
+            string reference, VersionRef version, string actor, string meaning,
+            CancellationToken cancellationToken = default) =>
+            Task.FromResult(SignatureCheckResult.Invalid(
+                "this deployment has no signature check configured."));
+    }
 
     /// <summary>Registers a version in the model's initial state.</summary>
     public Task RegisterAsync(VersionRef version, string author, CancellationToken cancellationToken = default) =>
@@ -64,12 +91,34 @@ public sealed class LifecycleService(
             }
         }
 
-        if (permitted.RequiresSignature && string.IsNullOrWhiteSpace(signatureReference))
+        if (permitted.RequiresSignature)
         {
             // A gate the model says must be signed cannot be passed unsigned, whatever the
-            // caller intends. The signature mechanism itself is a separate concern.
-            throw new TransitionRefusedException(version, action,
-                "this transition requires an electronic signature.");
+            // caller intends.
+            if (string.IsNullOrWhiteSpace(signatureReference))
+            {
+                throw new TransitionRefusedException(version, action,
+                    "this transition requires an electronic signature.");
+            }
+
+            // Single use, answered from the transition history rather than by marking the
+            // signature spent. Without it one approval signature could be replayed against
+            // every later gate, making a signature a token its holder can spend rather than an
+            // assertion about one act.
+            if (await _store.IsSignatureUsedAsync(signatureReference, cancellationToken))
+            {
+                throw new TransitionRefusedException(version, action,
+                    "that signature has already been used for another transition.");
+            }
+
+            var signature = await _signatureCheck.IsValidAsync(
+                signatureReference, version, actor, permitted.SignatureMeaning!, cancellationToken);
+
+            if (!signature.IsValid)
+            {
+                throw new TransitionRefusedException(version, action,
+                    $"the signature is not valid for this transition: {signature.Problem}");
+            }
         }
 
         var transition = new StateTransition(

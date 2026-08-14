@@ -99,7 +99,8 @@
   "IT-012": {
     "name": "Approval captures a signature binding signer, meaning, time and a hash of the version signed",
     "verifies": [
-      "CAP-AUD-003"
+      "CAP-AUD-003",
+      "CAP-WFL-003"
     ],
     "iteration": "2",
     "status": "planned"
