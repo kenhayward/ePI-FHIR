@@ -127,12 +127,12 @@ Status values: `planned` (scheduled, not built), `partial` (some aspect delivere
 | CAP-LCM-003 | 7 | M | P1 | Lifecycle & Workflow Service | 2 | partial | FN_LCM_004 and IT_013: per-market regulatory-approval state in its own model, store and service, with a test that a market transition leaves internal state untouched. Held in a durable append-only table keyed by version and market, with UPDATE and DELETE refused by a database trigger. Effective dating (CAP-LCM-004) follows |
 | CAP-LCM-004 | 7 | M | P1 | Lifecycle & Workflow Service | - | - | - |
 | CAP-LCM-005 | 7 | M | P1 | Lifecycle & Workflow Service | - | - | - |
-| CAP-LCM-006 | 7 | M | P1 | Lifecycle & Workflow Service | 2 | planned | iteration-2 (see design/iteration-2.md) |
+| CAP-LCM-006 | 7 | M | P1 | Lifecycle & Workflow Service | 2 | partial | IT_017 plus FN_LCM_005: content by version, the full transition history with the signature used, and the validating context recorded at approval (ADR-023). Effective dating and supersession are not yet part of what is reconstructed |
 | CAP-LCM-007 | 7 | M | P1 | Lifecycle & Workflow Service | 2 | partial | FN_LCM_003: transitions recorded with actor, time and reason, in a durable append-only table with UPDATE and DELETE refused by a database trigger; workflow routing is a later PR |
 | CAP-LCM-008 | 7 | S | P1 | Lifecycle & Workflow Service | - | - | - |
 | CAP-LCM-009 | 7 | M | P1 | Lifecycle & Workflow Service | - | - | - |
 | CAP-LCM-010 | 7 | M | P1 | Lifecycle & Workflow Service | - | - | - |
-| CAP-LCM-011 | 7 | M | P1 | Lifecycle & Workflow Service | 2 | planned | iteration-2 (see design/iteration-2.md) |
+| CAP-LCM-011 | 7 | M | P1 | Lifecycle & Workflow Service | 2 | partial | CAP_LCM_011 across the pinned-context conformance suite, run against both stores; packages, content hash, state model, template and identifier authority. Reusable-unit versions follow with reuse |
 | CAP-LCM-012 | 7 | M | P1 | Lifecycle & Workflow Service | 2 | partial | FN_LCM_007 and IT_018: submission to a regulator is refused without a valid, unspent signature meaning responsibility; recording the regulator's decision requires none and is audited regardless. Signature on submission of a variation (#8) follows with change management |
 | CAP-CHG-001 | 8 | M | P3 | Change & Impact Service | - | - | - |
 | CAP-CHG-002 | 8 | M | P3 | Change & Impact Service | - | - | - |
@@ -196,7 +196,7 @@ Status values: `planned` (scheduled, not built), `partial` (some aspect delivere
 | CAP-PUB-008 | 14 | M | P2 | Publishing Service | - | - | - |
 | CAP-PUB-009 | 14 | S | P2 | Publishing Service | - | - | - |
 | CAP-SCH-001 | 15 | M | P1 | Search Service | 2 | partial | FN_SCH_001 across the search conformance suite and GET /labels/search; effective date waits for effective dating, and product binds to what the content names as its subject until master data exists |
-| CAP-SCH-002 | 15 | M | P1 | Search Service | 2 | partial | FN_SCH_002 and IT_016: the current-approved version per market, resolved from per-market approval state; per-language resolution waits for localisation |
+| CAP-SCH-002 | 15 | M | P1 | Search Service | 2 | partial | FN_SCH_002 and IT_016 for the current-approved version per market, CAP_SCH_002 for retrieval of a specific version; per-language resolution waits for localisation |
 | CAP-SCH-003 | 15 | M | P1 | Search Service | 2 | partial | CAP_SCH_003 over title and section narrative in the projection; a dedicated index with tokenisation and relevance is a later implementation of the same port (ADR-022) |
 | CAP-SCH-004 | 15 | M | P1 | Search Service | 2 | partial | FN_IAM_005 plus the scoping cases of the search conformance suite and IT_016; scope is a query predicate, not a post-filter (ADR-022), and partial evaluation of the policy is the production path |
 | CAP-SCH-005 | 15 | M | P1 | Search Service | - | - | - |

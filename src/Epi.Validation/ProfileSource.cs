@@ -122,6 +122,18 @@ public static class ProfileSource
     }
 
     /// <summary>Finds profiles/packages relative to the running assembly.</summary>
+    /// <summary>
+    /// Where the vendored packages are: what configuration names, or the repository's own
+    /// directory when this runs from a checkout.
+    /// </summary>
+    /// <remarks>
+    /// Public because pinning a validating context at approval has to record the same packages
+    /// the validator loaded, and it cannot do that while only the validator knows where they
+    /// are (ADR-023 decision 2).
+    /// </remarks>
+    public static string PackagesDirectory(string? configured = null) =>
+        string.IsNullOrWhiteSpace(configured) ? LocatePackagesDirectory() : configured;
+
     private static string LocatePackagesDirectory()
     {
         var directory = new DirectoryInfo(AppContext.BaseDirectory);

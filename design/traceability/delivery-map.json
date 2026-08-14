@@ -102,8 +102,8 @@
   },
   "CAP-LCM-006": {
     "iteration": "2",
-    "status": "planned",
-    "evidence": "iteration-2 (see design/iteration-2.md)"
+    "status": "partial",
+    "evidence": "IT_017 plus FN_LCM_005: content by version, the full transition history with the signature used, and the validating context recorded at approval (ADR-023). Effective dating and supersession are not yet part of what is reconstructed"
   },
   "CAP-LCM-007": {
     "iteration": "2",
@@ -112,8 +112,8 @@
   },
   "CAP-LCM-011": {
     "iteration": "2",
-    "status": "planned",
-    "evidence": "iteration-2 (see design/iteration-2.md)"
+    "status": "partial",
+    "evidence": "CAP_LCM_011 across the pinned-context conformance suite, run against both stores; packages, content hash, state model, template and identifier authority. Reusable-unit versions follow with reuse"
   },
   "CAP-WFL-001": {
     "iteration": "2",
@@ -148,7 +148,7 @@
   "CAP-SCH-002": {
     "iteration": "2",
     "status": "partial",
-    "evidence": "FN_SCH_002 and IT_016: the current-approved version per market, resolved from per-market approval state; per-language resolution waits for localisation"
+    "evidence": "FN_SCH_002 and IT_016 for the current-approved version per market, CAP_SCH_002 for retrieval of a specific version; per-language resolution waits for localisation"
   },
   "CAP-SCH-004": {
     "iteration": "2",

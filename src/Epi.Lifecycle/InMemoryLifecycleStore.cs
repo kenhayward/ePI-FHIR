@@ -8,11 +8,12 @@ public sealed class InMemoryLifecycleStore : ILifecycleStore
 {
     private readonly Dictionary<string, string> _authors = [];
     private readonly Dictionary<string, string> _states = [];
+    private readonly Dictionary<string, DateTimeOffset> _registered = [];
     private readonly List<StateTransition> _transitions = [];
     private readonly Lock _gate = new();
 
     public Task RegisterAsync(VersionRef version, string author, string initialState,
-        CancellationToken cancellationToken = default)
+        DateTimeOffset registeredAt, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(version);
         ArgumentException.ThrowIfNullOrWhiteSpace(author);
@@ -30,6 +31,7 @@ public sealed class InMemoryLifecycleStore : ILifecycleStore
             }
 
             _states[version.ToString()] = initialState;
+            _registered[version.ToString()] = registeredAt;
         }
 
         return Task.CompletedTask;
@@ -40,6 +42,17 @@ public sealed class InMemoryLifecycleStore : ILifecycleStore
         lock (_gate)
         {
             return Task.FromResult(_authors.GetValueOrDefault(version.ToString()));
+        }
+    }
+
+    public Task<DateTimeOffset?> RegisteredAtAsync(
+        VersionRef version, CancellationToken cancellationToken = default)
+    {
+        lock (_gate)
+        {
+            return Task.FromResult(_registered.TryGetValue(version.ToString(), out var at)
+                ? at
+                : (DateTimeOffset?)null);
         }
     }
 

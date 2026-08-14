@@ -28,6 +28,7 @@ public sealed class PostgresLifecycleStore(string connectionString)
                 document_version    INTEGER NOT NULL,
                 author              TEXT    NOT NULL,
                 initial_state       TEXT    NOT NULL,
+                registered_at       TIMESTAMPTZ NULL,
                 PRIMARY KEY (document_identifier, document_version)
             );
 
@@ -52,6 +53,15 @@ public sealed class PostgresLifecycleStore(string connectionString)
                 ON lifecycle_transition (signature_reference)
                 WHERE signature_reference IS NOT NULL;
 
+            -- CREATE TABLE IF NOT EXISTS does nothing at all to a table that already exists,
+            -- so a column added later never appears in a database that predates it, and the
+            -- first write afterwards fails. Nullable rather than backfilled with a default:
+            -- inventing a registration time for rows written before the column existed would
+            -- put a false timestamp in an evidentiary table, and absence of a recorded time is
+            -- not evidence that the version did not exist. This is a bootstrap, not a
+            -- migration - D3 Section 10.3 is where the real one belongs.
+            ALTER TABLE lifecycle_version ADD COLUMN IF NOT EXISTS registered_at TIMESTAMPTZ NULL;
+
             CREATE OR REPLACE FUNCTION lifecycle_is_append_only() RETURNS TRIGGER AS $$
             BEGIN
                 RAISE EXCEPTION '% is append-only: % is not permitted', TG_TABLE_NAME, TG_OP
@@ -74,7 +84,7 @@ public sealed class PostgresLifecycleStore(string connectionString)
     }
 
     public async Task RegisterAsync(
-        VersionRef version, string author, string initialState,
+        VersionRef version, string author, string initialState, DateTimeOffset registeredAt,
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(version);
@@ -85,16 +95,42 @@ public sealed class PostgresLifecycleStore(string connectionString)
         // primary key refuses it.
         await using var command = _source.Value.CreateCommand("""
             INSERT INTO lifecycle_version
-                (document_identifier, document_version, author, initial_state)
-            VALUES ($1, $2, $3, $4)
+                (document_identifier, document_version, author, initial_state, registered_at)
+            VALUES ($1, $2, $3, $4, $5)
             """);
 
         command.Parameters.AddWithValue(version.DocumentIdentifier);
         command.Parameters.AddWithValue(version.Version);
         command.Parameters.AddWithValue(author);
         command.Parameters.AddWithValue(initialState);
+        command.Parameters.AddWithValue(registeredAt);
 
         await command.ExecuteNonQueryAsync(cancellationToken);
+    }
+
+    public async Task<DateTimeOffset?> RegisteredAtAsync(
+        VersionRef version, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(version);
+
+        await using var command = _source.Value.CreateCommand("""
+            SELECT registered_at FROM lifecycle_version
+            WHERE document_identifier = $1 AND document_version = $2
+            """);
+
+        command.Parameters.AddWithValue(version.DocumentIdentifier);
+        command.Parameters.AddWithValue(version.Version);
+
+        // Read through the reader rather than as a scalar cast. Npgsql hands back a DateTime
+        // for timestamptz, so "as DateTimeOffset?" is null for every row that has one - a
+        // silent wrong answer rather than an error, and one that reads as "never registered".
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        if (!await reader.ReadAsync(cancellationToken) || reader.IsDBNull(0))
+        {
+            return null;
+        }
+
+        return reader.GetFieldValue<DateTimeOffset>(0);
     }
 
     public async Task<string?> AuthorOfAsync(

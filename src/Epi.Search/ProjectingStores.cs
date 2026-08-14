@@ -69,10 +69,10 @@ public sealed class ProjectingLifecycleStore(
         projection ?? throw new ArgumentNullException(nameof(projection));
 
     public async Task RegisterAsync(
-        VersionRef version, string author, string initialState,
+        VersionRef version, string author, string initialState, DateTimeOffset registeredAt,
         CancellationToken cancellationToken = default)
     {
-        await _inner.RegisterAsync(version, author, initialState, cancellationToken);
+        await _inner.RegisterAsync(version, author, initialState, registeredAt, cancellationToken);
         await _projection.ProjectStateAsync(version, initialState, cancellationToken);
     }
 
@@ -85,6 +85,10 @@ public sealed class ProjectingLifecycleStore(
 
     public Task<string?> AuthorOfAsync(VersionRef version, CancellationToken cancellationToken = default) =>
         _inner.AuthorOfAsync(version, cancellationToken);
+
+    public Task<DateTimeOffset?> RegisteredAtAsync(
+        VersionRef version, CancellationToken cancellationToken = default) =>
+        _inner.RegisteredAtAsync(version, cancellationToken);
 
     public Task<string?> CurrentStateAsync(VersionRef version, CancellationToken cancellationToken = default) =>
         _inner.CurrentStateAsync(version, cancellationToken);

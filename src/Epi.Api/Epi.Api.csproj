@@ -6,6 +6,7 @@
     <ProjectReference Include="..\Epi.Iam\Epi.Iam.csproj" />
     <ProjectReference Include="..\Epi.Governance\Epi.Governance.csproj" />
     <ProjectReference Include="..\Epi.Search\Epi.Search.csproj" />
+    <ProjectReference Include="..\Epi.Templates\Epi.Templates.csproj" />
   </ItemGroup>
 
   <ItemGroup>

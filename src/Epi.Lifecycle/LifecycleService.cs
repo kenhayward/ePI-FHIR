@@ -55,7 +55,7 @@ public sealed class LifecycleService(
 
     /// <summary>Registers a version in the model's initial state.</summary>
     public Task RegisterAsync(VersionRef version, string author, CancellationToken cancellationToken = default) =>
-        _store.RegisterAsync(version, author, _model.Initial, cancellationToken);
+        _store.RegisterAsync(version, author, _model.Initial, _time.GetUtcNow(), cancellationToken);
 
     /// <summary>The state this version holds now, or null if it is not under management.</summary>
     /// <remarks>
@@ -75,6 +75,56 @@ public sealed class LifecycleService(
     {
         ArgumentNullException.ThrowIfNull(version);
         return _store.AuthorOfAsync(version, cancellationToken);
+    }
+
+    /// <summary>
+    /// The state this version held at a past moment, or null if it did not exist then.
+    /// </summary>
+    /// <remarks>
+    /// Derived from the append-only history rather than read from a field, which is what
+    /// ADR-019 decision 4 bought: a state column can say what a version is now and never what
+    /// it was. A transition timestamped at a moment means the version was in its new state at
+    /// that moment, so the comparison is inclusive of the transition's own instant.
+    /// </remarks>
+    public async Task<string?> StateAtAsync(
+        VersionRef version, DateTimeOffset moment, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(version);
+
+        // Two different nulls, and conflating them would be a lie in one direction or the
+        // other. A version nobody registered has no state at any moment; a version registered
+        // before the platform recorded registration times has an unknown start, and absence of
+        // a recorded time is not evidence that it did not exist.
+        if (await _store.CurrentStateAsync(version, cancellationToken) is null)
+        {
+            return null;
+        }
+
+        var registered = await _store.RegisteredAtAsync(version, cancellationToken);
+        if (registered is not null && moment < registered)
+        {
+            // Null, not the initial state. Answering "draft" for a moment before the version
+            // was registered would place a document in history that was not there.
+            return null;
+        }
+
+        var last = (await _store.HistoryAsync(version, cancellationToken))
+            .Where(transition => transition.At <= moment)
+            .LastOrDefault();
+
+        return last?.To ?? _model.Initial;
+    }
+
+    /// <summary>Every transition this version has been through, oldest first.</summary>
+    /// <remarks>
+    /// The evidence a reconstruction is built from: who moved a version, when, and on the
+    /// strength of which signature (CAP-LCM-006, ADR-023 decision 4).
+    /// </remarks>
+    public Task<IReadOnlyList<StateTransition>> HistoryAsync(
+        VersionRef version, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(version);
+        return _store.HistoryAsync(version, cancellationToken);
     }
 
     /// <summary>Moves a version to a new state, or explains why it may not move.</summary>

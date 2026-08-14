@@ -9,6 +9,9 @@ namespace Epi.Search.Tests;
 // sees, which makes forgetting the worst kind of defect to rely on review for.
 public sealed class ProjectingStoreTests
 {
+    private static readonly DateTimeOffset Registered =
+        new(2026, 8, 14, 9, 0, 0, TimeSpan.Zero);
+
     [Fact]
     public async Task FN_SCH_001_stored_content_is_searchable_without_the_caller_indexing_it()
     {
@@ -48,7 +51,7 @@ public sealed class ProjectingStoreTests
         await index.ProjectAsync(SearchFixtures.Document("doc-1", 1, SearchFixtures.Uk), "unknown");
         var store = new ProjectingLifecycleStore(new InMemoryLifecycleStore(), index);
 
-        await store.RegisterAsync(new VersionRef("doc-1", 1), "user-anna", "draft");
+        await store.RegisterAsync(new VersionRef("doc-1", 1), "user-anna", "draft", Registered);
 
         Assert.Single((await index.SearchAsync(new ScopedSearchQuery(
             new SearchCriteria(State: "draft"), [SearchFixtures.Uk]))).Hits);
@@ -61,7 +64,7 @@ public sealed class ProjectingStoreTests
         await index.ProjectAsync(SearchFixtures.Document("doc-1", 1, SearchFixtures.Uk), "draft");
         var inner = new InMemoryLifecycleStore();
         var store = new ProjectingLifecycleStore(inner, index);
-        await store.RegisterAsync(new VersionRef("doc-1", 1), "user-anna", "draft");
+        await store.RegisterAsync(new VersionRef("doc-1", 1), "user-anna", "draft", Registered);
 
         await store.AppendAsync(new StateTransition(
             new VersionRef("doc-1", 1), "draft", "in-review", "submit", "user-anna",

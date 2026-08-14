@@ -50,6 +50,20 @@ public sealed class PostgresSignatureStoreConformanceTests(PostgresServer server
     }
 }
 
+/// <summary>The durable pinned-context store, held to the same contract.</summary>
+[Collection(PostgresCollection.Name)]
+[Trait("Category", "Container")]
+public sealed class PostgresPinnedContextStoreConformanceTests(PostgresServer server)
+    : PinnedContextStoreConformance
+{
+    protected override async Task<IPinnedContextStore> CreateStoreAsync()
+    {
+        var store = new PostgresPinnedContextStore(await server.CreateDatabaseAsync());
+        await store.InitialiseAsync();
+        return store;
+    }
+}
+
 /// <summary>
 /// The guarantee the durable stores exist to provide, and which an in-memory one cannot make:
 /// append-only enforced by the database rather than by the application.
@@ -74,7 +88,7 @@ public sealed class PostgresGovernanceRecordsAreAppendOnlyTests(PostgresServer s
 
         var lifecycle = new PostgresLifecycleStore(connectionString);
         await lifecycle.InitialiseAsync();
-        await lifecycle.RegisterAsync(Version, "user-anna", "draft");
+        await lifecycle.RegisterAsync(Version, "user-anna", "draft", DateTimeOffset.UtcNow);
         await lifecycle.AppendAsync(new StateTransition(
             Version, "draft", "in-review", "submit", "user-anna", DateTimeOffset.UtcNow));
 
@@ -90,6 +104,13 @@ public sealed class PostgresGovernanceRecordsAreAppendOnlyTests(PostgresServer s
             "sig-GB", "user-rae", "Rae Lindqvist", SignatureMeaning.Responsibility,
             Document, 1, "sha-256:abc", DateTimeOffset.UtcNow));
 
+        var pins = new PostgresPinnedContextStore(connectionString);
+        await pins.InitialiseAsync();
+        await pins.PinAsync(new PinnedContext(
+            Version, "sha-256:abc", "label", "approved",
+            [new PinnedPackage("hl7.fhir.uv.emedicinal-product-info", "1.0.0", "c99767")],
+            "https://epi.example.org/identifier/document", DateTimeOffset.UtcNow, "smpc-gb", 3));
+
         return connectionString;
     }
 
@@ -98,6 +119,7 @@ public sealed class PostgresGovernanceRecordsAreAppendOnlyTests(PostgresServer s
     [InlineData("lifecycle_transition", "actor")]
     [InlineData("market_approval_transition", "actor")]
     [InlineData("signature_manifest", "signer_identifier")]
+    [InlineData("pinned_context", "content_hash")]
     public async Task FN_AUD_003_the_database_refuses_an_update_even_from_a_direct_connection(
         string table, string column)
     {
@@ -117,6 +139,7 @@ public sealed class PostgresGovernanceRecordsAreAppendOnlyTests(PostgresServer s
     [InlineData("lifecycle_transition")]
     [InlineData("market_approval_transition")]
     [InlineData("signature_manifest")]
+    [InlineData("pinned_context")]
     public async Task FN_AUD_003_the_database_refuses_a_delete_even_from_a_direct_connection(
         string table)
     {

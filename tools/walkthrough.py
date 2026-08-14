@@ -196,4 +196,32 @@ if status == 200:
     status, unseen = call("GET", f"/labels/{identifier}/current-approved?market=EU", anna)
     check("and a caller outside that market is told nothing either", status == 404, str(status))
 
+print("\nAnna reconstructs the approved version")
+status, record = call("GET", f"/labels/{identifier}/versions/1/reconstruction", anna)
+check("the reconstruction records what the version was approved against",
+      status == 200 and record.get("pinnedContext") is not None
+      and any(p["name"] == "hl7.fhir.uv.emedicinal-product-info"
+              for p in record["pinnedContext"]["packages"]),
+      f"{status} {str(record)[:200]}")
+
+if status == 200 and record.get("pinnedContext"):
+    check("the pinned packages are still the bytes recorded then",
+          record["packagesStillMatch"], str(record.get("packageDiscrepancies")))
+    approval = next((h for h in record["history"] if h["action"] == "approve"), None)
+    check("the signature that opened the approval gate is named in the history",
+          approval is not None and approval.get("signature") is not None,
+          str([h["action"] for h in record["history"]]))
+    if approval and approval.get("signature"):
+        check("what was signed is what was pinned",
+              record["pinnedContext"]["contentHash"] == approval["signature"]["contentHash"],
+              record["pinnedContext"]["contentHash"][:24])
+
+status, historical = call("GET", f"/fhir/Bundle/{identifier}/versions/1", anna)
+check("the historical content itself is retrievable by version",
+      status == 200 and "Examplinum" in str(historical), str(status))
+
+status, before = call(
+    "GET", f"/labels/{identifier}/versions/1/state?asAt=2020-01-01T00:00:00Z", anna)
+check("and before the version existed it was in no state at all", status == 404, str(status))
+
 print("\n" + ("ALL CHECKS PASSED" if not failures else f"FAILURES: {failures}"))
