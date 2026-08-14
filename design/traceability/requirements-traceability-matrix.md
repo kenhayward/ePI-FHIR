@@ -124,11 +124,11 @@ Status values: `planned` (scheduled, not built), `partial` (some aspect delivere
 | CAP-TRM-010 | 6 | S | P0 | Terminology Service | - | - | - |
 | CAP-LCM-001 | 7 | M | P1 | Lifecycle & Workflow Service | 2 | partial | FN_LCM_001/002 and IT_010: model loaded from configuration and unpermitted transitions refused |
 | CAP-LCM-002 | 7 | M | P1 | Lifecycle & Workflow Service | - | - | - |
-| CAP-LCM-003 | 7 | M | P1 | Lifecycle & Workflow Service | 2 | partial | FN_LCM_004 and IT_013: per-market regulatory-approval state in its own model, store and service, with a test that a market transition leaves internal state untouched. Effective dating (CAP-LCM-004) and the durable store follow |
+| CAP-LCM-003 | 7 | M | P1 | Lifecycle & Workflow Service | 2 | partial | FN_LCM_004 and IT_013: per-market regulatory-approval state in its own model, store and service, with a test that a market transition leaves internal state untouched. Held in a durable append-only table keyed by version and market, with UPDATE and DELETE refused by a database trigger. Effective dating (CAP-LCM-004) follows |
 | CAP-LCM-004 | 7 | M | P1 | Lifecycle & Workflow Service | - | - | - |
 | CAP-LCM-005 | 7 | M | P1 | Lifecycle & Workflow Service | - | - | - |
 | CAP-LCM-006 | 7 | M | P1 | Lifecycle & Workflow Service | 2 | planned | iteration-2 (see design/iteration-2.md) |
-| CAP-LCM-007 | 7 | M | P1 | Lifecycle & Workflow Service | 2 | partial | FN_LCM_003: transitions recorded with actor, time and reason; workflow routing is a later PR |
+| CAP-LCM-007 | 7 | M | P1 | Lifecycle & Workflow Service | 2 | partial | FN_LCM_003: transitions recorded with actor, time and reason, in a durable append-only table with UPDATE and DELETE refused by a database trigger; workflow routing is a later PR |
 | CAP-LCM-008 | 7 | S | P1 | Lifecycle & Workflow Service | - | - | - |
 | CAP-LCM-009 | 7 | M | P1 | Lifecycle & Workflow Service | - | - | - |
 | CAP-LCM-010 | 7 | M | P1 | Lifecycle & Workflow Service | - | - | - |
@@ -229,7 +229,7 @@ Status values: `planned` (scheduled, not built), `partial` (some aspect delivere
 | CAP-SEC-007 | 18 | S | P0 | Security | - | - | - |
 | CAP-AUD-001 | 19 | M | P0 | Audit & e-Signature | 1 | partial | FN_AUD_001 and IT_003 for content writes and access decisions; other capabilities write as they arrive |
 | CAP-AUD-002 | 19 | M | P0 | Audit & e-Signature | 1 | partial | FN_AUD_002 and FN_AUD_003: append-only by interface, and enforced by the database in the PostgreSQL sink; sealed WORM export is capability 22 |
-| CAP-AUD-003 | 19 | M | P0 | Audit & e-Signature | 2 | partial | ADR-020 plus FN_AUD_005, FN_WFL_003 and IT_012: the manifest binds signer, printed name, meaning, time and a SHA-256 hash of the version, every signing attempt is audited, and the approval gate accepts only a valid, unspent signature by the transitioning actor. The durable signature store is still to come; today they are held in memory |
+| CAP-AUD-003 | 19 | M | P0 | Audit & e-Signature | 2 | partial | ADR-020 plus FN_AUD_005, FN_WFL_003 and IT_012: the manifest binds signer, printed name, meaning, time and a SHA-256 hash of the version, every signing attempt is audited, and the approval gate accepts only a valid, unspent signature by the transitioning actor. Signatures are held in a durable append-only table, with UPDATE and DELETE refused by a database trigger |
 | CAP-AUD-004 | 19 | M | P0 | Audit & e-Signature | - | - | - |
 | CAP-AUD-005 | 19 | M | P0 | Audit & e-Signature | - | - | - |
 | CAP-AUD-006 | 19 | M | P0 | Audit & e-Signature | - | - | - |

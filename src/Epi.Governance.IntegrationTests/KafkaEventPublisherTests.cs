@@ -1,6 +1,7 @@
 using System.Text;
 using System.Text.Json;
 using Confluent.Kafka;
+using Confluent.Kafka.Admin;
 using Epi.Contracts;
 using Epi.Governance.Events;
 using Testcontainers.Kafka;
@@ -56,6 +57,27 @@ public sealed class KafkaEventPublisherTests(KafkaBroker broker)
         ContentEvent.Created, identifier, "https://epi.example.org/identifier/document",
         version, "uk-affiliate", "GB", DateTimeOffset.UtcNow);
 
+    /// <summary>
+    /// Creates the topic before anyone subscribes to it.
+    /// </summary>
+    /// <remarks>
+    /// Relying on the broker to create it on first publish is a race the test loses more often
+    /// than not: a consumer that subscribes to a topic which does not exist yet gets "unknown
+    /// topic or partition" back rather than waiting for it to appear.
+    /// </remarks>
+    private async Task<string> CreateTopicAsync()
+    {
+        var topic = $"epi.content.{Guid.NewGuid():N}";
+        using var admin = new AdminClientBuilder(
+            new AdminClientConfig { BootstrapServers = broker.BootstrapServers }).Build();
+
+        await admin.CreateTopicsAsync([
+            new TopicSpecification { Name = topic, NumPartitions = 1, ReplicationFactor = 1 }
+        ]);
+
+        return topic;
+    }
+
     private IConsumer<string, string> Subscribe(string topic)
     {
         var consumer = new ConsumerBuilder<string, string>(new ConsumerConfig
@@ -73,7 +95,7 @@ public sealed class KafkaEventPublisherTests(KafkaBroker broker)
     [Fact]
     public async Task FN_EVT_002_an_event_published_can_be_read_back_off_the_broker()
     {
-        var topic = $"epi.content.{Guid.NewGuid():N}";
+        var topic = await CreateTopicAsync();
         using var consumer = Subscribe(topic);
         using var publisher = new KafkaEventPublisher(broker.BootstrapServers, topic, PublishTimeout);
 
@@ -94,7 +116,7 @@ public sealed class KafkaEventPublisherTests(KafkaBroker broker)
     {
         // So a consumer can route or reject by type without deserialising a payload it may
         // not understand (CAP-EVT-006).
-        var topic = $"epi.content.{Guid.NewGuid():N}";
+        var topic = await CreateTopicAsync();
         using var consumer = Subscribe(topic);
         using var publisher = new KafkaEventPublisher(broker.BootstrapServers, topic, PublishTimeout);
 
@@ -114,7 +136,7 @@ public sealed class KafkaEventPublisherTests(KafkaBroker broker)
     {
         // A consumer must not see version 2 before version 1. Keying by document puts every
         // event about it on one partition, which is what makes that true.
-        var topic = $"epi.content.{Guid.NewGuid():N}";
+        var topic = await CreateTopicAsync();
         using var consumer = Subscribe(topic);
         using var publisher = new KafkaEventPublisher(broker.BootstrapServers, topic, PublishTimeout);
 
