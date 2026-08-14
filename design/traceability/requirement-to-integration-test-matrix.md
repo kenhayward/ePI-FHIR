@@ -13,7 +13,7 @@ Name integration tests for the case they validate, for example
 ## Coverage
 
 - Integration tests declared: **17**
-- Implemented in code: **12**
+- Implemented in code: **13**
 - Requirements validated by at least one integration test: **27**
 - Scheduled requirements still without one: **3**
 
@@ -33,7 +33,7 @@ Name integration tests for the case they validate, for example
 | IT-010 | An unpermitted transition is rejected and a permitted one records actor and timestamp | CAP-LCM-001, CAP-LCM-007 | 2 | implemented | `IT_010_a_permitted_transition_records_actor_and_time` (src/Epi.Lifecycle.Tests/LifecycleServiceTests.cs)<br>`IT_010_a_refused_transition_leaves_no_history_behind` (src/Epi.Lifecycle.Tests/LifecycleServiceTests.cs)<br>`IT_010_a_transition_the_model_does_not_permit_is_refused` (src/Epi.Lifecycle.Tests/LifecycleServiceTests.cs) |
 | IT-011 | The author of a version cannot approve it, by any route | CAP-IAM-006, CAP-WFL-005 | 2 | implemented | `IT_011_an_unknown_author_refuses_approval_rather_than_allowing_it` (src/Epi.Lifecycle.Tests/LifecycleServiceTests.cs)<br>`IT_011_someone_other_than_the_author_may_approve_it` (src/Epi.Lifecycle.Tests/LifecycleServiceTests.cs)<br>`IT_011_the_author_of_a_version_may_not_approve_it` (src/Epi.Lifecycle.Tests/LifecycleServiceTests.cs) |
 | IT-012 | Approval captures a signature binding signer, meaning, time and a hash of the version signed | CAP-AUD-003, CAP-WFL-003 | 2 | implemented | `IT_012_a_signature_by_the_author_cannot_approve_their_own_version` (src/Epi.Signature.Tests/SignatureCheckTests.cs)<br>`IT_012_approval_captures_a_signature_over_the_exact_version_signed` (src/Epi.Signature.Tests/SignatureCheckTests.cs) |
-| IT-013 | A version approved in one market is not approved in another, on the same content | CAP-LCM-003 | 2 | planned | - |
+| IT-013 | A version approved in one market is not approved in another, on the same content | CAP-LCM-003 | 2 | implemented | `IT_013_a_rejection_in_one_market_leaves_the_other_untouched` (src/Epi.Lifecycle.Tests/MarketApprovalServiceTests.cs)<br>`IT_013_a_version_approved_in_one_market_is_not_approved_in_another` (src/Epi.Lifecycle.Tests/MarketApprovalServiceTests.cs) |
 | IT-014 | A label instantiated from a template validates and records its template version | CAP-TPL-004, CAP-TPL-007 | 2 | planned | - |
 | IT-015 | Section identifiers survive a new version unchanged | CAP-SCM-007 | 2 | planned | - |
 | IT-016 | Search returns only what the caller may see and can return the current-approved version per market | CAP-SCH-002, CAP-SCH-004 | 2 | planned | - |

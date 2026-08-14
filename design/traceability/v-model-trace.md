@@ -22,8 +22,8 @@ set is in [requirements-traceability-matrix.md](requirements-traceability-matrix
 - Scheduled requirements: **30**
 - With at least one design function: **30**
 - With at least one integration test: **27**
-- Design functions awaiting a unit test: **10** of 39
-- Integration tests awaiting implementation: **5** of 17
+- Design functions awaiting a unit test: **9** of 39
+- Integration tests awaiting implementation: **4** of 17
 
 ## Trace
 
@@ -35,7 +35,7 @@ set is in [requirements-traceability-matrix.md](requirements-traceability-matrix
 | CAP-TPL-004 | P1 | 2 | FN-TPL-001 | - | IT-014 | - |
 | CAP-TPL-007 | P1 | 2 | FN-TPL-002 | - | IT-014 | - |
 | CAP-LCM-001 | P1 | 2 | FN-LCM-001, FN-LCM-002 | `FN_LCM_001_carries_the_conditions_a_transition_imposes` (src/Epi.Lifecycle.Tests/LifecycleModelTests.cs)<br>`FN_LCM_001_loads_states_and_transitions_from_configuration` (src/Epi.Lifecycle.Tests/LifecycleModelTests.cs)<br>`FN_LCM_001_rejects_a_model_with_no_states_at_all` (src/Epi.Lifecycle.Tests/LifecycleModelTests.cs)<br>`FN_LCM_001_rejects_a_transition_referring_to_a_state_that_does_not_exist` (src/Epi.Lifecycle.Tests/LifecycleModelTests.cs)<br>`FN_LCM_001_rejects_an_initial_state_that_is_not_among_the_states` (src/Epi.Lifecycle.Tests/LifecycleModelTests.cs)<br>`FN_LCM_001_rejects_two_transitions_claiming_the_same_state_and_action` (src/Epi.Lifecycle.Tests/LifecycleModelTests.cs)<br>`FN_LCM_001_the_shipped_label_model_loads_and_gates_approval` (src/Epi.Lifecycle.Tests/LifecycleModelTests.cs)<br>`FN_LCM_002_a_transition_the_model_does_not_permit_is_not_found` (src/Epi.Lifecycle.Tests/LifecycleModelTests.cs)<br>`FN_LCM_002_states_are_matched_exactly_rather_than_loosely` (src/Epi.Lifecycle.Tests/LifecycleModelTests.cs) | IT-010 | `IT_010_a_permitted_transition_records_actor_and_time` (src/Epi.Lifecycle.Tests/LifecycleServiceTests.cs)<br>`IT_010_a_refused_transition_leaves_no_history_behind` (src/Epi.Lifecycle.Tests/LifecycleServiceTests.cs)<br>`IT_010_a_transition_the_model_does_not_permit_is_refused` (src/Epi.Lifecycle.Tests/LifecycleServiceTests.cs) |
-| CAP-LCM-003 | P1 | 2 | FN-LCM-004 | - | IT-013 | - |
+| CAP-LCM-003 | P1 | 2 | FN-LCM-004 | `FN_LCM_004_a_market_model_may_not_gate_on_a_signature_nothing_here_checks` (src/Epi.Lifecycle.Tests/MarketApprovalServiceTests.cs)<br>`FN_LCM_004_a_market_the_platform_does_not_know_is_refused` (src/Epi.Lifecycle.Tests/MarketApprovalServiceTests.cs)<br>`FN_LCM_004_a_service_with_no_markets_configured_refuses_to_start` (src/Epi.Lifecycle.Tests/MarketApprovalServiceTests.cs)<br>`FN_LCM_004_a_transition_records_actor_time_and_reason` (src/Epi.Lifecycle.Tests/MarketApprovalServiceTests.cs)<br>`FN_LCM_004_a_transition_the_market_model_does_not_permit_is_refused` (src/Epi.Lifecycle.Tests/MarketApprovalServiceTests.cs)<br>`FN_LCM_004_a_version_is_unsubmitted_in_every_market_until_it_moves` (src/Epi.Lifecycle.Tests/MarketApprovalServiceTests.cs)<br>`FN_LCM_004_history_is_per_market_and_in_order` (src/Epi.Lifecycle.Tests/MarketApprovalServiceTests.cs)<br>`FN_LCM_004_market_state_does_not_disturb_internal_state` (src/Epi.Lifecycle.Tests/MarketApprovalServiceTests.cs)<br>`FN_LCM_004_states_are_reported_for_every_known_market` (src/Epi.Lifecycle.Tests/MarketApprovalServiceTests.cs)<br>`FN_LCM_004_the_shipped_market_model_loads_and_is_not_the_internal_one` (src/Epi.Lifecycle.Tests/MarketApprovalServiceTests.cs) | IT-013 | `IT_013_a_rejection_in_one_market_leaves_the_other_untouched` (src/Epi.Lifecycle.Tests/MarketApprovalServiceTests.cs)<br>`IT_013_a_version_approved_in_one_market_is_not_approved_in_another` (src/Epi.Lifecycle.Tests/MarketApprovalServiceTests.cs) |
 | CAP-LCM-006 | P1 | 2 | FN-LCM-006 | - | IT-017 | - |
 | CAP-LCM-007 | P1 | 2 | FN-LCM-003 | `FN_LCM_003_a_transition_the_model_says_must_be_signed_cannot_be_made_unsigned` (src/Epi.Lifecycle.Tests/LifecycleServiceTests.cs)<br>`FN_LCM_003_a_version_not_under_management_cannot_transition` (src/Epi.Lifecycle.Tests/LifecycleServiceTests.cs)<br>`FN_LCM_003_history_is_kept_in_order_and_the_store_offers_no_way_to_amend_it` (src/Epi.Lifecycle.Tests/LifecycleServiceTests.cs) | IT-010 | `IT_010_a_permitted_transition_records_actor_and_time` (src/Epi.Lifecycle.Tests/LifecycleServiceTests.cs)<br>`IT_010_a_refused_transition_leaves_no_history_behind` (src/Epi.Lifecycle.Tests/LifecycleServiceTests.cs)<br>`IT_010_a_transition_the_model_does_not_permit_is_refused` (src/Epi.Lifecycle.Tests/LifecycleServiceTests.cs) |
 | CAP-LCM-011 | P1 | 2 | FN-LCM-005 | - | **none** | - |
@@ -69,6 +69,6 @@ normal work in progress. Referential errors, by contrast, fail the build.
 
 **Scheduled requirements with no integration test:** CAP-LCM-011, CAP-SCH-001, CAP-WFL-001
 
-**Design functions with no unit test:** FN-AUD-001, FN-LCM-004, FN-LCM-005, FN-LCM-006, FN-SCH-001, FN-SCH-002, FN-TPL-001, FN-TPL-002, FN-WFL-001, FN-WFL-002
+**Design functions with no unit test:** FN-AUD-001, FN-LCM-005, FN-LCM-006, FN-SCH-001, FN-SCH-002, FN-TPL-001, FN-TPL-002, FN-WFL-001, FN-WFL-002
 
-**Integration tests not yet implemented:** IT-013, IT-014, IT-015, IT-016, IT-017
+**Integration tests not yet implemented:** IT-014, IT-015, IT-016, IT-017
