@@ -1,7 +1,6 @@
 using Epi.ContentCore;
 using Epi.Governance.Audit;
 using Hl7.Fhir.Model;
-using Microsoft.Extensions.Time.Testing;
 using Xunit;
 
 namespace Epi.Governance.Tests;
@@ -35,34 +34,9 @@ public sealed class AuditTests
         await Task.CompletedTask;
     }
 
-    [Fact]
-    public async Task FN_AUD_003_a_reader_cannot_change_history_through_the_list_it_is_given()
-    {
-        var sink = new InMemoryAuditSink();
-        await sink.AppendAsync(new AuditRecord("user-anna", "content.create", "doc", AuditOutcome.Succeeded, default));
-
-        var first = await sink.ReadAsync();
-        Assert.IsNotType<AuditRecord[]>(first as object);
-
-        var second = await sink.ReadAsync();
-        Assert.Single(second);
-    }
-
-    [Fact]
-    public async Task FN_AUD_002_the_sink_stamps_the_time_rather_than_trusting_the_caller()
-    {
-        // A contemporaneous record is one the system timed. A caller-supplied timestamp is a
-        // claim, not evidence (ALCOA+).
-        var clock = new FakeTimeProvider(new DateTimeOffset(2026, 8, 13, 9, 30, 0, TimeSpan.Zero));
-        var sink = new InMemoryAuditSink(clock);
-
-        await sink.AppendAsync(new AuditRecord(
-            "user-anna", "content.create", "doc", AuditOutcome.Succeeded,
-            RecordedAt: new DateTimeOffset(1999, 1, 1, 0, 0, 0, TimeSpan.Zero)));
-
-        var recorded = Assert.Single(await sink.ReadAsync());
-        Assert.Equal(clock.GetUtcNow(), recorded.RecordedAt);
-    }
+    // Sink-level behaviour lives in AuditSinkConformance, so that the durable sink is held to
+    // the same assertions as the in-memory one. What remains here is the decorators, which have
+    // one implementation each.
 
     [Fact]
     public async Task IT_003_a_content_write_produces_a_record_with_before_and_after()

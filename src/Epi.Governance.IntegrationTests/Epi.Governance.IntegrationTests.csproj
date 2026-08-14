@@ -1,0 +1,29 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>Epi.Governance.IntegrationTests</RootNamespace>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <!-- Testcontainers is MIT, compatible with the Apache-2.0 rule in CLAUDE.md. -->
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.TimeProvider.Testing" Version="9.0.0" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
+    <PackageReference Include="Testcontainers" Version="4.13.0" />
+    <PackageReference Include="Testcontainers.Kafka" Version="4.13.0" />
+    <PackageReference Include="xunit" Version="2.9.2" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.8.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../Epi.Governance/Epi.Governance.csproj" />
+    <ProjectReference Include="../Epi.Contracts/Epi.Contracts.csproj" />
+  </ItemGroup>
+
+  <!-- The audit conformance suite is shared source rather than a shipped test package: these
+       are the same assertions the in-memory sink satisfies, run against a real PostgreSQL. -->
+  <ItemGroup>
+    <Compile Include="../Epi.Governance.Tests/AuditSinkConformance.cs" Link="AuditSinkConformance.cs" />
+  </ItemGroup>
+
+</Project>

@@ -52,9 +52,11 @@ public sealed class PostgresCollection : ICollectionFixture<PostgresServer>
 [Trait("Category", "Container")]
 public sealed class PostgresAuditSinkConformanceTests(PostgresServer server) : AuditSinkConformance
 {
-    protected override async Task<IAuditSink> CreateSinkAsync()
+    protected override async Task<IAuditSink> CreateSinkAsync(TimeProvider? time = null)
     {
-        var sink = new PostgresAuditSink(await server.CreateDatabaseAsync());
+        // A database of its own per sink, so the conformance cases cannot see each other's
+        // records through a shared table.
+        var sink = new PostgresAuditSink(await server.CreateDatabaseAsync(), time);
         await sink.InitialiseAsync();
         return sink;
     }

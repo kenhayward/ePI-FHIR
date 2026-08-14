@@ -1,10 +1,9 @@
 using System.Text;
 using System.Text.Json;
 using Confluent.Kafka;
-using DotNet.Testcontainers.Builders;
-using DotNet.Testcontainers.Containers;
 using Epi.Contracts;
 using Epi.Governance.Events;
+using Testcontainers.Kafka;
 using Xunit;
 
 namespace Epi.Governance.IntegrationTests;
@@ -12,25 +11,21 @@ namespace Epi.Governance.IntegrationTests;
 /// <summary>A real Kafka broker, the same image the development stack runs.</summary>
 public sealed class KafkaBroker : IAsyncLifetime
 {
+    /// <summary>The image the development stack runs (deploy/docker-compose).</summary>
     private const string Image = "apache/kafka:3.8.0";
-    private const int Port = 9092;
 
-    private readonly IContainer _container = new ContainerBuilder(Image)
-        .WithPortBinding(Port, assignRandomHostPort: true)
-        .WithEnvironment("KAFKA_NODE_ID", "1")
-        .WithEnvironment("KAFKA_PROCESS_ROLES", "broker,controller")
-        .WithEnvironment("KAFKA_LISTENERS", "PLAINTEXT://:9092,CONTROLLER://:9093,HOST://:9094")
-        .WithEnvironment("KAFKA_CONTROLLER_QUORUM_VOTERS", "1@localhost:9093")
-        .WithEnvironment("KAFKA_CONTROLLER_LISTENER_NAMES", "CONTROLLER")
-        .WithEnvironment("KAFKA_LISTENER_SECURITY_PROTOCOL_MAP",
-            "CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,HOST:PLAINTEXT")
-        .WithEnvironment("KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR", "1")
-        .WithEnvironment("KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR", "1")
-        .WithEnvironment("KAFKA_TRANSACTION_STATE_LOG_MIN_ISR", "1")
-        .WithWaitStrategy(Wait.ForUnixContainer().UntilPortIsAvailable(Port))
-        .Build();
+    /// <remarks>
+    /// The Testcontainers Kafka module rather than a hand-built container, because a broker
+    /// needs its advertised listeners rewritten to the mapped host port after it starts, and
+    /// that cannot be done with environment variables alone - the port is not known until the
+    /// container is running. Configuring it by hand without them is what made these tests hang:
+    /// the broker advertised an address only reachable inside the container, the client
+    /// connected, received unusable metadata, and every produce sat there until librdkafka's
+    /// five-minute message timeout expired.
+    /// </remarks>
+    private readonly KafkaContainer _container = new KafkaBuilder(Image).Build();
 
-    public string BootstrapServers => $"{_container.Hostname}:{_container.GetMappedPublicPort(Port)}";
+    public string BootstrapServers => _container.GetBootstrapAddress().Replace("PLAINTEXT://", "");
 
     public Task InitializeAsync() => _container.StartAsync();
 
@@ -51,6 +46,12 @@ public sealed class KafkaCollection : ICollectionFixture<KafkaBroker>
 [Trait("Category", "Container")]
 public sealed class KafkaEventPublisherTests(KafkaBroker broker)
 {
+    /// <summary>
+    /// Short on purpose. A broker these tests cannot reach should fail in seconds; librdkafka's
+    /// five-minute default made three broken tests look like a sixteen-minute CI job.
+    /// </summary>
+    private static readonly TimeSpan PublishTimeout = TimeSpan.FromSeconds(20);
+
     private static ContentEvent Event(string identifier = "doc-1", int version = 1) => new(
         ContentEvent.Created, identifier, "https://epi.example.org/identifier/document",
         version, "uk-affiliate", "GB", DateTimeOffset.UtcNow);
@@ -74,7 +75,7 @@ public sealed class KafkaEventPublisherTests(KafkaBroker broker)
     {
         var topic = $"epi.content.{Guid.NewGuid():N}";
         using var consumer = Subscribe(topic);
-        using var publisher = new KafkaEventPublisher(broker.BootstrapServers, topic);
+        using var publisher = new KafkaEventPublisher(broker.BootstrapServers, topic, PublishTimeout);
 
         await publisher.PublishAsync(Event());
 
@@ -95,7 +96,7 @@ public sealed class KafkaEventPublisherTests(KafkaBroker broker)
         // not understand (CAP-EVT-006).
         var topic = $"epi.content.{Guid.NewGuid():N}";
         using var consumer = Subscribe(topic);
-        using var publisher = new KafkaEventPublisher(broker.BootstrapServers, topic);
+        using var publisher = new KafkaEventPublisher(broker.BootstrapServers, topic, PublishTimeout);
 
         await publisher.PublishAsync(Event());
 
@@ -115,7 +116,7 @@ public sealed class KafkaEventPublisherTests(KafkaBroker broker)
         // event about it on one partition, which is what makes that true.
         var topic = $"epi.content.{Guid.NewGuid():N}";
         using var consumer = Subscribe(topic);
-        using var publisher = new KafkaEventPublisher(broker.BootstrapServers, topic);
+        using var publisher = new KafkaEventPublisher(broker.BootstrapServers, topic, PublishTimeout);
 
         await publisher.PublishAsync(Event("doc-7", version: 1));
         await publisher.PublishAsync(Event("doc-7", version: 2) with { Type = ContentEvent.VersionCreated });

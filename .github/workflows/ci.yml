@@ -103,6 +103,44 @@ jobs:
           done < <(git ls-files)
           exit $fail
 
+      # A directory of C# that no project compiles is a directory of tests nobody runs, and it
+      # looks exactly like a directory of tests everybody runs. Epi.Governance.IntegrationTests
+      # sat like that from the pull request that wrote it: three tracked files, no .csproj, no
+      # solution entry, and a green build every time.
+      - name: Every C# directory belongs to a project in the solution
+        run: |
+          # Compared against the tracked project list directly. Git pathspec globs cross
+          # directory boundaries, so probing "$dir/*.csproj" would happily match a project
+          # several levels up and report every orphan as fine.
+          projects=$(git ls-files '*.csproj')
+          fail=0
+          for dir in $(git ls-files '*.cs' | grep '^src/' | xargs -r -n1 dirname | sort -u); do
+            found=""
+            probe="$dir"
+            while [ "$probe" != "." ] && [ "$probe" != "/" ]; do
+              for project in $projects; do
+                if [ "$(dirname "$project")" = "$probe" ]; then
+                  found="$project"
+                fi
+              done
+              if [ -n "$found" ]; then
+                break
+              fi
+              probe=$(dirname "$probe")
+            done
+            if [ -z "$found" ]; then
+              echo "::error file=$dir::C# here belongs to no .csproj, so it is never compiled"
+              fail=1
+              continue
+            fi
+            # A project outside the solution is not built or tested by CI either.
+            if ! grep -qF "$(basename "$found")" EpiPlatform.sln; then
+              echo "::error file=$found::project is not in EpiPlatform.sln, so CI never builds it"
+              fail=1
+            fi
+          done
+          exit $fail
+
   # ---- The dev stack must at least be a valid, resolvable compose project. ----
   compose:
     runs-on: ubuntu-latest
