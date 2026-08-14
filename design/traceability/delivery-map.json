@@ -80,6 +80,11 @@
     "status": "partial",
     "evidence": "FN_LCM_001/002 and IT_010: model loaded from configuration and unpermitted transitions refused"
   },
+  "CAP-LCM-012": {
+    "iteration": "2",
+    "status": "partial",
+    "evidence": "FN_LCM_007 and IT_018: submission to a regulator is refused without a valid, unspent signature meaning responsibility; recording the regulator's decision requires none and is audited regardless. Signature on submission of a variation (#8) follows with change management"
+  },
   "CAP-LCM-003": {
     "iteration": "2",
     "status": "partial",

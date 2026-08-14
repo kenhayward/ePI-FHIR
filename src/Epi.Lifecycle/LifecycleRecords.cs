@@ -31,7 +31,7 @@ public sealed record StateTransition(
 /// No update and no delete, for the same reason the audit sink has none: the history is the
 /// evidence. State is a record about a version, never a field on it (ADR-019 decision 1).
 /// </remarks>
-public interface ILifecycleStore
+public interface ILifecycleStore : ISpentSignatures
 {
     /// <summary>Registers a new version in the initial state, recording who authored it.</summary>
     Task RegisterAsync(VersionRef version, string author, string initialState,
@@ -46,16 +46,6 @@ public interface ILifecycleStore
     /// <summary>Every transition a version has been through, oldest first.</summary>
     Task<IReadOnlyList<StateTransition>> HistoryAsync(VersionRef version,
         CancellationToken cancellationToken = default);
-
-    /// <summary>
-    /// Whether any transition, on any version, has already cited this signature reference.
-    /// </summary>
-    /// <remarks>
-    /// This is how a signature is made single-use. Nothing is written back to the signature to
-    /// mark it spent - an append-only store could not do that - so the question is answered from
-    /// the transition history, which is the record of what has actually been signed for.
-    /// </remarks>
-    Task<bool> IsSignatureUsedAsync(string reference, CancellationToken cancellationToken = default);
 
     Task AppendAsync(StateTransition transition, CancellationToken cancellationToken = default);
 }

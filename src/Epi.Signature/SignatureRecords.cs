@@ -7,11 +7,17 @@ namespace Epi.Signature;
 /// 21 CFR Part 11 Section 11.50(a)(3) requires the meaning of a signature to be recorded, and a
 /// free-text field records whatever the caller chose to type.
 /// </summary>
+/// <remarks>
+/// The four meanings 21 CFR Part 11 Section 11.50(a)(3) itself gives as examples. Responsibility
+/// is what someone submitting a version to a regulator asserts: not that the content is approved
+/// - that was the earlier approval signature - but that they are the person sending it.
+/// </remarks>
 public enum SignatureMeaning
 {
     Authorship,
     Review,
     Approval,
+    Responsibility,
 }
 
 /// <summary>

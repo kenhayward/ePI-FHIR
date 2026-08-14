@@ -13,8 +13,14 @@ public sealed class LifecycleService(
     LifecycleModel model,
     ILifecycleStore store,
     TimeProvider? time = null,
-    ISignatureCheck? signatureCheck = null)
+    ISignatureCheck? signatureCheck = null,
+    ISpentSignatures? spent = null)
 {
+    // Defaults to this store alone, which is right when it is the only one. Composition passes
+    // a SpentSignatures over every store that records signature use, so a signature spent on a
+    // regulatory submission cannot then carry an internal approval.
+    private readonly ISpentSignatures _spent = spent ?? store;
+
     private readonly LifecycleModel _model = model ?? throw new ArgumentNullException(nameof(model));
     private readonly ILifecycleStore _store = store ?? throw new ArgumentNullException(nameof(store));
     private readonly TimeProvider _time = time ?? TimeProvider.System;
@@ -105,7 +111,7 @@ public sealed class LifecycleService(
             // signature spent. Without it one approval signature could be replayed against
             // every later gate, making a signature a token its holder can spend rather than an
             // assertion about one act.
-            if (await _store.IsSignatureUsedAsync(signatureReference, cancellationToken))
+            if (await _spent.IsSignatureUsedAsync(signatureReference, cancellationToken))
             {
                 throw new TransitionRefusedException(version, action,
                     "that signature has already been used for another transition.");

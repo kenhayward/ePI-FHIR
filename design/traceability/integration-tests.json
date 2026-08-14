@@ -105,6 +105,14 @@
     "iteration": "2",
     "status": "planned"
   },
+  "IT-018": {
+    "name": "A regulatory submission is refused unsigned; recording the regulator's decision needs no signature",
+    "verifies": [
+      "CAP-LCM-012"
+    ],
+    "iteration": "2",
+    "status": "planned"
+  },
   "IT-013": {
     "name": "A version approved in one market is not approved in another, on the same content",
     "verifies": [
