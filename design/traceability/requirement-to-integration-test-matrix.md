@@ -12,9 +12,9 @@ Name integration tests for the case they validate, for example
 
 ## Coverage
 
-- Integration tests declared: **17**
-- Implemented in code: **13**
-- Requirements validated by at least one integration test: **27**
+- Integration tests declared: **18**
+- Implemented in code: **14**
+- Requirements validated by at least one integration test: **28**
 - Scheduled requirements still without one: **3**
 
 ## Integration tests
@@ -38,6 +38,7 @@ Name integration tests for the case they validate, for example
 | IT-015 | Section identifiers survive a new version unchanged | CAP-SCM-007 | 2 | planned | - |
 | IT-016 | Search returns only what the caller may see and can return the current-approved version per market | CAP-SCH-002, CAP-SCH-004 | 2 | planned | - |
 | IT-017 | A historical version is reconstructable with the metadata that made it valid | CAP-LCM-006 | 2 | planned | - |
+| IT-018 | A regulatory submission is refused unsigned; recording the regulator's decision needs no signature | CAP-LCM-012 | 2 | implemented | `IT_018_a_submission_without_a_signature_is_refused` (src/Epi.Lifecycle.Tests/MarketSubmissionSignatureTests.cs)<br>`IT_018_recording_the_regulators_decision_needs_no_signature` (src/Epi.Lifecycle.Tests/MarketSubmissionSignatureTests.cs) |
 
 ## By requirement
 
@@ -59,6 +60,7 @@ Name integration tests for the case they validate, for example
 | CAP-LCM-003 | IT-013 | Maintain **internal lifecycle state** separately from **per-market regulatory-approval state**. |
 | CAP-LCM-006 | IT-017 | Reconstruct the full content and metadata of any historical version. |
 | CAP-LCM-007 | IT-010 | Enforce transitions through workflow (#16) and permissions/segregation of duties (#17). |
+| CAP-LCM-012 | IT-018 | Require an electronic signature (#19) to submit a version to a regulator. Recording a regulator's subsequent decision is a factual entry about an external event and is **not** signed. |
 | CAP-SCH-002 | IT-016 | Retrieve a specific version and the current-approved version of a label per market/language. |
 | CAP-SCH-004 | IT-016 | Scope all results by caller permissions/attributes (#17); never leak out-of-scope content. |
 | CAP-SCM-001 | IT-001 | Represent an ePI as a FHIR document `Bundle` anchored by a `Composition` with typed, coded sections. |

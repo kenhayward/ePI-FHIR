@@ -172,7 +172,7 @@ public sealed class MarketApprovalServiceTests
     public async Task FN_LCM_004_a_transition_records_actor_time_and_reason()
     {
         var (service, _) = Approvals();
-        await service.TransitionAsync(Version, "GB", "submit", "user-rae");
+        await service.TransitionAsync(Version, "GB", "submit", "user-rae", signatureReference: "sig-GB");
         await service.TransitionAsync(Version, "GB", "begin-assessment", "user-rae");
 
         var transition = await service.TransitionAsync(

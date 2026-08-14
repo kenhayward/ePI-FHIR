@@ -51,8 +51,16 @@ public sealed class InMemoryMarketApprovalStore : IMarketApprovalStore
     }
 
     public Task<bool> IsSignatureUsedAsync(
-        string reference, CancellationToken cancellationToken = default) =>
-        throw new NotImplementedException();
+        string reference, CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(reference);
+
+        lock (_gate)
+        {
+            return Task.FromResult(_transitions.Any(
+                t => string.Equals(t.SignatureReference, reference, StringComparison.Ordinal)));
+        }
+    }
 
     public Task AppendAsync(
         MarketStateTransition transition, CancellationToken cancellationToken = default)
