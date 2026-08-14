@@ -137,7 +137,8 @@ Each becomes an ADR:
    config-as-data (capability 21), but their storage, and how a transition is recorded against
    an immutable version, is not settled. This interacts with ADR-005's separation of internal
    and per-market state.
-2. **Electronic signature mechanism - direction settled, ADR still needed.** The demonstration
+2. **Electronic signature mechanism - settled by
+   [ADR-020](adrs/0020-electronic-signature.md).** The demonstration
    uses **user identifier and password re-authentication at the signing gate**, with the
    signature manifest persisted in the audit trail and linked to the electronic record. PKI is
    the expected production mechanism.
@@ -146,7 +147,7 @@ Each becomes an ADR:
    electronic signatures built from **at least two distinct identification components**, of
    which a user identifier and a password is the canonical pair, and Section 11.70 requires a
    signature to be **linked to its record** so it cannot be excised, copied, or transferred.
-   What the ADR must still specify:
+   What the ADR had to specify, and now does:
 
    - **Re-authentication at the point of signing**, rather than relying on the session. A
      signature any authenticated session can produce is an authorisation, not a signature.
