@@ -6,13 +6,41 @@ namespace Epi.Signature.Tests;
 /// <summary>
 /// The behaviour every signature store must exhibit, whatever backs it (FN-AUD-005).
 /// </summary>
-public abstract class SignatureStoreConformance
+public abstract class SignatureStoreConformance : IAsyncDisposable
 {
     private static readonly DocumentIdentity Document =
         new(ContentCoreDefaults.DocumentIdentifierSystem, "018f2a10-0000-7000-8000-000000000001");
 
+    private readonly List<ISignatureStore> _created = [];
+
     /// <summary>A store ready to use, with its schema in place if it needs one.</summary>
     protected abstract Task<ISignatureStore> CreateStoreAsync();
+
+    /// <summary>
+    /// A store, remembered so it is disposed when the case finishes. A durable store owns a
+    /// connection pool; leaving one per case open exhausted the server's connections partway
+    /// through the suite, which surfaced as a connection torn down mid-handshake rather than as
+    /// anything resembling "too many clients".
+    /// </summary>
+    private async Task<ISignatureStore> NewStoreAsync()
+    {
+        var store = await CreateStoreAsync();
+        _created.Add(store);
+        return store;
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        foreach (var store in _created)
+        {
+            if (store is IAsyncDisposable disposable)
+            {
+                await disposable.DisposeAsync();
+            }
+        }
+
+        GC.SuppressFinalize(this);
+    }
 
     private static SignatureManifest Manifest(
         string reference = "sig-1",
@@ -26,7 +54,7 @@ public abstract class SignatureStoreConformance
     [Fact]
     public async Task FN_AUD_005_a_reference_that_names_no_signature_finds_nothing()
     {
-        var store = await CreateStoreAsync();
+        var store = await NewStoreAsync();
 
         Assert.Null(await store.FindAsync("sig-1"));
     }
@@ -37,7 +65,7 @@ public abstract class SignatureStoreConformance
         // The manifest is the signature. A store dropping the meaning, the printed name, or the
         // hash would leave a record that cannot answer what 21 CFR Part 11 Section 11.50 asks of
         // it, while looking intact from every other angle.
-        var store = await CreateStoreAsync();
+        var store = await NewStoreAsync();
         var manifest = Manifest(reason: "reviewed against source");
 
         await store.AppendAsync(manifest);
@@ -58,7 +86,7 @@ public abstract class SignatureStoreConformance
     [Fact]
     public async Task FN_AUD_005_a_manifest_with_no_reason_reads_back_without_one()
     {
-        var store = await CreateStoreAsync();
+        var store = await NewStoreAsync();
         await store.AppendAsync(Manifest());
 
         Assert.Null((await store.FindAsync("sig-1"))!.Reason);
@@ -74,7 +102,7 @@ public abstract class SignatureStoreConformance
         // Meaning is what Section 11.50(a)(3) requires to be recorded, and it is what
         // distinguishes an approval gate from a submission gate. A store that flattened it
         // would silently make one signature usable at the other.
-        var store = await CreateStoreAsync();
+        var store = await NewStoreAsync();
         await store.AppendAsync(Manifest(meaning: meaning));
 
         Assert.Equal(meaning, (await store.FindAsync("sig-1"))!.Meaning);
@@ -83,7 +111,7 @@ public abstract class SignatureStoreConformance
     [Fact]
     public async Task FN_AUD_005_signatures_are_kept_apart_by_reference()
     {
-        var store = await CreateStoreAsync();
+        var store = await NewStoreAsync();
         await store.AppendAsync(Manifest("sig-1", version: 1));
         await store.AppendAsync(Manifest("sig-2", version: 2));
 
@@ -96,7 +124,7 @@ public abstract class SignatureStoreConformance
     {
         // Accepting it would replace one signature with another under the same reference, which
         // is an amendment however it is spelled (ADR-020 decision 7).
-        var store = await CreateStoreAsync();
+        var store = await NewStoreAsync();
         await store.AppendAsync(Manifest("sig-1", SignatureMeaning.Approval));
 
         await Assert.ThrowsAnyAsync<Exception>(

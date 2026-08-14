@@ -18,6 +18,9 @@ public sealed class PostgresServer : IAsyncLifetime
         .WithEnvironment("POSTGRES_PASSWORD", "devpassword")
         .WithEnvironment("POSTGRES_DB", "epi_audit")
         .WithPortBinding(Port, assignRandomHostPort: true)
+        // The default of 100 is generous for an application and thin for a suite that gives
+        // every case its own database, and so its own pool.
+        .WithCommand("postgres", "-c", "max_connections=300")
         .WithWaitStrategy(Wait.ForUnixContainer().UntilCommandIsCompleted("pg_isready", "-U", "epi"))
         .Build();
 
@@ -26,6 +29,12 @@ public sealed class PostgresServer : IAsyncLifetime
         + "Username=epi;Password=devpassword;Database=epi_audit";
 
     /// <summary>A database of its own, so tests sharing the container cannot see each other.</summary>
+    /// <remarks>
+    /// The pool is capped small. Each case gets its own database and therefore its own pool, and
+    /// a server that allows a hundred connections does not go far when dozens of cases each want
+    /// a poolful. Cases dispose their stores, and this is the belt to that pair of braces: a
+    /// leaked pool costs a couple of connections rather than a share of the whole server.
+    /// </remarks>
     public async Task<string> CreateDatabaseAsync()
     {
         var database = $"audit_{Guid.NewGuid():N}";
@@ -33,7 +42,8 @@ public sealed class PostgresServer : IAsyncLifetime
         await using var create = admin.CreateCommand($"CREATE DATABASE {database}");
         await create.ExecuteNonQueryAsync();
 
-        return ConnectionString.Replace("Database=epi_audit", $"Database={database}");
+        return ConnectionString.Replace("Database=epi_audit", $"Database={database}")
+               + ";Maximum Pool Size=3";
     }
 
     public Task InitializeAsync() => _container.StartAsync();

@@ -12,10 +12,38 @@ namespace Epi.Governance.Tests;
 /// same reasoning as the content store's conformance suite: two implementations of one contract
 /// drift unless the same assertions are run against both.
 /// </remarks>
-public abstract class AuditSinkConformance
+public abstract class AuditSinkConformance : IAsyncDisposable
 {
+    private readonly List<IAuditSink> _created = [];
+
     /// <summary>A sink ready to use, with its schema in place if it needs one.</summary>
     protected abstract Task<IAuditSink> CreateSinkAsync(TimeProvider? time = null);
+
+    /// <summary>
+    /// A sink, remembered so it is disposed when the case finishes. A durable sink owns a
+    /// connection pool; leaving one per case open exhausted the server's connections partway
+    /// through the suite, which surfaced as a connection torn down mid-handshake rather than as
+    /// anything resembling "too many clients".
+    /// </summary>
+    private async Task<IAuditSink> NewSinkAsync(TimeProvider? time = null)
+    {
+        var sink = await CreateSinkAsync(time);
+        _created.Add(sink);
+        return sink;
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        foreach (var sink in _created)
+        {
+            if (sink is IAsyncDisposable disposable)
+            {
+                await disposable.DisposeAsync();
+            }
+        }
+
+        GC.SuppressFinalize(this);
+    }
 
     [Fact]
     public async Task FN_AUD_002_the_sink_stamps_the_time_rather_than_trusting_the_caller()
@@ -23,7 +51,7 @@ public abstract class AuditSinkConformance
         // A contemporaneous record is one the system timed. A caller-supplied timestamp is a
         // claim, not evidence (ALCOA+).
         var clock = new FakeTimeProvider(new DateTimeOffset(2026, 8, 13, 9, 30, 0, TimeSpan.Zero));
-        var sink = await CreateSinkAsync(clock);
+        var sink = await NewSinkAsync(clock);
 
         await sink.AppendAsync(new AuditRecord(
             "user-anna", "content.create", "doc", AuditOutcome.Succeeded,
@@ -38,7 +66,7 @@ public abstract class AuditSinkConformance
     {
         // The before and after pair is the point of the record (ADR-018). A sink that dropped
         // either would still look like it worked from every other angle.
-        var sink = await CreateSinkAsync();
+        var sink = await NewSinkAsync();
 
         await sink.AppendAsync(new AuditRecord(
             "user-anna", "content.version", "doc-1@2", AuditOutcome.Denied, default,
@@ -59,7 +87,7 @@ public abstract class AuditSinkConformance
     {
         // Order is evidence. A trail that cannot say what happened before what cannot support
         // a reconstruction (CAP-AUD-004).
-        var sink = await CreateSinkAsync();
+        var sink = await NewSinkAsync();
 
         foreach (var target in new[] { "first", "second", "third" })
         {
@@ -73,7 +101,7 @@ public abstract class AuditSinkConformance
     [Fact]
     public async Task FN_AUD_003_a_reader_cannot_change_history_through_the_list_it_is_given()
     {
-        var sink = await CreateSinkAsync();
+        var sink = await NewSinkAsync();
         await sink.AppendAsync(
             new AuditRecord("user-anna", "content.create", "doc", AuditOutcome.Succeeded, default));
 
