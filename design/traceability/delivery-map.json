@@ -80,6 +80,16 @@
     "status": "partial",
     "evidence": "FN_LCM_001/002 and IT_010: model loaded from configuration and unpermitted transitions refused"
   },
+  "CAP-TPL-004": {
+    "iteration": "2",
+    "status": "partial",
+    "evidence": "ADR-021 plus CAP_TPL_004 tests: a template scaffolds a document Bundle anchored by a Composition, sections in the order the template gives them, optional ones included and boilerplate as narrative. The template library and its own lifecycle (CAP-TPL-001, CAP-TPL-008) follow"
+  },
+  "CAP-TPL-007": {
+    "iteration": "2",
+    "status": "partial",
+    "evidence": "CAP_TPL_007 tests: instantiated content records the template and template version on itself, in the deployment's configured namespaces. Effective dating of templates follows with the library"
+  },
   "CAP-LCM-012": {
     "iteration": "2",
     "status": "partial",
