@@ -122,7 +122,7 @@ Status values: `planned` (scheduled, not built), `partial` (some aspect delivere
 | CAP-TRM-008 | 6 | S | P0 | Terminology Service | - | - | - |
 | CAP-TRM-009 | 6 | M | P0 | Terminology Service | - | - | - |
 | CAP-TRM-010 | 6 | S | P0 | Terminology Service | - | - | - |
-| CAP-LCM-001 | 7 | M | P1 | Lifecycle & Workflow Service | 2 | partial | FN_LCM_001/002 and IT_010: model loaded from configuration and unpermitted transitions refused |
+| CAP-LCM-001 | 7 | M | P1 | Lifecycle & Workflow Service | 2-3 | partial | IT_010 for the state model, plus CAP_LCM_001 on the registering decorator: a version is registered under lifecycle management before its content is written, so a failed write leaves an inert record rather than ungoverned content (ADR-025) |
 | CAP-LCM-002 | 7 | M | P1 | Lifecycle & Workflow Service | - | - | - |
 | CAP-LCM-003 | 7 | M | P1 | Lifecycle & Workflow Service | 2 | partial | FN_LCM_004 and IT_013: per-market regulatory-approval state in its own model, store and service, with a test that a market transition leaves internal state untouched. Held in a durable append-only table keyed by version and market, with UPDATE and DELETE refused by a database trigger. Effective dating (CAP-LCM-004) follows |
 | CAP-LCM-004 | 7 | M | P1 | Lifecycle & Workflow Service | - | - | - |
@@ -216,7 +216,7 @@ Status values: `planned` (scheduled, not built), `partial` (some aspect delivere
 | CAP-IAM-003 | 17 | M | P0 | IAM | - | - | - |
 | CAP-IAM-004 | 17 | M | P0 | IAM | - | - | - |
 | CAP-IAM-005 | 17 | M | P0 | IAM | - | - | - |
-| CAP-IAM-006 | 17 | M | P0 | IAM | 2 | partial | IT_011: the author of a version cannot approve it, enforced in the one path every transition takes |
+| CAP-IAM-006 | 17 | M | P0 | IAM | 2-3 | partial | IT_011 on every route into a transition, plus CAP_IAM_006 on the registering decorator: content cannot be stored without an author recorded first, because the author is what segregation of duties is checked against |
 | CAP-IAM-007 | 17 | M | P0 | IAM | 1 | partial | FN_IAM_004 on every store operation, reached through the API; physical partitioning for residency markets is ADR-004, later |
 | CAP-IAM-008 | 17 | M | P0 | IAM | - | - | - |
 | CAP-IAM-009 | 17 | M | P0 | IAM | 1 | partial | FN_AUD_004: decisions recorded whether allowed or denied; administration changes are recorded when that surface exists |

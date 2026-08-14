@@ -19,17 +19,17 @@ public sealed class ScopedContentStore(
     private readonly IPolicyDecisionPoint _policy = policy ?? throw new ArgumentNullException(nameof(policy));
     private readonly Subject _subject = subject ?? throw new ArgumentNullException(nameof(subject));
 
-    public async Task<EpiDocument> CreateAsync(Bundle bundle, CancellationToken cancellationToken = default)
+    public async Task<EpiDocument> CreateAsync(DocumentIdentity identity, Bundle bundle, CancellationToken cancellationToken = default)
     {
         await AuthoriseAsync("author", bundle, cancellationToken);
-        return await _inner.CreateAsync(bundle, cancellationToken);
+        return await _inner.CreateAsync(identity, bundle, cancellationToken);
     }
 
     public async Task<EpiDocument> CreateVersionAsync(
-        DocumentIdentity identity, Bundle bundle, CancellationToken cancellationToken = default)
+        DocumentIdentity identity, int version, Bundle bundle, CancellationToken cancellationToken = default)
     {
         await AuthoriseAsync("author", bundle, cancellationToken);
-        return await _inner.CreateVersionAsync(identity, bundle, cancellationToken);
+        return await _inner.CreateVersionAsync(identity, version, bundle, cancellationToken);
     }
 
     public async Task<EpiDocument?> GetAsync(

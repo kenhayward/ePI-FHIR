@@ -4,4 +4,11 @@
     <RootNamespace>Epi.Lifecycle</RootNamespace>
   </PropertyGroup>
 
+  <!-- Registration has to sit on the content write path, which means knowing what a content
+       store is. The dependency runs this way and not the other: content knows nothing about
+       lifecycle (ADR-025 decision 3). -->
+  <ItemGroup>
+    <ProjectReference Include="..\Epi.ContentCore\Epi.ContentCore.csproj" />
+  </ItemGroup>
+
 </Project>

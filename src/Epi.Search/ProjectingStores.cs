@@ -25,17 +25,17 @@ public sealed class ProjectingContentStore(
         projection ?? throw new ArgumentNullException(nameof(projection));
 
     public async Task<EpiDocument> CreateAsync(
-        Bundle bundle, CancellationToken cancellationToken = default)
+        DocumentIdentity identity, Bundle bundle, CancellationToken cancellationToken = default)
     {
-        var stored = await _inner.CreateAsync(bundle, cancellationToken);
+        var stored = await _inner.CreateAsync(identity, bundle, cancellationToken);
         await _projection.ProjectAsync(stored, initialState, cancellationToken);
         return stored;
     }
 
     public async Task<EpiDocument> CreateVersionAsync(
-        DocumentIdentity identity, Bundle bundle, CancellationToken cancellationToken = default)
+        DocumentIdentity identity, int version, Bundle bundle, CancellationToken cancellationToken = default)
     {
-        var stored = await _inner.CreateVersionAsync(identity, bundle, cancellationToken);
+        var stored = await _inner.CreateVersionAsync(identity, version, bundle, cancellationToken);
         await _projection.ProjectAsync(stored, initialState, cancellationToken);
         return stored;
     }

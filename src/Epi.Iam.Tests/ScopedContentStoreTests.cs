@@ -39,7 +39,7 @@ public sealed class ScopedContentStoreTests
     {
         var (scoped, _) = Build(allow: true);
 
-        var stored = await scoped.CreateAsync(UkDocument());
+        var stored = await scoped.CreateAsync(ContentIdentity.Mint(), UkDocument());
 
         Assert.NotNull(await scoped.GetAsync(stored.Identity, 1));
         Assert.Equal([1], await scoped.VersionsAsync(stored.Identity));
@@ -50,7 +50,7 @@ public sealed class ScopedContentStoreTests
     {
         var (scoped, inner) = Build(allow: false);
 
-        await Assert.ThrowsAsync<AccessDeniedException>(() => scoped.CreateAsync(UkDocument()));
+        await Assert.ThrowsAsync<AccessDeniedException>(() => scoped.CreateAsync(ContentIdentity.Mint(), UkDocument()));
 
         Assert.Empty(inner.KnownIdentities);
     }
@@ -61,7 +61,7 @@ public sealed class ScopedContentStoreTests
         // CAP-SCH-004: results never leak content outside the caller's scope. A refusal would
         // confirm the document exists, which is itself a leak.
         var inner = new InMemoryContentStore();
-        var stored = await inner.CreateAsync(UkDocument());
+        var stored = await inner.CreateAsync(ContentIdentity.Mint(), UkDocument());
         var scoped = new ScopedContentStore(inner, new StubPolicy(allow: false), Anna);
 
         Assert.Null(await scoped.GetAsync(stored.Identity, 1));
@@ -77,7 +77,7 @@ public sealed class ScopedContentStoreTests
         var (scoped, _) = Build(allow: true);
 
         var denied = await Assert.ThrowsAsync<AccessDeniedException>(
-            () => scoped.CreateAsync(MinimalDocument()));
+            () => scoped.CreateAsync(ContentIdentity.Mint(), MinimalDocument()));
 
         Assert.Contains("scope", denied.Message, StringComparison.OrdinalIgnoreCase);
     }
@@ -90,7 +90,7 @@ public sealed class ScopedContentStoreTests
         var recorder = new RecordingPolicy();
         var (scoped, _) = Build(recorder);
 
-        await scoped.CreateAsync(UkDocument());
+        await scoped.CreateAsync(ContentIdentity.Mint(), UkDocument());
 
         Assert.Equal("uk-affiliate", recorder.Last!.Resource.Affiliate);
         Assert.Equal("GB", recorder.Last.Resource.Market);
@@ -102,7 +102,7 @@ public sealed class ScopedContentStoreTests
     {
         var recorder = new RecordingPolicy();
         var inner = new InMemoryContentStore();
-        var stored = await inner.CreateAsync(UkDocument());
+        var stored = await inner.CreateAsync(ContentIdentity.Mint(), UkDocument());
         var scoped = new ScopedContentStore(inner, recorder, Anna);
 
         await scoped.GetAsync(stored.Identity, 1);

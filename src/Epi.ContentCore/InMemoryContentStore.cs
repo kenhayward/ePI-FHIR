@@ -12,22 +12,28 @@ public sealed class InMemoryContentStore : IContentStore
     private readonly Dictionary<string, SortedList<int, Bundle>> _documents = [];
     private readonly Lock _gate = new();
 
-    public Task<EpiDocument> CreateAsync(Bundle bundle, CancellationToken cancellationToken = default)
+    public Task<EpiDocument> CreateAsync(
+        DocumentIdentity identity, Bundle bundle, CancellationToken cancellationToken = default)
     {
+        ArgumentNullException.ThrowIfNull(identity);
         ArgumentNullException.ThrowIfNull(bundle);
         ContentIdentity.RejectClaimedIdentity(bundle);
 
-        var identity = ContentIdentity.Mint();
-
         lock (_gate)
         {
+            if (_documents.TryGetValue(identity.Value, out var existing) && existing.Count > 0)
+            {
+                throw new VersionConflictException(identity, 1);
+            }
+
             _documents[identity.Value] = [];
             return Task.FromResult(Store(identity, 1, bundle));
         }
     }
 
     public Task<EpiDocument> CreateVersionAsync(
-        DocumentIdentity identity, Bundle bundle, CancellationToken cancellationToken = default)
+        DocumentIdentity identity, int version, Bundle bundle,
+        CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(identity);
         ArgumentNullException.ThrowIfNull(bundle);
@@ -39,7 +45,12 @@ public sealed class InMemoryContentStore : IContentStore
                 throw new UnknownDocumentException(identity);
             }
 
-            return Task.FromResult(Store(identity, versions.Count == 0 ? 1 : versions.Keys[^1] + 1, bundle));
+            if (versions.ContainsKey(version))
+            {
+                throw new VersionConflictException(identity, version);
+            }
+
+            return Task.FromResult(Store(identity, version, bundle));
         }
     }
 

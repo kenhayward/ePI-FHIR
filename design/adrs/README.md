@@ -22,6 +22,7 @@ of them next needs revising, not as a bulk exercise.
 | [ADR-022](0022-permission-scoped-search.md) | Permission-scoped search and current-approved retrieval | accepted |
 | [ADR-023](0023-historical-version-reconstruction.md) | Reconstructing a historical version | accepted |
 | [ADR-024](0024-atomic-governance-writes.md) | Atomic governance writes, and a migrated schema to hold them | accepted |
+| [ADR-025](0025-register-before-write.md) | A version is registered before its content is written | accepted |
 
 A record stays `proposed` until the pull request carrying it is merged, at which point it
 becomes `accepted`. Superseding a decision means a new record that says so, never editing the
