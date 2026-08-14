@@ -7,9 +7,9 @@
   "transitions": [
     {"from": "draft", "to": "in-review", "action": "submit"},
     {"from": "in-review", "to": "draft", "action": "return"},
-    {"from": "in-review", "to": "approved", "action": "approve", "requiresSignature": true, "segregatedFromAuthor": true},
+    {"from": "in-review", "to": "approved", "action": "approve", "requiresSignature": true, "signatureMeaning": "approval", "segregatedFromAuthor": true},
     {"from": "approved", "to": "superseded", "action": "supersede"},
-    {"from": "approved", "to": "withdrawn", "action": "withdraw", "requiresSignature": true},
+    {"from": "approved", "to": "withdrawn", "action": "withdraw", "requiresSignature": true, "signatureMeaning": "approval"},
     {"from": "draft", "to": "withdrawn", "action": "withdraw"}
   ]
 }

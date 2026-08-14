@@ -52,6 +52,10 @@ public sealed class InMemoryLifecycleStore : ILifecycleStore
         }
     }
 
+    public Task<bool> IsSignatureUsedAsync(
+        string reference, CancellationToken cancellationToken = default) =>
+        throw new NotImplementedException();
+
     public Task AppendAsync(StateTransition transition, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(transition);

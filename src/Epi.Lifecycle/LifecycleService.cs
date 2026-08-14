@@ -10,11 +10,15 @@ namespace Epi.Lifecycle;
 /// second code path that changes state without going past the check.
 /// </remarks>
 public sealed class LifecycleService(
-    LifecycleModel model, ILifecycleStore store, TimeProvider? time = null)
+    LifecycleModel model,
+    ILifecycleStore store,
+    TimeProvider? time = null,
+    ISignatureCheck? signatureCheck = null)
 {
     private readonly LifecycleModel _model = model ?? throw new ArgumentNullException(nameof(model));
     private readonly ILifecycleStore _store = store ?? throw new ArgumentNullException(nameof(store));
     private readonly TimeProvider _time = time ?? TimeProvider.System;
+    private readonly ISignatureCheck? _signatureCheck = signatureCheck;
 
     /// <summary>Registers a version in the model's initial state.</summary>
     public Task RegisterAsync(VersionRef version, string author, CancellationToken cancellationToken = default) =>

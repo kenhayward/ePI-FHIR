@@ -6,6 +6,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Epi.ContentCore\Epi.ContentCore.csproj" />
+    <ProjectReference Include="..\Epi.Lifecycle\Epi.Lifecycle.csproj" />
   </ItemGroup>
 
 </Project>

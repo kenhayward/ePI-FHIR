@@ -1,12 +1,18 @@
 namespace Epi.Lifecycle;
 
 /// <summary>One permitted move between states (ADR-019 decision 3).</summary>
+/// <param name="SignatureMeaning">
+/// What a signature at this gate must assert. Required where <paramref name="RequiresSignature"/>
+/// is set: a signature captured as a review is not an approval, and a gate that accepted either
+/// would be recording assent nobody gave.
+/// </param>
 public sealed record LifecycleTransition(
     string From,
     string To,
     string Action,
     bool RequiresSignature = false,
-    bool SegregatedFromAuthor = false);
+    bool SegregatedFromAuthor = false,
+    string? SignatureMeaning = null);
 
 /// <summary>
 /// The states a label may hold and the moves permitted between them. Configuration, not code:

@@ -103,7 +103,8 @@ public static class LifecycleModelConfiguration
 
     private sealed record TransitionFile(
         string? From, string? To, string? Action,
-        bool RequiresSignature = false, bool SegregatedFromAuthor = false);
+        bool RequiresSignature = false, bool SegregatedFromAuthor = false,
+        string? SignatureMeaning = null);
 }
 
 /// <summary>Raised when a state model cannot be activated.</summary>
