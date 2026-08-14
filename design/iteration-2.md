@@ -54,6 +54,9 @@ when it was found, and each has a natural home in this iteration or a named late
 | The search projection has no rebuild path. It is derived and therefore rebuildable in principle, and nothing implements it - which means a projection lost or corrupted cannot be restored without replaying writes by hand | PR 40 | **Before the projection leaves the process**, which is when it first becomes possible for it to diverge |
 | Permitted scopes cost one policy call per candidate scope per request (ADR-022 decision 5). Bounded by the caller's breadth rather than by the corpus, and still the first thing to replace under load - partial evaluation of the policy into a residual query is the named production path | ADR-022 | When search is measured, or when a caller with wide scope appears |
 | Search parameters `product` and `effective date` are not what CAP-SCH-001 ultimately means: product binds to what the content names as its subject until master data (capability 5) exists, and effective date waits for effective dating | PR 40 | With capability 5, and with effective dating |
+| The pinned validating context is written after the transition that approves a version, not with it. A transition that succeeds and a pin that fails leaves an approved version with no record of what it was approved against - the same non-transactional seam as lifecycle registration, and it wants the same fix | ADR-023, PR 41 | **With the registration transaction**, since one solution serves both |
+| `InitialiseAsync` is a bootstrap, not a migration. `CREATE TABLE IF NOT EXISTS` does nothing at all to a table that already exists, so every column added later needs its own `ALTER ... IF NOT EXISTS` and CI cannot see the difference: it starts from an empty database every time | PR 41 | **Before a deployment holds data anyone keeps** - D3 Section 10.3 |
+| Terminology versions are not in the pinned context, because terminology is not yet bound. When Snowstorm arrives its content version belongs there, and the R4/R5 question against ADR-016 has to be settled first | ADR-023 | With capability 6 |
 
 ### 2.3 The boundary iteration 1 drew, and why it matters here
 
@@ -181,6 +184,12 @@ Each becomes an ADR:
    predicate rather than a filter applied to results, the permitted scopes come from the same
    policy that decides a single read, and an unscoped search is not expressible. Section 4.3
    argued search was cheap now and expensive later; this is the decision that was cheap now.
+6. **What "reconstruct a historical version" means - settled by
+   [ADR-023](adrs/0023-historical-version-reconstruction.md).** The
+   content, the history and the signature already existed; what did not was a record of what
+   the version was approved *against*, and every part of that is configuration that moves.
+   Reconstruction is a read and never a re-computation: re-validating today would produce a
+   confident answer to a question nobody asked.
 
 ## 8. Open questions for the programme
 

@@ -278,4 +278,71 @@ public sealed class LifecycleServiceTests
 
         Assert.Contains("not under lifecycle management", refused.Reason);
     }
+
+    /// <summary>Registers a version and walks it to approved, one hour per step.</summary>
+    private static async Task<LifecycleService> ApprovedAsync(FakeTimeProvider clock)
+    {
+        var service = Service(new InMemoryLifecycleStore(), time: clock);
+        await service.RegisterAsync(Version, "user-anna");
+
+        clock.Advance(TimeSpan.FromHours(1));
+        await service.TransitionAsync(Version, "submit", "user-anna");
+
+        clock.Advance(TimeSpan.FromHours(1));
+        await service.TransitionAsync(Version, "approve", "user-ben", signatureReference: "sig-1");
+
+        return service;
+    }
+
+    [Fact]
+    public async Task FN_LCM_006_the_state_at_a_past_moment_is_derived_from_the_transitions()
+    {
+        // The question an inspection asks is "what was this on the third of March", not "what
+        // is it now". An append-only history can answer it; a state column never could
+        // (ADR-019 decision 4).
+        var start = new DateTimeOffset(2026, 8, 14, 9, 0, 0, TimeSpan.Zero);
+        var clock = new FakeTimeProvider(start);
+        var service = await ApprovedAsync(clock);
+
+        Assert.Equal("draft", await service.StateAtAsync(Version, start.AddMinutes(30)));
+        Assert.Equal("in-review", await service.StateAtAsync(Version, start.AddMinutes(90)));
+        Assert.Equal("approved", await service.StateAtAsync(Version, start.AddHours(3)));
+    }
+
+    [Fact]
+    public async Task FN_LCM_006_the_state_at_the_moment_of_a_transition_is_the_state_it_moved_to()
+    {
+        // The boundary, stated rather than left to whichever comparison was written. A
+        // transition timestamped 10:00 means the version was in its new state at 10:00.
+        var start = new DateTimeOffset(2026, 8, 14, 9, 0, 0, TimeSpan.Zero);
+        var clock = new FakeTimeProvider(start);
+        var service = await ApprovedAsync(clock);
+
+        Assert.Equal("in-review", await service.StateAtAsync(Version, start.AddHours(1)));
+        Assert.Equal("approved", await service.StateAtAsync(Version, start.AddHours(2)));
+    }
+
+    [Fact]
+    public async Task FN_LCM_006_before_a_version_existed_it_was_in_no_state_at_all()
+    {
+        // Null rather than the initial state. Reporting "draft" for a moment before the
+        // version was registered would place a document in history that was not there.
+        var start = new DateTimeOffset(2026, 8, 14, 9, 0, 0, TimeSpan.Zero);
+        var clock = new FakeTimeProvider(start);
+        var service = await ApprovedAsync(clock);
+
+        Assert.Null(await service.StateAtAsync(Version, start.AddDays(-1)));
+        Assert.Null(await service.StateAtAsync(new VersionRef("never-registered", 1), start));
+    }
+
+    [Fact]
+    public async Task FN_LCM_006_a_version_that_has_never_moved_holds_its_initial_state()
+    {
+        var start = new DateTimeOffset(2026, 8, 14, 9, 0, 0, TimeSpan.Zero);
+        var clock = new FakeTimeProvider(start);
+        var service = Service(new InMemoryLifecycleStore(), time: clock);
+        await service.RegisterAsync(Version, "user-anna");
+
+        Assert.Equal("draft", await service.StateAtAsync(Version, start.AddYears(1)));
+    }
 }

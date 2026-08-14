@@ -26,8 +26,46 @@ public sealed record ConformanceManifest(IReadOnlyList<ManifestPackage> Packages
     /// cannot pin it either, and an approval with an empty context is worse than no approval
     /// because it looks like a record.
     /// </exception>
-    public static ConformanceManifest LoadFrom(string packagesDirectory) =>
-        throw new NotImplementedException();
+    public static ConformanceManifest LoadFrom(string packagesDirectory)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(packagesDirectory);
+
+        var path = Path.Combine(packagesDirectory, FileName);
+        if (!File.Exists(path))
+        {
+            throw new ConformanceManifestException(
+                $"{path}: no pinned conformance manifest. A deployment that cannot say what it "
+                + "validates against cannot record it at approval either (ADR-016, ADR-023).");
+        }
+
+        ManifestFile? parsed;
+        try
+        {
+            parsed = JsonSerializer.Deserialize<ManifestFile>(File.ReadAllText(path), ReadOptions);
+        }
+        catch (JsonException error)
+        {
+            throw new ConformanceManifestException(
+                $"{path}: not a valid conformance manifest - {error.Message}");
+        }
+
+        var packages = (parsed?.Packages ?? new Dictionary<string, PackageFile>())
+            .Where(entry => !entry.Key.StartsWith('_'))
+            .Select(entry => new ManifestPackage(
+                entry.Key,
+                entry.Value.Version ?? string.Empty,
+                entry.Value.Sha256 ?? string.Empty,
+                entry.Value.File ?? string.Empty))
+            .OrderBy(package => package.Name, StringComparer.Ordinal)
+            .ToList();
+
+        // An empty manifest is refused rather than returned. A pin listing no packages looks
+        // like a record of what a version was approved against and is not one.
+        return packages.Count > 0
+            ? new ConformanceManifest(packages)
+            : throw new ConformanceManifestException(
+                $"{path}: the manifest pins no packages, so there is nothing to record.");
+    }
 
     /// <summary>
     /// The packages whose vendored bytes no longer match the digest recorded for them, and the
@@ -38,8 +76,39 @@ public sealed record ConformanceManifest(IReadOnlyList<ManifestPackage> Packages
     /// mismatch, that is a material finding and the answer must say so. Refusing to answer
     /// would deny an inspection exactly the information it came for.
     /// </remarks>
-    public IReadOnlyList<string> Discrepancies(string packagesDirectory) =>
-        throw new NotImplementedException();
+    public IReadOnlyList<string> Discrepancies(string packagesDirectory)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(packagesDirectory);
+
+        var findings = new List<string>();
+
+        foreach (var package in Packages)
+        {
+            var path = Path.Combine(packagesDirectory, package.File);
+            if (!File.Exists(path))
+            {
+                findings.Add($"{package.Name} {package.Version}: {package.File} is not present.");
+                continue;
+            }
+
+            using var stream = File.OpenRead(path);
+            var digest = Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(stream));
+            if (!string.Equals(digest, package.Sha256, StringComparison.OrdinalIgnoreCase))
+            {
+                findings.Add(
+                    $"{package.Name} {package.Version}: {package.File} hashes to {digest}, "
+                    + $"and the manifest pins {package.Sha256}.");
+            }
+        }
+
+        return findings;
+    }
+
+    private static readonly JsonSerializerOptions ReadOptions = new()
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        PropertyNameCaseInsensitive = true,
+    };
 
     private sealed record ManifestFile(
         [property: JsonPropertyName("_comment")] string? Comment,

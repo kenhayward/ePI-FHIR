@@ -11,12 +11,29 @@ public sealed class InMemoryPinnedContextStore : IPinnedContextStore
 
     public Task PinAsync(PinnedContext context, CancellationToken cancellationToken = default)
     {
-        _ = _pins;
-        _ = _gate;
-        throw new NotImplementedException();
+        ArgumentNullException.ThrowIfNull(context);
+
+        lock (_gate)
+        {
+            // Refused rather than overwritten. Overwriting is silent, and a record that can be
+            // replaced is not a record (ADR-023 decision 3).
+            if (!_pins.TryAdd(context.Version, context))
+            {
+                throw new ContextAlreadyPinnedException(context.Version);
+            }
+        }
+
+        return Task.CompletedTask;
     }
 
     public Task<PinnedContext?> ForAsync(
-        VersionRef version, CancellationToken cancellationToken = default) =>
-        throw new NotImplementedException();
+        VersionRef version, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(version);
+
+        lock (_gate)
+        {
+            return Task.FromResult(_pins.GetValueOrDefault(version));
+        }
+    }
 }

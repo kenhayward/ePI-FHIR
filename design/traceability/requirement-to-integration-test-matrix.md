@@ -13,7 +13,7 @@ Name integration tests for the case they validate, for example
 ## Coverage
 
 - Integration tests declared: **18**
-- Implemented in code: **15**
+- Implemented in code: **16**
 - Requirements validated by at least one integration test: **28**
 - Scheduled requirements still without one: **5**
 
@@ -37,7 +37,7 @@ Name integration tests for the case they validate, for example
 | IT-014 | A label instantiated from a template validates and records its template version | CAP-TPL-004, CAP-TPL-007 | 2 | planned | - |
 | IT-015 | Section identifiers survive a new version unchanged | CAP-SCM-007 | 2 | planned | - |
 | IT-016 | Search returns only what the caller may see and can return the current-approved version per market | CAP-SCH-002, CAP-SCH-004 | 2 | implemented | `IT_016_a_current_approved_version_outside_the_callers_scope_is_not_found` (src/Epi.Api.Tests/SearchEndpointTests.cs)<br>`IT_016_a_search_returns_the_content_the_caller_may_see` (src/Epi.Api.Tests/SearchEndpointTests.cs)<br>`IT_016_content_in_a_market_the_caller_does_not_hold_is_invisible` (src/Epi.Api.Tests/SearchEndpointTests.cs)<br>`IT_016_the_current_approved_version_is_the_one_the_market_approved` (src/Epi.Api.Tests/SearchEndpointTests.cs) |
-| IT-017 | A historical version is reconstructable with the metadata that made it valid | CAP-LCM-006 | 2 | planned | - |
+| IT-017 | A historical version is reconstructable with the metadata that made it valid | CAP-LCM-006 | 2 | implemented | `IT_017_an_approved_version_reconstructs_with_what_it_was_approved_against` (src/Epi.Api.Tests/ReconstructionEndpointTests.cs)<br>`IT_017_the_reconstruction_carries_the_whole_history_and_the_signature_used` (src/Epi.Api.Tests/ReconstructionEndpointTests.cs)<br>`IT_017_the_reconstruction_reports_whether_the_pinned_packages_still_match` (src/Epi.Api.Tests/ReconstructionEndpointTests.cs) |
 | IT-018 | A regulatory submission is refused unsigned; recording the regulator's decision needs no signature | CAP-LCM-012 | 2 | implemented | `IT_018_a_submission_without_a_signature_is_refused` (src/Epi.Lifecycle.Tests/MarketSubmissionSignatureTests.cs)<br>`IT_018_recording_the_regulators_decision_needs_no_signature` (src/Epi.Lifecycle.Tests/MarketSubmissionSignatureTests.cs) |
 
 ## By requirement

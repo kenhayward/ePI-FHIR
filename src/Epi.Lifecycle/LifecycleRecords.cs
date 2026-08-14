@@ -33,12 +33,22 @@ public sealed record StateTransition(
 /// </remarks>
 public interface ILifecycleStore : ISpentSignatures
 {
-    /// <summary>Registers a new version in the initial state, recording who authored it.</summary>
+    /// <summary>
+    /// Registers a new version in the initial state, recording who authored it and when.
+    /// </summary>
+    /// <remarks>
+    /// The moment matters as much as the author. Without it the history begins at the first
+    /// transition, and "what state was this in on the third of March" cannot distinguish a
+    /// version that was a draft then from one that did not yet exist (CAP-LCM-006).
+    /// </remarks>
     Task RegisterAsync(VersionRef version, string author, string initialState,
-        CancellationToken cancellationToken = default);
+        DateTimeOffset registeredAt, CancellationToken cancellationToken = default);
 
     /// <summary>The person who authored a version, or null if it is unknown.</summary>
     Task<string?> AuthorOfAsync(VersionRef version, CancellationToken cancellationToken = default);
+
+    /// <summary>When the version came under lifecycle management, or null if it never did.</summary>
+    Task<DateTimeOffset?> RegisteredAtAsync(VersionRef version, CancellationToken cancellationToken = default);
 
     /// <summary>The state a version holds now, or null if it was never registered.</summary>
     Task<string?> CurrentStateAsync(VersionRef version, CancellationToken cancellationToken = default);

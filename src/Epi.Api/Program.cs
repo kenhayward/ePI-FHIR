@@ -9,6 +9,7 @@ using Epi.Iam;
 using Epi.Lifecycle;
 using Epi.Search;
 using Epi.Signature;
+using Epi.Templates;
 using Epi.Validation;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 
@@ -125,6 +126,18 @@ var marketApprovalStore = string.IsNullOrWhiteSpace(governanceConnection)
 var signatureStore = string.IsNullOrWhiteSpace(governanceConnection)
     ? new InMemorySignatureStore()
     : (ISignatureStore)new PostgresSignatureStore(governanceConnection);
+var pinnedContexts = string.IsNullOrWhiteSpace(governanceConnection)
+    ? new InMemoryPinnedContextStore()
+    : (IPinnedContextStore)new PostgresPinnedContextStore(governanceConnection);
+builder.Services.AddSingleton(pinnedContexts);
+
+// What the platform validates against, read once and recorded at every approval (ADR-023).
+// Lazy for the same reason the state models are: a host that never approves anything need not
+// have the vendored packages present.
+var packagesDirectory = ProfileSource.PackagesDirectory(
+    builder.Configuration["Epi:Validation:PackagesPath"]);
+var conformance = new Lazy<ConformanceManifest>(
+    () => ConformanceManifest.LoadFrom(packagesDirectory));
 
 // The lifecycle store is wrapped so that a transition recorded by any engine reaches the
 // projection, rather than every caller of a transition remembering to update the index.
@@ -238,6 +251,11 @@ if (app.Services.GetRequiredService<ISignatureStore>() is PostgresSignatureStore
     await durableSignatures.InitialiseAsync();
 }
 
+if (pinnedContexts is PostgresPinnedContextStore durablePins)
+{
+    await durablePins.InitialiseAsync();
+}
+
 app.UseAuthentication();
 app.UseAuthorization();
 
@@ -348,6 +366,7 @@ app.MapGet("/fhir/Bundle/{id}", async (
 app.MapGet("/labels/{id}/versions/{version:int}/state", async (
     string id,
     int version,
+    DateTimeOffset? asAt,
     ClaimsPrincipal principal,
     IContentStore store,
     IPolicyDecisionPoint policy,
@@ -375,7 +394,12 @@ app.MapGet("/labels/{id}/versions/{version:int}/state", async (
     }
 
     var reference = new VersionRef(id, version);
-    var state = await lifecycle.CurrentStateAsync(reference, cancellationToken);
+
+    // "As at" is derived from the append-only history rather than read from a field, which is
+    // the question an inspection actually asks (CAP-LCM-006, ADR-023).
+    var state = asAt is null
+        ? await lifecycle.CurrentStateAsync(reference, cancellationToken)
+        : await lifecycle.StateAtAsync(reference, asAt.Value, cancellationToken);
 
     return state is null
         ? Results.NotFound()
@@ -384,6 +408,7 @@ app.MapGet("/labels/{id}/versions/{version:int}/state", async (
             identifier = id,
             version,
             state,
+            asAt,
             author = await lifecycle.AuthorOfAsync(reference, cancellationToken),
 
             // Named separately and always, so "approved" can never be read as approved
@@ -468,6 +493,7 @@ app.MapPost("/labels/{id}/versions/{version:int}/transitions", async (
     IContentStore store,
     IPolicyDecisionPoint policy,
     LifecycleService lifecycle,
+    IPinnedContextStore pins,
     IdentifierAuthority authority,
     CancellationToken cancellationToken) =>
 {
@@ -491,6 +517,12 @@ app.MapPost("/labels/{id}/versions/{version:int}/transitions", async (
         var transition = await lifecycle.TransitionAsync(
             new VersionRef(id, version), body.Action, subject.Id, body.Reason,
             body.SignatureReference, cancellationToken);
+
+        // Approval is the moment the organisation commits to a version, and the moment what it
+        // was approved against has to be written down: every part of that is configuration, and
+        // configuration moves (CAP-LCM-011, ADR-023 decision 1).
+        await Pinning.PinIfApprovedAsync(
+            transition, document, pins, conformance, labelModel, authority, cancellationToken);
 
         return Results.Ok(new
         {
@@ -646,6 +678,216 @@ app.MapPost("/labels/{id}/versions/{version:int}/markets/{market}/transitions", 
     }
 }).RequireAuthorization();
 
+app.MapPost("/fhir/Bundle/{id}/versions", async (
+    string id,
+    HttpRequest request,
+    ClaimsPrincipal principal,
+    IContentStore store,
+    StructuralValidator validator,
+    IPolicyDecisionPoint policy,
+    IAuditSink audit,
+    IEventPublisher events,
+    LifecycleService lifecycle,
+    IdentifierAuthority authority,
+    CancellationToken cancellationToken) =>
+{
+    var subject = SubjectFactory.From(principal);
+    if (subject is null)
+    {
+        return Results.Unauthorized();
+    }
+
+    using var reader = new StreamReader(request.Body);
+    var json = await reader.ReadToEndAsync(cancellationToken);
+
+    try
+    {
+        var bundle = EpiBundleReader.Read(json);
+        var identity = new DocumentIdentity(authority.DocumentSystem, id);
+
+        // Read through scope first. Without it, an unknown document and one the caller may not
+        // see would answer differently, and adding a version would be a way of proving that a
+        // document exists (CAP-SCH-004).
+        var scoped = new ScopedContentStore(store, policy, subject);
+        if (await scoped.GetLatestAsync(identity, cancellationToken) is null)
+        {
+            return Results.NotFound();
+        }
+
+        var gated = new AuditingContentStore(
+            new PublishingContentStore(
+                new ValidatingContentStore(scoped, validator),
+                events),
+            audit,
+            subject.Id);
+
+        var stored = await gated.CreateVersionAsync(identity, bundle, cancellationToken);
+
+        await lifecycle.RegisterAsync(
+            new VersionRef(stored.Identity.Value, stored.Version), subject.Id, cancellationToken);
+
+        return Results.Created(
+            $"/fhir/Bundle/{stored.Identity.Value}/versions/{stored.Version}",
+            new
+            {
+                identifier = stored.Identity.Value,
+                system = stored.Identity.System,
+                version = stored.Version,
+            });
+    }
+    catch (InvalidEpiBundleException invalid)
+    {
+        return Results.BadRequest(new { problems = invalid.Problems });
+    }
+    catch (ContentRejectedException rejected)
+    {
+        return Results.BadRequest(new
+        {
+            problems = rejected.Issues.Select(i => new
+            {
+                severity = i.Severity.ToString(),
+                i.Location,
+                i.Message,
+            }),
+        });
+    }
+    catch (AccessDeniedException denied)
+    {
+        return Results.Problem(denied.Message, statusCode: StatusCodes.Status403Forbidden);
+    }
+    catch (UnknownDocumentException)
+    {
+        return Results.NotFound();
+    }
+}).RequireAuthorization();
+
+app.MapGet("/fhir/Bundle/{id}/versions/{version:int}", async (
+    string id,
+    int version,
+    ClaimsPrincipal principal,
+    IContentStore store,
+    IPolicyDecisionPoint policy,
+    IdentifierAuthority authority,
+    CancellationToken cancellationToken) =>
+{
+    var subject = SubjectFactory.From(principal);
+    if (subject is null)
+    {
+        return Results.Unauthorized();
+    }
+
+    // The historical content itself, unchanged since it was stored. Reconstruction is worthless
+    // while the only reachable content is the latest version (ADR-023 decision 6).
+    var scoped = new ScopedContentStore(store, policy, subject);
+    var document = await scoped.GetAsync(
+        new DocumentIdentity(authority.DocumentSystem, id), version, cancellationToken);
+
+    return document is null
+        ? Results.NotFound()
+        : Results.Content(EpiBundleReader.Write(document.Bundle), "application/fhir+json");
+}).RequireAuthorization();
+
+app.MapGet("/labels/{id}/versions/{version:int}/reconstruction", async (
+    string id,
+    int version,
+    ClaimsPrincipal principal,
+    IContentStore store,
+    IPolicyDecisionPoint policy,
+    LifecycleService lifecycle,
+    MarketApprovalService markets,
+    IPinnedContextStore pins,
+    ISignatureStore signatures,
+    IdentifierAuthority authority,
+    CancellationToken cancellationToken) =>
+{
+    var subject = SubjectFactory.From(principal);
+    if (subject is null)
+    {
+        return Results.Unauthorized();
+    }
+
+    var scoped = new ScopedContentStore(store, policy, subject);
+    var document = await scoped.GetAsync(
+        new DocumentIdentity(authority.DocumentSystem, id), version, cancellationToken);
+
+    if (document is null)
+    {
+        return Results.NotFound();
+    }
+
+    var reference = new VersionRef(id, version);
+    var state = await lifecycle.CurrentStateAsync(reference, cancellationToken);
+    if (state is null)
+    {
+        return Results.NotFound();
+    }
+
+    var pinned = await pins.ForAsync(reference, cancellationToken);
+
+    // Reported, never enforced, and never recomputed: the platform says what was recorded and
+    // whether the packages present now are still those bytes. A verdict produced today with
+    // today's packages would be evidence about today (ADR-023 decisions 4 and 5).
+    var discrepancies = pinned is null
+        ? []
+        : conformance.Value.Discrepancies(packagesDirectory);
+
+    var history = new List<object>();
+    foreach (var transition in await lifecycle.HistoryAsync(reference, cancellationToken))
+    {
+        var manifest = transition.SignatureReference is null
+            ? null
+            : await signatures.FindAsync(transition.SignatureReference, cancellationToken);
+
+        history.Add(new
+        {
+            from = transition.From,
+            to = transition.To,
+            action = transition.Action,
+            actor = transition.Actor,
+            at = transition.At,
+            reason = transition.Reason,
+            signature = manifest is null ? null : new
+            {
+                reference = manifest.Reference,
+                signer = manifest.SignerIdentifier,
+                printedName = manifest.SignerPrintedName,
+                meaning = manifest.Meaning.ToString(),
+                contentHash = manifest.ContentHash,
+                signedAt = manifest.SignedAt,
+            },
+        });
+    }
+
+    return Results.Ok(new
+    {
+        identifier = id,
+        version,
+        state,
+        author = await lifecycle.AuthorOfAsync(reference, cancellationToken),
+        contentHash = ContentHash.Of(document.Bundle),
+        pinnedContext = pinned is null ? null : new
+        {
+            contentHash = pinned.ContentHash,
+            stateModel = pinned.StateModel,
+            state = pinned.State,
+            identifierAuthority = pinned.IdentifierAuthority,
+            template = pinned.Template,
+            templateVersion = pinned.TemplateVersion,
+            pinnedAt = pinned.PinnedAt,
+            packages = pinned.Packages.Select(p => new
+            {
+                name = p.Name,
+                version = p.Version,
+                sha256 = p.Sha256,
+            }),
+        },
+        packagesStillMatch = discrepancies.Count == 0,
+        packageDiscrepancies = discrepancies,
+        markets = await markets.StatesAsync(reference, cancellationToken),
+        history,
+    });
+}).RequireAuthorization();
+
 app.Run();
 
 /// <summary>One search result on the wire.</summary>
@@ -661,6 +903,57 @@ static object Describe(SearchHit hit) => new
     product = hit.Product,
     documentType = hit.DocumentType,
 };
+
+/// <summary>
+/// Records what a version was approved against, at the moment it is approved (ADR-023).
+/// </summary>
+/// <remarks>
+/// Here rather than inside the lifecycle engine because the engine knows nothing about content
+/// bytes or conformance packages, and this is where content and lifecycle already meet. That
+/// leaves the same non-transactional seam already recorded for lifecycle registration: a
+/// transition that succeeds and a pin that fails leaves an approved version with no record of
+/// what it was approved against. Recorded in iteration-2 Section 2.2 rather than assumed away.
+/// </remarks>
+static class Pinning
+{
+    public static async Task PinIfApprovedAsync(
+        StateTransition transition,
+        EpiDocument document,
+        IPinnedContextStore pins,
+        Lazy<ConformanceManifest> conformance,
+        Lazy<LifecycleModel> model,
+        IdentifierAuthority authority,
+        CancellationToken cancellationToken)
+    {
+        if (!string.Equals(transition.To, model.Value.ApprovedState, StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        try
+        {
+            await pins.PinAsync(
+                new PinnedContext(
+                    transition.Version,
+                    ContentHash.Of(document.Bundle),
+                    model.Value.Name,
+                    transition.To,
+                    [.. conformance.Value.Packages.Select(
+                        p => new PinnedPackage(p.Name, p.Version, p.Sha256))],
+                    authority.DocumentSystem,
+                    transition.At,
+                    TemplateInstantiation.TemplateOf(document.Bundle, authority),
+                    TemplateInstantiation.TemplateVersionOf(document.Bundle, authority)),
+                cancellationToken);
+        }
+        catch (ContextAlreadyPinnedException)
+        {
+            // A version approved, withdrawn and approved again keeps the pin made the first
+            // time. The state model permits no second approval of the same version, so this is
+            // a race rather than a workflow, and the first record is the one that stands.
+        }
+    }
+}
 
 /// <summary>What a caller asks for when signing. The signer is the token, never the body.</summary>
 internal sealed record SignatureRequest(

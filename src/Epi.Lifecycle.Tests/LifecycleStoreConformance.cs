@@ -14,6 +14,9 @@ public abstract class LifecycleStoreConformance : IAsyncDisposable
 {
     private static readonly VersionRef Version = new("doc-1", 1);
 
+    private static readonly DateTimeOffset Registered =
+        new(2026, 8, 14, 9, 0, 0, TimeSpan.Zero);
+
     private readonly List<ILifecycleStore> _created = [];
 
     /// <summary>A store ready to use, with its schema in place if it needs one.</summary>
@@ -52,6 +55,19 @@ public abstract class LifecycleStoreConformance : IAsyncDisposable
             new DateTimeOffset(2026, 8, 14, 10, 0, 0, TimeSpan.Zero), reason, signature);
 
     [Fact]
+    public async Task FN_LCM_006_a_registration_records_when_the_version_came_under_management()
+    {
+        // Without the moment, a version's history begins at its first transition, and "what
+        // state was this in on the third of March" cannot distinguish a version that was a
+        // draft then from one that did not yet exist (CAP-LCM-006).
+        var store = await NewStoreAsync();
+        await store.RegisterAsync(Version, "user-anna", "draft", Registered);
+
+        Assert.Equal(Registered, await store.RegisteredAtAsync(Version));
+        Assert.Null(await store.RegisteredAtAsync(new VersionRef("never-registered", 1)));
+    }
+
+    [Fact]
     public async Task FN_LCM_003_a_version_that_was_never_registered_has_no_state_and_no_author()
     {
         // Null rather than a default state. A store that answered "draft" for a version it has
@@ -68,7 +84,7 @@ public abstract class LifecycleStoreConformance : IAsyncDisposable
     {
         var store = await NewStoreAsync();
 
-        await store.RegisterAsync(Version, "user-anna", "draft");
+        await store.RegisterAsync(Version, "user-anna", "draft", Registered);
 
         Assert.Equal("draft", await store.CurrentStateAsync(Version));
         Assert.Equal("user-anna", await store.AuthorOfAsync(Version));
@@ -81,10 +97,10 @@ public abstract class LifecycleStoreConformance : IAsyncDisposable
         // of duties is checked against - so silently accepting it would let someone become
         // eligible to approve their own work (CAP-IAM-006).
         var store = await NewStoreAsync();
-        await store.RegisterAsync(Version, "user-anna", "draft");
+        await store.RegisterAsync(Version, "user-anna", "draft", Registered);
 
         await Assert.ThrowsAnyAsync<Exception>(
-            () => store.RegisterAsync(Version, "user-ben", "draft"));
+            () => store.RegisterAsync(Version, "user-ben", "draft", Registered));
 
         Assert.Equal("user-anna", await store.AuthorOfAsync(Version));
     }
@@ -93,7 +109,7 @@ public abstract class LifecycleStoreConformance : IAsyncDisposable
     public async Task FN_LCM_003_the_current_state_is_the_destination_of_the_last_transition()
     {
         var store = await NewStoreAsync();
-        await store.RegisterAsync(Version, "user-anna", "draft");
+        await store.RegisterAsync(Version, "user-anna", "draft", Registered);
 
         await store.AppendAsync(Transition("draft", "in-review", "submit"));
         await store.AppendAsync(Transition("in-review", "approved", "approve", "user-ben"));
@@ -107,7 +123,7 @@ public abstract class LifecycleStoreConformance : IAsyncDisposable
         // Order is evidence: a trail that cannot say what happened before what cannot support
         // a reconstruction (CAP-LCM-006).
         var store = await NewStoreAsync();
-        await store.RegisterAsync(Version, "user-anna", "draft");
+        await store.RegisterAsync(Version, "user-anna", "draft", Registered);
 
         await store.AppendAsync(Transition("draft", "in-review", "submit", reason: "ready"));
         await store.AppendAsync(Transition(
@@ -132,8 +148,8 @@ public abstract class LifecycleStoreConformance : IAsyncDisposable
     {
         var store = await NewStoreAsync();
         var second = new VersionRef("doc-1", 2);
-        await store.RegisterAsync(Version, "user-anna", "draft");
-        await store.RegisterAsync(second, "user-anna", "draft");
+        await store.RegisterAsync(Version, "user-anna", "draft", Registered);
+        await store.RegisterAsync(second, "user-anna", "draft", Registered);
 
         await store.AppendAsync(Transition("draft", "in-review", "submit"));
         await store.AppendAsync(Transition("draft", "in-review", "submit", version: second));
@@ -148,7 +164,7 @@ public abstract class LifecycleStoreConformance : IAsyncDisposable
     public async Task FN_WFL_003_a_signature_is_spent_once_it_has_been_cited()
     {
         var store = await NewStoreAsync();
-        await store.RegisterAsync(Version, "user-anna", "draft");
+        await store.RegisterAsync(Version, "user-anna", "draft", Registered);
 
         Assert.False(await store.IsSignatureUsedAsync("sig-1"));
 
@@ -162,7 +178,7 @@ public abstract class LifecycleStoreConformance : IAsyncDisposable
     public async Task FN_WFL_003_an_unsigned_transition_spends_nothing()
     {
         var store = await NewStoreAsync();
-        await store.RegisterAsync(Version, "user-anna", "draft");
+        await store.RegisterAsync(Version, "user-anna", "draft", Registered);
 
         await store.AppendAsync(Transition("draft", "in-review", "submit"));
 
