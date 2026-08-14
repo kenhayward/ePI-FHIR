@@ -29,7 +29,9 @@ public sealed class IdentifierAuthorityConfigurationTests : IDisposable
               "affiliateTagSystem": "https://id.example-pharma.test/epi/affiliate",
               "marketTagSystem": "https://id.example-pharma.test/epi/market",
               "templateSystem": "https://id.example-pharma.test/epi/template",
-              "templateVersionTagSystem": "https://id.example-pharma.test/epi/template-version"
+              "templateVersionTagSystem": "https://id.example-pharma.test/epi/template-version",
+              "unitSystem": "https://id.example-pharma.test/epi/reusable-unit",
+              "unitReferenceExtension": "https://id.example-pharma.test/epi/unit-reference"
             }
             """);
 
@@ -52,7 +54,9 @@ public sealed class IdentifierAuthorityConfigurationTests : IDisposable
               "affiliateTagSystem": "https://id.example-pharma.test/epi/affiliate",
               "marketTagSystem": "https://id.example-pharma.test/epi/market",
               "templateSystem": "https://id.example-pharma.test/epi/template",
-              "templateVersionTagSystem": "https://id.example-pharma.test/epi/template-version"
+              "templateVersionTagSystem": "https://id.example-pharma.test/epi/template-version",
+              "unitSystem": "https://id.example-pharma.test/epi/reusable-unit",
+              "unitReferenceExtension": "https://id.example-pharma.test/epi/unit-reference"
             }
             """));
 
@@ -73,7 +77,9 @@ public sealed class IdentifierAuthorityConfigurationTests : IDisposable
               "affiliateTagSystem": "https://id.example-pharma.test/epi/affiliate",
               "marketTagSystem": "https://id.example-pharma.test/epi/market",
               "templateSystem": "https://id.example-pharma.test/epi/template",
-              "templateVersionTagSystem": "https://id.example-pharma.test/epi/template-version"
+              "templateVersionTagSystem": "https://id.example-pharma.test/epi/template-version",
+              "unitSystem": "https://id.example-pharma.test/epi/reusable-unit",
+              "unitReferenceExtension": "https://id.example-pharma.test/epi/unit-reference"
             }
             """);
 
@@ -95,7 +101,9 @@ public sealed class IdentifierAuthorityConfigurationTests : IDisposable
               "affiliateTagSystem": "https://id.example-pharma.test/epi/affiliate",
               "marketTagSystem": "https://id.example-pharma.test/epi/market",
               "templateSystem": "https://id.example-pharma.test/epi/template",
-              "templateVersionTagSystem": "https://id.example-pharma.test/epi/template-version"
+              "templateVersionTagSystem": "https://id.example-pharma.test/epi/template-version",
+              "unitSystem": "https://id.example-pharma.test/epi/reusable-unit",
+              "unitReferenceExtension": "https://id.example-pharma.test/epi/unit-reference"
             }
             """);
 

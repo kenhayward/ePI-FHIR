@@ -169,5 +169,10 @@
     "iteration": "3",
     "status": "partial",
     "evidence": "FN_CFG_004: the governance schema is applied as ordered migrations recorded in an append-only ledger, so a database that predates a change is migrated rather than left behind (ADR-024). Environment promotion beyond the schema is later"
+  },
+  "CAP-SCM-004": {
+    "iteration": "3",
+    "status": "partial",
+    "evidence": "ADR-026 plus CAP_SCM_004 tests: a unit is content marked as such, and a section records the unit and version it borrows, pinned by default (ADR-007). Materialisation at the write gate and track-latest propagation follow in delivery rows 3 and 4"
   }
 }
