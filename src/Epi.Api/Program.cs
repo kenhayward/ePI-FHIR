@@ -7,6 +7,7 @@ using Epi.Governance.Events;
 using Epi.Governance.Persistence;
 using Epi.Iam;
 using Epi.Lifecycle;
+using Epi.Search;
 using Epi.Signature;
 using Epi.Validation;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -68,10 +69,43 @@ builder.Services.AddSingleton<IEventPublisher>(_ => string.IsNullOrWhiteSpace(br
     ? new InMemoryEventPublisher()
     : new KafkaEventPublisher(brokers, builder.Configuration["Epi:Events:Topic"]));
 
+// The state models are configuration, validated before activation like every other
+// configuration the platform reads (CAP-CFG-006, ADR-019 decision 3). Read on first use rather
+// than at start-up, which is what they have always done - hoisted here only because more than
+// one component now needs them, and loading a model twice could load two different models.
+var lifecycleStates = builder.Configuration["Epi:Lifecycle:StatesPath"]
+    ?? Path.Combine(builder.Environment.ContentRootPath, "config", "lifecycle", "label-states.json");
+var marketStates = builder.Configuration["Epi:Lifecycle:MarketStatesPath"]
+    ?? Path.Combine(builder.Environment.ContentRootPath, "config", "lifecycle",
+        "market-approval-states.json");
+
+var labelModel = new Lazy<LifecycleModel>(() => LifecycleModelConfiguration.LoadFrom(lifecycleStates));
+var marketModel = new Lazy<LifecycleModel>(() => LifecycleModelConfiguration.LoadFrom(marketStates));
+
+// Search is served from a projection, derived and never a source of truth (ADR-022 decision 6).
+// One instance behind both ports: the thing that is written and the thing that is read are the
+// same index, and registering them separately would let a deployment search an empty one.
+builder.Services.AddSingleton<InMemorySearchIndex>(services =>
+    new InMemorySearchIndex(services.GetRequiredService<IdentifierAuthority>()));
+builder.Services.AddSingleton<ISearchProjection>(
+    services => services.GetRequiredService<InMemorySearchIndex>());
+builder.Services.AddSingleton<ILabelSearch>(
+    services => services.GetRequiredService<InMemorySearchIndex>());
+
+builder.Services.AddSingleton<IPermittedScopes>(services =>
+    new PolicyPermittedScopes(services.GetRequiredService<IPolicyDecisionPoint>()));
+
+// Held as locals as well as in the container, because the projection decorators wrap them and
+// a durable store still has to be found - and initialised - through its own type.
 var fhirServer = builder.Configuration["Epi:Content:FhirServerUrl"];
-builder.Services.AddSingleton<IContentStore>(_ => string.IsNullOrWhiteSpace(fhirServer)
+var contentStore = string.IsNullOrWhiteSpace(fhirServer)
     ? new InMemoryContentStore()
-    : new FhirRestContentStore(FhirContentClient.Create(fhirServer)));
+    : (IContentStore)new FhirRestContentStore(FhirContentClient.Create(fhirServer));
+
+builder.Services.AddSingleton(services => new ProjectingContentStore(
+    contentStore, services.GetRequiredService<ISearchProjection>(), labelModel.Value.Initial));
+builder.Services.AddSingleton<IContentStore>(
+    services => services.GetRequiredService<ProjectingContentStore>());
 // The pinned conformance packages are found by walking up to the repository root when this
 // runs from a checkout, which a container has no way to do - it holds the application, not
 // the repository. Configuration names the directory where there is no root to find.
@@ -82,15 +116,22 @@ builder.Services.AddSingleton(_ => new StructuralValidator(
 // They are separate tables for the reasons ADR-005 and ADR-019 give; they are one connection
 // because they are one operational store.
 var governanceConnection = builder.Configuration["Epi:Governance:ConnectionString"];
-builder.Services.AddSingleton<ILifecycleStore>(_ => string.IsNullOrWhiteSpace(governanceConnection)
+var lifecycleStore = string.IsNullOrWhiteSpace(governanceConnection)
     ? new InMemoryLifecycleStore()
-    : new PostgresLifecycleStore(governanceConnection));
-builder.Services.AddSingleton<IMarketApprovalStore>(_ => string.IsNullOrWhiteSpace(governanceConnection)
+    : (ILifecycleStore)new PostgresLifecycleStore(governanceConnection);
+var marketApprovalStore = string.IsNullOrWhiteSpace(governanceConnection)
     ? new InMemoryMarketApprovalStore()
-    : new PostgresMarketApprovalStore(governanceConnection));
-builder.Services.AddSingleton<ISignatureStore>(_ => string.IsNullOrWhiteSpace(governanceConnection)
+    : (IMarketApprovalStore)new PostgresMarketApprovalStore(governanceConnection);
+var signatureStore = string.IsNullOrWhiteSpace(governanceConnection)
     ? new InMemorySignatureStore()
-    : new PostgresSignatureStore(governanceConnection));
+    : (ISignatureStore)new PostgresSignatureStore(governanceConnection);
+
+// The lifecycle store is wrapped so that a transition recorded by any engine reaches the
+// projection, rather than every caller of a transition remembering to update the index.
+builder.Services.AddSingleton<ILifecycleStore>(services => new ProjectingLifecycleStore(
+    lifecycleStore, services.GetRequiredService<ISearchProjection>()));
+builder.Services.AddSingleton(marketApprovalStore);
+builder.Services.AddSingleton(signatureStore);
 
 // A signature is spent platform-wide. Neither store can see the other's records, so both
 // engines are given the pair rather than their own store alone (CAP-LCM-012).
@@ -100,15 +141,8 @@ builder.Services.AddSingleton<ISpentSignatures>(services => new SpentSignatures(
 builder.Services.AddSingleton<ISignatureCheck>(services =>
     new SignatureCheck(services.GetRequiredService<ISignatureStore>()));
 
-// The state models are configuration, loaded and validated at start-up like every other
-// configuration the platform reads (CAP-CFG-006, ADR-019 decision 3).
-var lifecycleStates = builder.Configuration["Epi:Lifecycle:StatesPath"]
-    ?? Path.Combine(builder.Environment.ContentRootPath, "config", "lifecycle", "label-states.json");
-var marketStates = builder.Configuration["Epi:Lifecycle:MarketStatesPath"]
-    ?? Path.Combine(builder.Environment.ContentRootPath, "config", "lifecycle", "market-approval-states.json");
-
 builder.Services.AddSingleton(services => new LifecycleService(
-    LifecycleModelConfiguration.LoadFrom(lifecycleStates),
+    labelModel.Value,
     services.GetRequiredService<ILifecycleStore>(),
     time: null,
     signatureCheck: services.GetRequiredService<ISignatureCheck>(),
@@ -135,7 +169,7 @@ builder.Services.AddSingleton<IElectronicSignatureService>(services => new Audit
     services.GetRequiredService<IAuditSink>()));
 
 builder.Services.AddSingleton(services => new MarketApprovalService(
-    LifecycleModelConfiguration.LoadFrom(marketStates),
+    marketModel.Value,
     services.GetRequiredService<IMarketApprovalStore>(),
     services.GetRequiredService<MarketCatalogue>().Markets
         .Select(market => market.Code)
@@ -143,6 +177,18 @@ builder.Services.AddSingleton(services => new MarketApprovalService(
     time: null,
     signatureCheck: services.GetRequiredService<ISignatureCheck>(),
     spent: services.GetRequiredService<ISpentSignatures>()));
+
+// Which state means a market has approved a version is configuration, not a literal in the
+// search code (ADR-022 decision 7). A market approval model that names none cannot express
+// approval at all, which for this platform is a misconfiguration rather than a variation - so
+// it is refused at start-up rather than discovered as a null at the first regulatory question.
+builder.Services.AddSingleton(services => new CurrentApprovedVersions(
+    services.GetRequiredService<ILabelSearch>(),
+    services.GetRequiredService<IMarketApprovalStore>(),
+    marketModel.Value.ApprovedState ?? throw new InvalidOperationException(
+        $"{marketStates}: 'approvedState' must name the state that means a market has "
+        + "approved a version, or the platform cannot answer which version a market currently "
+        + "has approved (CAP-SCH-002).")));
 
 var app = builder.Build();
 
@@ -174,7 +220,10 @@ if (app.Services.GetRequiredService<IAuditSink>() is PostgresAuditSink durableAu
     await durableAudit.InitialiseAsync();
 }
 
-if (app.Services.GetRequiredService<ILifecycleStore>() is PostgresLifecycleStore durableLifecycle)
+// Resolved from the local rather than the container: the registered lifecycle store is now the
+// projecting decorator, and asking the container for it would find a wrapper that is not a
+// PostgreSQL store - so the schema would silently never be created.
+if (lifecycleStore is PostgresLifecycleStore durableLifecycle)
 {
     await durableLifecycle.InitialiseAsync();
 }
@@ -460,7 +509,158 @@ app.MapPost("/labels/{id}/versions/{version:int}/transitions", async (
     }
 }).RequireAuthorization();
 
+app.MapGet("/labels/search", async (
+    string? text,
+    string? product,
+    string? market,
+    string? language,
+    string? state,
+    string? identifier,
+    int? page,
+    int? pageSize,
+    ClaimsPrincipal principal,
+    IPermittedScopes permitted,
+    ILabelSearch search,
+    CancellationToken cancellationToken) =>
+{
+    var subject = SubjectFactory.From(principal);
+    if (subject is null)
+    {
+        return Results.Unauthorized();
+    }
+
+    // Scope first, then the query. The permitted set bounds the search rather than filtering
+    // its results, so the total is a true total and a page is a full page (ADR-022 decision 1).
+    var scopes = await permitted.ForAsync(subject, "read", cancellationToken);
+
+    var results = await search.SearchAsync(
+        new ScopedSearchQuery(
+            new SearchCriteria(
+                text, product, market, language, state, identifier,
+                page ?? 1, pageSize ?? SearchCriteria.DefaultPageSize),
+            scopes),
+        cancellationToken);
+
+    return Results.Ok(new
+    {
+        total = results.Total,
+        page = results.Page,
+        pageSize = results.PageSize,
+        hits = results.Hits.Select(Describe),
+    });
+}).RequireAuthorization();
+
+app.MapGet("/labels/{id}/current-approved", async (
+    string id,
+    string market,
+    ClaimsPrincipal principal,
+    IPermittedScopes permitted,
+    CurrentApprovedVersions approved,
+    CancellationToken cancellationToken) =>
+{
+    var subject = SubjectFactory.From(principal);
+    if (subject is null)
+    {
+        return Results.Unauthorized();
+    }
+
+    var scopes = await permitted.ForAsync(subject, "read", cancellationToken);
+    var hit = await approved.ForAsync(id, market, scopes, cancellationToken);
+
+    // Not found covers both "this market has approved nothing" and "you may not see this
+    // document", deliberately: the second must not be distinguishable from the first
+    // (CAP-SCH-004).
+    return hit is null ? Results.NotFound() : Results.Ok(Describe(hit));
+}).RequireAuthorization();
+
+app.MapPost("/labels/{id}/versions/{version:int}/markets/{market}/transitions", async (
+    string id,
+    int version,
+    string market,
+    TransitionRequest body,
+    ClaimsPrincipal principal,
+    IContentStore store,
+    IPolicyDecisionPoint policy,
+    MarketApprovalService markets,
+    IdentifierAuthority authority,
+    CancellationToken cancellationToken) =>
+{
+    var subject = SubjectFactory.From(principal);
+    if (subject is null)
+    {
+        return Results.Unauthorized();
+    }
+
+    // Scope is decided on the content, as everywhere else: a market approval record carries no
+    // affiliate of its own, and answering from it alone would act on documents the caller may
+    // not see.
+    var scoped = new ScopedContentStore(store, policy, subject);
+    var document = await scoped.GetAsync(
+        new DocumentIdentity(authority.DocumentSystem, id), version, cancellationToken);
+
+    if (document is null)
+    {
+        return Results.NotFound();
+    }
+
+    // Seeing a label is not the same as being allowed to deal with a regulator about it, so
+    // the move itself is authorised as well as the read. The two actions are the distinction
+    // the market model already draws: a transition requiring a signature is an act of this
+    // organisation by an accountable person, and one that does not is the recording of a
+    // decision taken outside it (CAP-LCM-012, ADR-020).
+    var scope = ContentScope.Of(document.Bundle, authority)!;
+    var permission = markets.RequiresSignature(body.Action)
+        ? "submit-to-regulator"
+        : "record-decision";
+
+    var decision = await policy.DecideAsync(
+        new AuthorizationQuery(subject, permission, new ResourceScope(scope.Affiliate, scope.Market)),
+        cancellationToken);
+
+    if (!decision.Allowed)
+    {
+        return Results.Problem(
+            $"Access denied for action '{permission}': {decision.Reason}",
+            statusCode: StatusCodes.Status403Forbidden);
+    }
+
+    try
+    {
+        var transition = await markets.TransitionAsync(
+            new VersionRef(id, version), market, body.Action, subject.Id, body.Reason,
+            body.SignatureReference, cancellationToken);
+
+        return Results.Ok(new
+        {
+            market = transition.Subject.Market,
+            from = transition.From,
+            to = transition.To,
+            action = transition.Action,
+            actor = transition.Actor,
+            at = transition.At,
+        });
+    }
+    catch (TransitionRefusedException refused)
+    {
+        return Results.Problem(refused.Reason, statusCode: StatusCodes.Status409Conflict);
+    }
+}).RequireAuthorization();
+
 app.Run();
+
+/// <summary>One search result on the wire.</summary>
+static object Describe(SearchHit hit) => new
+{
+    documentIdentifier = hit.DocumentIdentifier,
+    version = hit.Version,
+    title = hit.Title,
+    affiliate = hit.Scope.Affiliate,
+    market = hit.Scope.Market,
+    state = hit.State,
+    language = hit.Language,
+    product = hit.Product,
+    documentType = hit.DocumentType,
+};
 
 /// <summary>What a caller asks for when signing. The signer is the token, never the body.</summary>
 internal sealed record SignatureRequest(

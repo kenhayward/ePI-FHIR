@@ -35,10 +35,32 @@ public interface IPermittedScopes
 /// </remarks>
 public sealed class PolicyPermittedScopes(IPolicyDecisionPoint policy) : IPermittedScopes
 {
-    public Task<IReadOnlyCollection<DocumentScope>> ForAsync(
+    private readonly IPolicyDecisionPoint _policy =
+        policy ?? throw new ArgumentNullException(nameof(policy));
+
+    public async Task<IReadOnlyCollection<DocumentScope>> ForAsync(
         Subject subject, string action, CancellationToken cancellationToken = default)
     {
-        _ = policy;
-        throw new NotImplementedException();
+        ArgumentNullException.ThrowIfNull(subject);
+        ArgumentException.ThrowIfNullOrWhiteSpace(action);
+
+        var permitted = new List<DocumentScope>();
+
+        foreach (var affiliate in subject.Affiliates)
+        {
+            foreach (var market in subject.Markets)
+            {
+                var decision = await _policy.DecideAsync(
+                    new AuthorizationQuery(subject, action, new ResourceScope(affiliate, market)),
+                    cancellationToken);
+
+                if (decision.Allowed)
+                {
+                    permitted.Add(new DocumentScope(affiliate, market));
+                }
+            }
+        }
+
+        return permitted;
     }
 }

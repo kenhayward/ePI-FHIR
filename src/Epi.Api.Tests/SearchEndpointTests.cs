@@ -47,7 +47,7 @@ public sealed class SearchEndpointTests(WebApplicationFactory<Program> factory)
             // Mirrors scope_covers_resource in policies/authz, which is itself tested against a
             // real OPA in Epi.Iam.IntegrationTests. What is under test here is what the API
             // does with a decision, on the path that has no single document to decide about.
-            services.AddSingleton<IPolicyDecisionPoint>(new ScopeCoversResource());
+            services.AddSingleton<IPolicyDecisionPoint>(new RolesAndScope());
             services.AddSingleton<ICredentialVerifier>(new KnownUsers());
         });
     });
@@ -97,7 +97,7 @@ public sealed class SearchEndpointTests(WebApplicationFactory<Program> factory)
         // Not refused - invisible, and absent from the total. A caller must not be able to
         // learn from a count that there is something they may not see (CAP-SCH-004).
         var host = Host();
-        var wide = As(host, "user-rae", "GB,EU");
+        var wide = As(host, "user-anna", "GB,EU");
         await CreateAsync(wide, "GB");
         await CreateAsync(wide, "EU");
 
@@ -161,7 +161,7 @@ public sealed class SearchEndpointTests(WebApplicationFactory<Program> factory)
     {
         var host = Host();
         var rae = As(host, "user-rae", "GB,EU");
-        var identifier = await CreateAsync(rae, "GB");
+        var identifier = await CreateAsync(As(host, "user-anna", "GB"), "GB");
 
         // Nothing is approved until a market says so, whatever the internal state.
         using var none = await rae.GetAsync($"/labels/{identifier}/current-approved?market=GB");
@@ -185,13 +185,44 @@ public sealed class SearchEndpointTests(WebApplicationFactory<Program> factory)
     {
         var host = Host();
         var rae = As(host, "user-rae", "GB,EU");
-        var identifier = await CreateAsync(rae, "EU");
+        var identifier = await CreateAsync(As(host, "user-anna", "GB,EU"), "EU");
         await ApproveInMarketAsync(rae, identifier, "EU");
 
         using var response = await As(host, "user-anna", "GB")
             .GetAsync($"/labels/{identifier}/current-approved?market=EU");
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task CAP_IAM_002_seeing_a_label_is_not_permission_to_deal_with_a_regulator()
+    {
+        // The author may read the label and may not submit it to a regulator. Without this the
+        // market endpoint would be gated only by whether the caller can see the content, which
+        // is the weakest gate in the platform and the wrong one for an act of the organisation.
+        var host = Host();
+        var identifier = await CreateAsync(As(host, "user-anna", "GB"), "GB");
+
+        using var response = await As(host, "user-anna", "GB").PostAsJsonAsync(
+            $"/labels/{identifier}/versions/1/markets/GB/transitions",
+            new { action = "submit", reason = "not mine to make" });
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task CAP_IAM_002_recording_a_regulators_decision_needs_its_own_permission()
+    {
+        // The unsigned half of CAP-LCM-012 is still a permission: transcribing what a regulator
+        // decided is not something everyone who may read a label may do.
+        var host = Host();
+        var identifier = await CreateAsync(As(host, "user-anna", "GB"), "GB");
+
+        using var response = await As(host, "user-anna", "GB").PostAsJsonAsync(
+            $"/labels/{identifier}/versions/1/markets/GB/transitions",
+            new { action = "begin-assessment", reason = "not mine to record" });
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
     }
 
     [Fact]
@@ -263,16 +294,35 @@ public sealed class SearchEndpointTests(WebApplicationFactory<Program> factory)
             });
     }
 
-    /// <summary>The scope half of the shipped policy, as a stand-in.</summary>
-    private sealed class ScopeCoversResource : IPolicyDecisionPoint
+    /// <summary>
+    /// The shipped policy as a stand-in: the role must grant the action and the caller's scope
+    /// must cover the resource. Kept in step with policies/authz and policies/data by hand,
+    /// which is why the real thing is exercised against a real OPA in Epi.Iam.IntegrationTests
+    /// and end to end by tools/walkthrough.py.
+    /// </summary>
+    private sealed class RolesAndScope : IPolicyDecisionPoint
     {
+        private static readonly Dictionary<string, string[]> Actions = new(StringComparer.Ordinal)
+        {
+            ["author"] = ["read", "author"],
+            ["approver"] = ["read", "approve"],
+            ["regulatory"] = ["read", "submit-to-regulator", "record-decision"],
+            ["reader"] = ["read"],
+        };
+
         public Task<AuthorizationDecision> DecideAsync(
-            AuthorizationQuery query, CancellationToken cancellationToken = default) =>
-            Task.FromResult(
-                query.Subject.Affiliates.Contains(query.Resource.Affiliate)
-                && query.Subject.Markets.Contains(query.Resource.Market)
-                    ? new AuthorizationDecision(true, "stub")
-                    : AuthorizationDecision.Deny("out of scope"));
+            AuthorizationQuery query, CancellationToken cancellationToken = default)
+        {
+            var granted = query.Subject.Roles.Any(
+                role => Actions.TryGetValue(role, out var actions) && actions.Contains(query.Action));
+
+            var inScope = query.Subject.Affiliates.Contains(query.Resource.Affiliate)
+                          && query.Subject.Markets.Contains(query.Resource.Market);
+
+            return Task.FromResult(granted && inScope
+                ? new AuthorizationDecision(true, "stub")
+                : AuthorizationDecision.Deny(granted ? "out of scope" : "no role grants that action"));
+        }
     }
 
     /// <summary>
@@ -292,6 +342,14 @@ public sealed class SearchEndpointTests(WebApplicationFactory<Program> factory)
 
         public const string MarketsHeader = "X-Test-Markets";
 
+        /// <summary>The roles the demonstration realm gives each user.</summary>
+        private static string RoleOf(string user) => user switch
+        {
+            "user-ben" => "approver",
+            "user-rae" => "regulatory",
+            _ => "author",
+        };
+
         protected override Task<AuthenticateResult> HandleAuthenticateAsync()
         {
             var user = Request.Headers[UserHeader].FirstOrDefault() ?? "user-anna";
@@ -300,6 +358,7 @@ public sealed class SearchEndpointTests(WebApplicationFactory<Program> factory)
             var identity = new ClaimsIdentity(
                 [
                     new Claim(ClaimTypes.NameIdentifier, user),
+                    new Claim(SubjectFactory.RolesClaim, RoleOf(user)),
                     new Claim(SubjectFactory.AffiliatesClaim, "uk-affiliate"),
                     .. markets.Select(market => new Claim(SubjectFactory.MarketsClaim, market.Trim())),
                 ],

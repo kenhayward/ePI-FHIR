@@ -50,6 +50,10 @@ when it was found, and each has a natural home in this iteration or a named late
 | Snowstorm serves FHIR R4 (`4.0.1`) while the platform is pinned to R5 (ADR-016). Terminology operations are largely version-agnostic in practice, so this may be a non-issue - but it should be a recorded decision rather than a surprise | PR 32 | **Before capability 6 work starts** - an ADR note, or an amendment to ADR-016 |
 | ~~The durable stores are built and proven but nothing composes them~~ - **paid**, PR 34 | PR 10 review notes | Done |
 | Lifecycle registration is not transactional with the content write. If the write succeeds and registration fails there is content nobody is recorded as having authored, and the author is what segregation of duties is checked against. Narrower than registering later, and still real | PR 12 review notes | **Before any demonstration** - needs a transaction across two stores, or a reconciling read that registers what it finds unmanaged |
+| ~~The delivery map carried duplicate keys, so an entry could be written, reviewed and merged without ever reaching a matrix~~ - **paid**, PR 40: the registry loader refuses duplicates. CAP-TPL-004 and CAP-TPL-007 had been recorded as `planned` for a release despite PR 14 recording evidence for them | PR 40 | Done |
+| The search projection has no rebuild path. It is derived and therefore rebuildable in principle, and nothing implements it - which means a projection lost or corrupted cannot be restored without replaying writes by hand | PR 40 | **Before the projection leaves the process**, which is when it first becomes possible for it to diverge |
+| Permitted scopes cost one policy call per candidate scope per request (ADR-022 decision 5). Bounded by the caller's breadth rather than by the corpus, and still the first thing to replace under load - partial evaluation of the policy into a residual query is the named production path | ADR-022 | When search is measured, or when a caller with wide scope appears |
+| Search parameters `product` and `effective date` are not what CAP-SCH-001 ultimately means: product binds to what the content names as its subject until master data (capability 5) exists, and effective date waits for effective dating | PR 40 | With capability 5, and with effective dating |
 
 ### 2.3 The boundary iteration 1 drew, and why it matters here
 
@@ -172,6 +176,11 @@ Each becomes an ADR:
    `Composition` skeleton. Deferred through iteration 1 because nothing needed it.
 4. **Secondary identifiers.** Where a submitter's or legacy identifier lives, given
    `Bundle.identifier` is 0..1 and ADR-015 gives ours the slot.
+5. **How search is scoped - settled by
+   [ADR-022](adrs/0022-permission-scoped-search.md).** Scope is a query
+   predicate rather than a filter applied to results, the permitted scopes come from the same
+   policy that decides a single read, and an unscoped search is not expressible. Section 4.3
+   argued search was cheap now and expensive later; this is the decision that was cheap now.
 
 ## 8. Open questions for the programme
 

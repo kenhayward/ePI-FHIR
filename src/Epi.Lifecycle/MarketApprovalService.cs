@@ -87,6 +87,18 @@ public sealed class MarketApprovalService
                 "this deployment has no signature check configured."));
     }
 
+    /// <summary>
+    /// Whether the model gates this action with a signature, from any state it is permitted in.
+    /// </summary>
+    /// <remarks>
+    /// The distinction CAP-LCM-012 draws, exposed so a caller can authorise on it: a signed
+    /// transition is an act of this organisation by an accountable person, an unsigned one is
+    /// the recording of a decision taken outside it. Answering "yes" if any state gates the
+    /// action is the safe direction - it asks for the stronger permission, never the weaker.
+    /// </remarks>
+    public bool RequiresSignature(string action) => _model.Transitions.Any(
+        t => string.Equals(t.Action, action, StringComparison.Ordinal) && t.RequiresSignature);
+
     /// <summary>The state this version holds in this market.</summary>
     /// <remarks>
     /// A version with no history in a market is at the model's initial state. Nothing is written

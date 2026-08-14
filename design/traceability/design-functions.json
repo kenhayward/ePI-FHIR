@@ -126,6 +126,16 @@
     "iteration": "1",
     "status": "planned"
   },
+  "FN-IAM-005": {
+    "name": "Resolve the scopes a caller may search within, from the policy that decides a read",
+    "component": "IAM",
+    "satisfies": [
+      "CAP-IAM-007",
+      "CAP-SCH-004"
+    ],
+    "iteration": "2",
+    "status": "planned"
+  },
   "FN-AUD-001": {
     "name": "Compose an audit record with actor, action, target, before and after values",
     "component": "Audit & e-Signature",
