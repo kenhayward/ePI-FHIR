@@ -88,7 +88,7 @@
   "CAP-LCM-003": {
     "iteration": "2",
     "status": "partial",
-    "evidence": "FN_LCM_004 and IT_013: per-market regulatory-approval state in its own model, store and service, with a test that a market transition leaves internal state untouched. Effective dating (CAP-LCM-004) and the durable store follow"
+    "evidence": "FN_LCM_004 and IT_013: per-market regulatory-approval state in its own model, store and service, with a test that a market transition leaves internal state untouched. Held in a durable append-only table keyed by version and market, with UPDATE and DELETE refused by a database trigger. Effective dating (CAP-LCM-004) follows"
   },
   "CAP-LCM-006": {
     "iteration": "2",
@@ -98,7 +98,7 @@
   "CAP-LCM-007": {
     "iteration": "2",
     "status": "partial",
-    "evidence": "FN_LCM_003: transitions recorded with actor, time and reason; workflow routing is a later PR"
+    "evidence": "FN_LCM_003: transitions recorded with actor, time and reason, in a durable append-only table with UPDATE and DELETE refused by a database trigger; workflow routing is a later PR"
   },
   "CAP-LCM-011": {
     "iteration": "2",
@@ -123,7 +123,7 @@
   "CAP-AUD-003": {
     "iteration": "2",
     "status": "partial",
-    "evidence": "ADR-020 plus FN_AUD_005, FN_WFL_003 and IT_012: the manifest binds signer, printed name, meaning, time and a SHA-256 hash of the version, every signing attempt is audited, and the approval gate accepts only a valid, unspent signature by the transitioning actor. The durable signature store is still to come; today they are held in memory"
+    "evidence": "ADR-020 plus FN_AUD_005, FN_WFL_003 and IT_012: the manifest binds signer, printed name, meaning, time and a SHA-256 hash of the version, every signing attempt is audited, and the approval gate accepts only a valid, unspent signature by the transitioning actor. Signatures are held in a durable append-only table, with UPDATE and DELETE refused by a database trigger"
   },
   "CAP-IAM-006": {
     "iteration": "2",

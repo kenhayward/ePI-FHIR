@@ -24,6 +24,9 @@
        are the same assertions the in-memory sink satisfies, run against a real PostgreSQL. -->
   <ItemGroup>
     <Compile Include="../Epi.Governance.Tests/AuditSinkConformance.cs" Link="AuditSinkConformance.cs" />
+    <Compile Include="../Epi.Lifecycle.Tests/LifecycleStoreConformance.cs" Link="LifecycleStoreConformance.cs" />
+    <Compile Include="../Epi.Lifecycle.Tests/MarketApprovalStoreConformance.cs" Link="MarketApprovalStoreConformance.cs" />
+    <Compile Include="../Epi.Signature.Tests/SignatureStoreConformance.cs" Link="SignatureStoreConformance.cs" />
   </ItemGroup>
 
 </Project>

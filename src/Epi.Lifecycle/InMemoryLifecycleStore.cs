@@ -19,7 +19,16 @@ public sealed class InMemoryLifecycleStore : ILifecycleStore
 
         lock (_gate)
         {
-            _authors[version.ToString()] = author;
+            // Refused rather than overwritten. The recorded author is what segregation of
+            // duties is checked against, so a second registration would let someone quietly
+            // become eligible to approve their own work (CAP-IAM-006).
+            if (!_authors.TryAdd(version.ToString(), author))
+            {
+                throw new InvalidOperationException(
+                    $"{version} is already under lifecycle management, authored by "
+                    + $"'{_authors[version.ToString()]}'.");
+            }
+
             _states[version.ToString()] = initialState;
         }
 
