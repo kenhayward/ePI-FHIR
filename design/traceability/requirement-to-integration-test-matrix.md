@@ -13,7 +13,7 @@ Name integration tests for the case they validate, for example
 ## Coverage
 
 - Integration tests declared: **17**
-- Implemented in code: **9**
+- Implemented in code: **11**
 - Requirements validated by at least one integration test: **26**
 - Scheduled requirements still without one: **3**
 
@@ -30,8 +30,8 @@ Name integration tests for the case they validate, for example
 | IT-007 | A request without a valid OIDC token is rejected before reaching content | CAP-IAM-001 | 1 | implemented | `IT_007_a_request_without_a_token_is_refused` (src/Epi.Api.Tests/ContentEndpointTests.cs)<br>`IT_007_reading_without_a_token_is_refused_too` (src/Epi.Api.Tests/ContentEndpointTests.cs)<br>`IT_007_the_health_probe_stays_open` (src/Epi.Api.Tests/ContentEndpointTests.cs) |
 | IT-008 | Creating a document emits a content event to the backbone | CAP-EVT-001 | 1 | implemented | `IT_008_creating_a_document_emits_an_event_naming_it` (src/Epi.Governance.Tests/ContentEventTests.cs) |
 | IT-009 | An invalid market definition is rejected before activation | CAP-CFG-006 | 1 | implemented | `IT_009_an_invalid_market_definition_is_rejected_before_activation` (src/Epi.Governance.Tests/MarketConfigurationIntegrationTests.cs) |
-| IT-010 | An unpermitted transition is rejected and a permitted one records actor and timestamp | CAP-LCM-001, CAP-LCM-007 | 2 | planned | - |
-| IT-011 | The author of a version cannot approve it, by any route | CAP-IAM-006, CAP-WFL-005 | 2 | planned | - |
+| IT-010 | An unpermitted transition is rejected and a permitted one records actor and timestamp | CAP-LCM-001, CAP-LCM-007 | 2 | implemented | `IT_010_a_permitted_transition_records_actor_and_time` (src/Epi.Lifecycle.Tests/LifecycleServiceTests.cs)<br>`IT_010_a_refused_transition_leaves_no_history_behind` (src/Epi.Lifecycle.Tests/LifecycleServiceTests.cs)<br>`IT_010_a_transition_the_model_does_not_permit_is_refused` (src/Epi.Lifecycle.Tests/LifecycleServiceTests.cs) |
+| IT-011 | The author of a version cannot approve it, by any route | CAP-IAM-006, CAP-WFL-005 | 2 | implemented | `IT_011_an_unknown_author_refuses_approval_rather_than_allowing_it` (src/Epi.Lifecycle.Tests/LifecycleServiceTests.cs)<br>`IT_011_someone_other_than_the_author_may_approve_it` (src/Epi.Lifecycle.Tests/LifecycleServiceTests.cs)<br>`IT_011_the_author_of_a_version_may_not_approve_it` (src/Epi.Lifecycle.Tests/LifecycleServiceTests.cs) |
 | IT-012 | Approval captures a signature binding signer, meaning, time and a hash of the version signed | CAP-AUD-003 | 2 | planned | - |
 | IT-013 | A version approved in one market is not approved in another, on the same content | CAP-LCM-003 | 2 | planned | - |
 | IT-014 | A label instantiated from a template validates and records its template version | CAP-TPL-004, CAP-TPL-007 | 2 | planned | - |

@@ -122,13 +122,13 @@ Status values: `planned` (scheduled, not built), `partial` (some aspect delivere
 | CAP-TRM-008 | 6 | S | P0 | Terminology Service | - | - | - |
 | CAP-TRM-009 | 6 | M | P0 | Terminology Service | - | - | - |
 | CAP-TRM-010 | 6 | S | P0 | Terminology Service | - | - | - |
-| CAP-LCM-001 | 7 | M | P1 | Lifecycle & Workflow Service | 2 | planned | iteration-2 (see design/iteration-2.md) |
+| CAP-LCM-001 | 7 | M | P1 | Lifecycle & Workflow Service | 2 | partial | FN_LCM_001/002 and IT_010: model loaded from configuration and unpermitted transitions refused |
 | CAP-LCM-002 | 7 | M | P1 | Lifecycle & Workflow Service | - | - | - |
 | CAP-LCM-003 | 7 | M | P1 | Lifecycle & Workflow Service | 2 | planned | iteration-2 (see design/iteration-2.md) |
 | CAP-LCM-004 | 7 | M | P1 | Lifecycle & Workflow Service | - | - | - |
 | CAP-LCM-005 | 7 | M | P1 | Lifecycle & Workflow Service | - | - | - |
 | CAP-LCM-006 | 7 | M | P1 | Lifecycle & Workflow Service | 2 | planned | iteration-2 (see design/iteration-2.md) |
-| CAP-LCM-007 | 7 | M | P1 | Lifecycle & Workflow Service | 2 | planned | iteration-2 (see design/iteration-2.md) |
+| CAP-LCM-007 | 7 | M | P1 | Lifecycle & Workflow Service | 2 | partial | FN_LCM_003: transitions recorded with actor, time and reason; workflow routing is a later PR |
 | CAP-LCM-008 | 7 | S | P1 | Lifecycle & Workflow Service | - | - | - |
 | CAP-LCM-009 | 7 | M | P1 | Lifecycle & Workflow Service | - | - | - |
 | CAP-LCM-010 | 7 | M | P1 | Lifecycle & Workflow Service | - | - | - |
@@ -206,7 +206,7 @@ Status values: `planned` (scheduled, not built), `partial` (some aspect delivere
 | CAP-WFL-002 | 16 | M | P1 | Lifecycle & Workflow Service | - | - | - |
 | CAP-WFL-003 | 16 | M | P1 | Lifecycle & Workflow Service | - | - | - |
 | CAP-WFL-004 | 16 | M | P1 | Lifecycle & Workflow Service | - | - | - |
-| CAP-WFL-005 | 16 | M | P1 | Lifecycle & Workflow Service | 2 | planned | iteration-2 (see design/iteration-2.md) |
+| CAP-WFL-005 | 16 | M | P1 | Lifecycle & Workflow Service | 2 | partial | IT_011 for the approval gate; routing and escalation are later |
 | CAP-WFL-006 | 16 | S | P1 | Lifecycle & Workflow Service | - | - | - |
 | CAP-WFL-007 | 16 | M | P1 | Lifecycle & Workflow Service | - | - | - |
 | CAP-WFL-008 | 16 | M | P1 | Lifecycle & Workflow Service | - | - | - |
@@ -215,7 +215,7 @@ Status values: `planned` (scheduled, not built), `partial` (some aspect delivere
 | CAP-IAM-003 | 17 | M | P0 | IAM | - | - | - |
 | CAP-IAM-004 | 17 | M | P0 | IAM | - | - | - |
 | CAP-IAM-005 | 17 | M | P0 | IAM | - | - | - |
-| CAP-IAM-006 | 17 | M | P0 | IAM | 2 | planned | iteration-2 (see design/iteration-2.md) |
+| CAP-IAM-006 | 17 | M | P0 | IAM | 2 | partial | IT_011: the author of a version cannot approve it, enforced in the one path every transition takes |
 | CAP-IAM-007 | 17 | M | P0 | IAM | 1 | partial | FN_IAM_004 on every store operation, reached through the API; physical partitioning for residency markets is ADR-004, later |
 | CAP-IAM-008 | 17 | M | P0 | IAM | - | - | - |
 | CAP-IAM-009 | 17 | M | P0 | IAM | 1 | partial | FN_AUD_004: decisions recorded whether allowed or denied; administration changes are recorded when that surface exists |
