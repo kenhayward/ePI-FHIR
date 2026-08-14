@@ -46,6 +46,24 @@ docker compose down                           # stop (add -v to remove volumes/d
 
 \* observability profile  ** gateway profile  *** messaging profile
 
+### If a port is already taken
+
+Every published host port above is the default, and every one can be overridden from
+`.env` - the variable names are listed there, commented out. Nothing else changes: the
+ports inside the container network are fixed, so only your side of the mapping moves.
+
+Corporate endpoint agents are the usual squatters, and they will not give a port up.
+Zscaler's tunnel binds **9001**, which is MinIO's console by default, and the failure
+arrives as `ports are not available ... bind: Only one usage of each socket address`.
+To find the holder on Windows:
+
+```
+netstat -ano | findstr :9001
+```
+
+then `Get-Process -Id <pid>` in PowerShell to name it. Move our port rather than the
+agent's - set `MINIO_CONSOLE_PORT=9101` in `.env` and bring the stack up again.
+
 ## WORM / object-lock (audit and retention)
 The `minio-init` one-shot creates buckets with **object-lock (WORM)** enabled:
 `epi-content`, `epi-artwork`, `epi-rendered`, `epi-audit`, `epi-archive`. The `epi-audit`
