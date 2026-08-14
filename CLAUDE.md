@@ -112,7 +112,9 @@ registry fails the build, as does a registry entry pointing at a requirement tha
 Declare new design functions in `design-functions.json`, new scenarios in `integration-tests.json`,
 and scheduling in `delivery-map.json`; then regenerate.
 
-The current increment is planned in [design/iteration-1.md](design/iteration-1.md).
+The current increment is planned in [design/iteration-3.md](design/iteration-3.md);
+[iteration-1.md](design/iteration-1.md) and [iteration-2.md](design/iteration-2.md) record what
+came before, and each iteration plan carries the debts the previous one left open.
 
 ## Writing conventions
 
