@@ -134,6 +134,7 @@ public sealed class LifecycleService(
         string actor,
         string? reason = null,
         string? signatureReference = null,
+        ApprovalContext? approvalContext = null,
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(version);
@@ -200,7 +201,47 @@ public sealed class LifecycleService(
         var transition = new StateTransition(
             version, current, permitted.To, action, actor, _time.GetUtcNow(), reason, signatureReference);
 
-        await _store.AppendAsync(transition, cancellationToken);
+        // The engine decides when a pin is due, because it is the thing that knows the
+        // transition lands on the approved state and what its timestamp is. The caller supplies
+        // only the ingredients (ADR-024 decision 3).
+        var pin = PinFor(transition, approvalContext);
+
+        await _store.AppendAsync(transition, pin, cancellationToken);
         return transition;
+    }
+
+    /// <summary>
+    /// The context to pin with this transition, or null where none is due.
+    /// </summary>
+    /// <exception cref="TransitionRefusedException">
+    /// If the transition approves a version and the caller supplied nothing to pin. An approval
+    /// that silently records no context looks exactly like one that recorded a context, until
+    /// somebody asks (ADR-024 decision 4).
+    /// </exception>
+    private PinnedContext? PinFor(StateTransition transition, ApprovalContext? context)
+    {
+        if (_model.ApprovedState is null
+            || !string.Equals(transition.To, _model.ApprovedState, StringComparison.Ordinal))
+        {
+            return null;
+        }
+
+        if (context is null)
+        {
+            throw new TransitionRefusedException(transition.Version, transition.Action,
+                "this transition approves the version, and the platform was given nothing to "
+                + "record as what it was approved against (CAP-LCM-011).");
+        }
+
+        return new PinnedContext(
+            transition.Version,
+            context.ContentHash,
+            _model.Name,
+            transition.To,
+            context.Packages,
+            context.IdentifierAuthority,
+            transition.At,
+            context.Template,
+            context.TemplateVersion);
     }
 }

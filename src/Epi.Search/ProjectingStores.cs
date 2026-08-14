@@ -77,9 +77,10 @@ public sealed class ProjectingLifecycleStore(
     }
 
     public async Task AppendAsync(
-        StateTransition transition, CancellationToken cancellationToken = default)
+        StateTransition transition, PinnedContext? pin = null,
+        CancellationToken cancellationToken = default)
     {
-        await _inner.AppendAsync(transition, cancellationToken);
+        await _inner.AppendAsync(transition, pin, cancellationToken);
         await _projection.ProjectStateAsync(transition.Version, transition.To, cancellationToken);
     }
 

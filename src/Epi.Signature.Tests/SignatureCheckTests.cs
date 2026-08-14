@@ -149,7 +149,11 @@ public sealed class SignatureCheckTests
         var manifest = await signing.SignAsync(
             document, "user-ben", BensPassword, SignatureMeaning.Approval, reason: "checked against source");
         var transition = await service.TransitionAsync(
-            Reference, "approve", "user-ben", signatureReference: manifest.Reference);
+            Reference, "approve", "user-ben", signatureReference: manifest.Reference,
+            approvalContext: new ApprovalContext(
+                manifest.ContentHash,
+                [new PinnedPackage("hl7.fhir.uv.emedicinal-product-info", "1.0.0", "c99767")],
+                "https://epi.example.org/identifier/document"));
 
         Assert.Equal("approved", await lifecycle.CurrentStateAsync(Reference));
         Assert.Equal(manifest.Reference, transition.SignatureReference);

@@ -1,4 +1,5 @@
 using Epi.Governance.Audit;
+using Epi.Governance.Persistence;
 using Epi.Governance.Tests;
 using Npgsql;
 using Testcontainers.PostgreSql;
@@ -68,9 +69,9 @@ public sealed class PostgresAuditSinkConformanceTests(PostgresServer server) : A
     {
         // A database of its own per sink, so the conformance cases cannot see each other's
         // records through a shared table.
-        var sink = new PostgresAuditSink(await server.CreateDatabaseAsync(), time);
-        await sink.InitialiseAsync();
-        return sink;
+        var connectionString = await server.CreateDatabaseAsync();
+        await GovernanceSchema.ApplyAsync(connectionString);
+        return new PostgresAuditSink(connectionString, time);
     }
 }
 
@@ -85,8 +86,8 @@ public sealed class PostgresAppendOnlyTests(PostgresServer server)
     private async Task<string> SinkWithOneRecordAsync()
     {
         var connectionString = await server.CreateDatabaseAsync();
+        await GovernanceSchema.ApplyAsync(connectionString);
         var sink = new PostgresAuditSink(connectionString);
-        await sink.InitialiseAsync();
         await sink.AppendAsync(
             new AuditRecord("user-anna", "content.create", "doc-1", AuditOutcome.Succeeded, default));
         return connectionString;

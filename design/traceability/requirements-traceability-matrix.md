@@ -13,8 +13,8 @@ For the full V model see [v-model-trace.md](v-model-trace.md).
 ## Coverage
 
 - Requirements specified: **221** across **24** capabilities
-- Requirements with delivery evidence: **33**
-- Requirements not yet scheduled: **188**
+- Requirements with delivery evidence: **34**
+- Requirements not yet scheduled: **187**
 
 ## Capabilities
 
@@ -132,7 +132,7 @@ Status values: `planned` (scheduled, not built), `partial` (some aspect delivere
 | CAP-LCM-008 | 7 | S | P1 | Lifecycle & Workflow Service | - | - | - |
 | CAP-LCM-009 | 7 | M | P1 | Lifecycle & Workflow Service | - | - | - |
 | CAP-LCM-010 | 7 | M | P1 | Lifecycle & Workflow Service | - | - | - |
-| CAP-LCM-011 | 7 | M | P1 | Lifecycle & Workflow Service | 2 | partial | CAP_LCM_011 across the pinned-context conformance suite, run against both stores; packages, content hash, state model, template and identifier authority. Reusable-unit versions follow with reuse |
+| CAP-LCM-011 | 7 | M | P1 | Lifecycle & Workflow Service | 2-3 | partial | CAP_LCM_011 across the pinned-context conformance suite, run against both stores. The pin is now written in the same transaction as the transition that approves the version, and an approval with nothing to pin is refused (ADR-024); reusable-unit versions follow with reuse |
 | CAP-LCM-012 | 7 | M | P1 | Lifecycle & Workflow Service | 2 | partial | FN_LCM_007 and IT_018: submission to a regulator is refused without a valid, unspent signature meaning responsibility; recording the regulator's decision requires none and is audited regardless. Signature on submission of a variation (#8) follows with change management |
 | CAP-CHG-001 | 8 | M | P3 | Change & Impact Service | - | - | - |
 | CAP-CHG-002 | 8 | M | P3 | Change & Impact Service | - | - | - |
@@ -250,7 +250,7 @@ Status values: `planned` (scheduled, not built), `partial` (some aspect delivere
 | CAP-CFG-004 | 21 | M | P0 | Configuration & Rules Service | 1 | partial | IT_004_a_new_market_is_added_by_configuration_alone; a market carries no behaviour until PR 6 consumes it |
 | CAP-CFG-005 | 21 | M | P0 | Configuration & Rules Service | - | - | - |
 | CAP-CFG-006 | 21 | M | P0 | Configuration & Rules Service | 1 | partial | IT_009_an_invalid_market_definition_is_rejected_before_activation; market configuration only |
-| CAP-CFG-007 | 21 | M | P0 | Configuration & Rules Service | - | - | - |
+| CAP-CFG-007 | 21 | M | P0 | Configuration & Rules Service | 3 | partial | FN_CFG_004: the governance schema is applied as ordered migrations recorded in an append-only ledger, so a database that predates a change is migrated rather than left behind (ADR-024). Environment promotion beyond the schema is later |
 | CAP-RET-001 | 22 | M | P4 | Retention & Archival Service | - | - | - |
 | CAP-RET-002 | 22 | M | P4 | Retention & Archival Service | - | - | - |
 | CAP-RET-003 | 22 | M | P4 | Retention & Archival Service | - | - | - |

@@ -14,6 +14,16 @@ public sealed class LifecycleServiceTests
     private static readonly VersionRef Version = new("doc-1", 1);
 
     /// <summary>
+    /// What an approval is pinned against. Supplied on every approving transition because the
+    /// engine refuses one without it - an approval that silently records no context looks
+    /// exactly like one that recorded a context (ADR-024 decision 4).
+    /// </summary>
+    private static readonly ApprovalContext Approved = new(
+        "sha-256:abc123",
+        [new PinnedPackage("hl7.fhir.uv.emedicinal-product-info", "1.0.0", "c99767")],
+        "https://epi.example.org/identifier/document");
+
+    /// <summary>
     /// Stands in for the signature module. Records what it was asked, so a test can assert the
     /// gate demanded the meaning the model requires rather than merely demanding something.
     /// </summary>
@@ -88,7 +98,7 @@ public sealed class LifecycleServiceTests
         await service.RegisterAsync(Version, "user-anna");
 
         var refused = await Assert.ThrowsAsync<TransitionRefusedException>(
-            () => service.TransitionAsync(Version, "approve", "user-ben", signatureReference: "sig-1"));
+            () => service.TransitionAsync(Version, "approve", "user-ben", signatureReference: "sig-1", approvalContext: Approved));
 
         Assert.Contains("permits no", refused.Reason);
         Assert.Equal("draft", await store.CurrentStateAsync(Version));
@@ -111,7 +121,7 @@ public sealed class LifecycleServiceTests
         var (service, _, _) = await InReviewAsync(author: "user-anna");
 
         var refused = await Assert.ThrowsAsync<TransitionRefusedException>(
-            () => service.TransitionAsync(Version, "approve", "user-anna", signatureReference: "sig-1"));
+            () => service.TransitionAsync(Version, "approve", "user-anna", signatureReference: "sig-1", approvalContext: Approved));
 
         Assert.Contains("may not approve", refused.Reason);
     }
@@ -121,7 +131,7 @@ public sealed class LifecycleServiceTests
     {
         var (service, store, _) = await InReviewAsync(author: "user-anna");
 
-        await service.TransitionAsync(Version, "approve", "user-ben", signatureReference: "sig-1");
+        await service.TransitionAsync(Version, "approve", "user-ben", signatureReference: "sig-1", approvalContext: Approved);
 
         Assert.Equal("approved", await store.CurrentStateAsync(Version));
     }
@@ -140,7 +150,7 @@ public sealed class LifecycleServiceTests
             orphan, "draft", "in-review", "submit", "someone", DateTimeOffset.UtcNow));
 
         var refused = await Assert.ThrowsAsync<TransitionRefusedException>(
-            () => service.TransitionAsync(orphan, "approve", "user-ben", signatureReference: "sig-1"));
+            () => service.TransitionAsync(orphan, "approve", "user-ben", signatureReference: "sig-1", approvalContext: Approved));
 
         Assert.Contains("author", refused.Reason);
     }
@@ -151,7 +161,7 @@ public sealed class LifecycleServiceTests
         var (service, _, _) = await InReviewAsync();
 
         var refused = await Assert.ThrowsAsync<TransitionRefusedException>(
-            () => service.TransitionAsync(Version, "approve", "user-ben"));
+            () => service.TransitionAsync(Version, "approve", "user-ben", approvalContext: Approved));
 
         Assert.Contains("signature", refused.Reason);
     }
@@ -163,7 +173,7 @@ public sealed class LifecycleServiceTests
             answer: SignatureCheckResult.Invalid("it was made over a different version."));
 
         var refused = await Assert.ThrowsAsync<TransitionRefusedException>(
-            () => service.TransitionAsync(Version, "approve", "user-ben", signatureReference: "sig-1"));
+            () => service.TransitionAsync(Version, "approve", "user-ben", signatureReference: "sig-1", approvalContext: Approved));
 
         Assert.Contains("different version", refused.Reason);
         Assert.Equal("in-review", await store.CurrentStateAsync(Version));
@@ -176,7 +186,7 @@ public sealed class LifecycleServiceTests
         // approval, and the model says which is needed where.
         var (service, _, signatures) = await InReviewAsync();
 
-        await service.TransitionAsync(Version, "approve", "user-ben", signatureReference: "sig-1");
+        await service.TransitionAsync(Version, "approve", "user-ben", signatureReference: "sig-1", approvalContext: Approved);
 
         var asked = Assert.Single(signatures.Asked);
         Assert.Equal("sig-1", asked.Reference);
@@ -192,7 +202,7 @@ public sealed class LifecycleServiceTests
         // which would make the signature a token the holder can spend rather than an assertion
         // about one act.
         var (service, _, _) = await InReviewAsync();
-        await service.TransitionAsync(Version, "approve", "user-ben", signatureReference: "sig-1");
+        await service.TransitionAsync(Version, "approve", "user-ben", signatureReference: "sig-1", approvalContext: Approved);
 
         var refused = await Assert.ThrowsAsync<TransitionRefusedException>(
             () => service.TransitionAsync(Version, "withdraw", "user-ben", signatureReference: "sig-1"));
@@ -206,14 +216,14 @@ public sealed class LifecycleServiceTests
         // The reference is unique across the platform, so re-use is refused wherever it is
         // attempted rather than only within the version that spent it.
         var (service, store, _) = await InReviewAsync();
-        await service.TransitionAsync(Version, "approve", "user-ben", signatureReference: "sig-1");
+        await service.TransitionAsync(Version, "approve", "user-ben", signatureReference: "sig-1", approvalContext: Approved);
 
         var other = new VersionRef("doc-2", 1);
         await service.RegisterAsync(other, "user-anna");
         await service.TransitionAsync(other, "submit", "user-anna");
 
         var refused = await Assert.ThrowsAsync<TransitionRefusedException>(
-            () => service.TransitionAsync(other, "approve", "user-ben", signatureReference: "sig-1"));
+            () => service.TransitionAsync(other, "approve", "user-ben", signatureReference: "sig-1", approvalContext: Approved));
 
         Assert.Contains("already", refused.Reason);
         Assert.Equal("in-review", await store.CurrentStateAsync(other));
@@ -235,7 +245,7 @@ public sealed class LifecycleServiceTests
     public async Task FN_LCM_003_history_is_kept_in_order_and_the_store_offers_no_way_to_amend_it()
     {
         var (service, store, _) = await InReviewAsync();
-        await service.TransitionAsync(Version, "approve", "user-ben", signatureReference: "sig-1");
+        await service.TransitionAsync(Version, "approve", "user-ben", signatureReference: "sig-1", approvalContext: Approved);
 
         var history = await store.HistoryAsync(Version);
 
@@ -255,6 +265,57 @@ public sealed class LifecycleServiceTests
 
         Assert.Equal("in-review", await service.CurrentStateAsync(Version));
         Assert.Equal("user-anna", await service.AuthorOfAsync(Version));
+    }
+
+    [Fact]
+    public async Task CAP_LCM_011_an_approval_with_nothing_to_pin_is_refused()
+    {
+        // An approval that silently records no context looks exactly like one that recorded a
+        // context, until somebody asks - and by then the configuration has moved and the
+        // answer cannot be reconstructed (ADR-024 decision 4).
+        var (service, store, _) = await InReviewAsync();
+
+        var refused = await Assert.ThrowsAsync<TransitionRefusedException>(
+            () => service.TransitionAsync(Version, "approve", "user-ben", signatureReference: "sig-1"));
+
+        Assert.Contains("approved against", refused.Reason, StringComparison.Ordinal);
+
+        // And the transition did not happen, so the refusal is a gate rather than a warning.
+        Assert.Equal("in-review", await store.CurrentStateAsync(Version));
+    }
+
+    [Fact]
+    public async Task CAP_LCM_011_a_transition_that_is_not_an_approval_needs_nothing_to_pin()
+    {
+        // Most transitions pin nothing, and demanding a context for a submit would make the
+        // control noise that callers learn to satisfy with anything to hand.
+        var store = new InMemoryLifecycleStore();
+        var service = Service(store);
+        await service.RegisterAsync(Version, "user-anna");
+
+        await service.TransitionAsync(Version, "submit", "user-anna");
+
+        Assert.Equal("in-review", await store.CurrentStateAsync(Version));
+        Assert.Null(await store.ForAsync(Version));
+    }
+
+    [Fact]
+    public async Task CAP_LCM_011_an_approval_pins_the_context_it_was_given()
+    {
+        var (service, store, _) = await InReviewAsync();
+
+        await service.TransitionAsync(
+            Version, "approve", "user-ben", signatureReference: "sig-1", approvalContext: Approved);
+
+        var pinned = await store.ForAsync(Version);
+        Assert.NotNull(pinned);
+        Assert.Equal("sha-256:abc123", pinned!.ContentHash);
+        Assert.Equal("approved", pinned.State);
+
+        // The model's own name and the transition's own timestamp, not the caller's: the
+        // engine is the thing that knows both (ADR-024 decision 3).
+        Assert.Equal("label", pinned.StateModel);
+        Assert.Equal((await store.HistoryAsync(Version))[^1].At, pinned.PinnedAt);
     }
 
     [Fact]
@@ -289,7 +350,7 @@ public sealed class LifecycleServiceTests
         await service.TransitionAsync(Version, "submit", "user-anna");
 
         clock.Advance(TimeSpan.FromHours(1));
-        await service.TransitionAsync(Version, "approve", "user-ben", signatureReference: "sig-1");
+        await service.TransitionAsync(Version, "approve", "user-ben", signatureReference: "sig-1", approvalContext: Approved);
 
         return service;
     }

@@ -29,19 +29,31 @@ public sealed record PinnedContext(
     int? TemplateVersion = null);
 
 /// <summary>
-/// The pinned validating contexts, append-only like everything else that is evidence.
+/// What a caller must supply for an approval to be pinnable (ADR-024 decision 3).
 /// </summary>
+/// <remarks>
+/// The ingredients, not the record. The lifecycle engine knows when a transition lands on the
+/// approved state and what its timestamp is; it does not know about FHIR bytes or conformance
+/// packages. Passing the parts rather than the finished pin keeps each side ignorant of the
+/// other's business and puts the decision about <em>when</em> to pin with the thing that knows.
+/// </remarks>
+public sealed record ApprovalContext(
+    string ContentHash,
+    IReadOnlyList<PinnedPackage> Packages,
+    string IdentifierAuthority,
+    string? Template = null,
+    int? TemplateVersion = null);
+
+/// <summary>
+/// The pinned validating contexts, read-only (ADR-024 decision 2).
+/// </summary>
+/// <remarks>
+/// There is deliberately no write here. A pin is written by the same append that records the
+/// transition it belongs to, in one transaction, and a second way to write one would be a way
+/// to write a pin with no transition behind it.
+/// </remarks>
 public interface IPinnedContextStore
 {
-    /// <summary>
-    /// Records what a version was approved against.
-    /// </summary>
-    /// <exception cref="ContextAlreadyPinnedException">
-    /// If this version already has a pin. A record that can be replaced is not a record, and an
-    /// approval happens once.
-    /// </exception>
-    Task PinAsync(PinnedContext context, CancellationToken cancellationToken = default);
-
     /// <summary>The context pinned for this version, or null where none was.</summary>
     Task<PinnedContext?> ForAsync(VersionRef version, CancellationToken cancellationToken = default);
 }

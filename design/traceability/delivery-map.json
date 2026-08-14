@@ -111,9 +111,9 @@
     "evidence": "FN_LCM_003: transitions recorded with actor, time and reason, in a durable append-only table with UPDATE and DELETE refused by a database trigger; workflow routing is a later PR"
   },
   "CAP-LCM-011": {
-    "iteration": "2",
+    "iteration": "2-3",
     "status": "partial",
-    "evidence": "CAP_LCM_011 across the pinned-context conformance suite, run against both stores; packages, content hash, state model, template and identifier authority. Reusable-unit versions follow with reuse"
+    "evidence": "CAP_LCM_011 across the pinned-context conformance suite, run against both stores. The pin is now written in the same transaction as the transition that approves the version, and an approval with nothing to pin is refused (ADR-024); reusable-unit versions follow with reuse"
   },
   "CAP-WFL-001": {
     "iteration": "2",
@@ -164,5 +164,10 @@
     "iteration": "2",
     "status": "partial",
     "evidence": "CAP_SCH_006: every page is bounded and capped, and the total is the scoped total; query cost bounds are not yet measured"
+  },
+  "CAP-CFG-007": {
+    "iteration": "3",
+    "status": "partial",
+    "evidence": "FN_CFG_004: the governance schema is applied as ordered migrations recorded in an append-only ledger, so a database that predates a change is migrated rather than left behind (ADR-024). Environment promotion beyond the schema is later"
   }
 }

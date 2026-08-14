@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Epi.Lifecycle;
 using Npgsql;
 
@@ -14,74 +15,12 @@ namespace Epi.Governance.Persistence;
 /// reached by a permitted route.
 /// </remarks>
 public sealed class PostgresLifecycleStore(string connectionString)
-    : ILifecycleStore, IAsyncDisposable
+    : ILifecycleStore, IPinnedContextStore, IAsyncDisposable
 {
+    private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
+
     private readonly Lazy<NpgsqlDataSource> _source =
         new(() => new NpgsqlDataSourceBuilder(connectionString).Build());
-
-    /// <summary>Creates the tables and the triggers that make them append-only.</summary>
-    public async Task InitialiseAsync(CancellationToken cancellationToken = default)
-    {
-        await using var command = _source.Value.CreateCommand("""
-            CREATE TABLE IF NOT EXISTS lifecycle_version (
-                document_identifier TEXT    NOT NULL,
-                document_version    INTEGER NOT NULL,
-                author              TEXT    NOT NULL,
-                initial_state       TEXT    NOT NULL,
-                registered_at       TIMESTAMPTZ NULL,
-                PRIMARY KEY (document_identifier, document_version)
-            );
-
-            CREATE TABLE IF NOT EXISTS lifecycle_transition (
-                id                  BIGINT      GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-                document_identifier TEXT        NOT NULL,
-                document_version    INTEGER     NOT NULL,
-                from_state          TEXT        NOT NULL,
-                to_state            TEXT        NOT NULL,
-                action              TEXT        NOT NULL,
-                actor               TEXT        NOT NULL,
-                occurred_at         TIMESTAMPTZ NOT NULL,
-                reason              TEXT        NULL,
-                signature_reference TEXT        NULL
-            );
-
-            CREATE INDEX IF NOT EXISTS lifecycle_transition_by_version
-                ON lifecycle_transition (document_identifier, document_version, id);
-
-            -- A signature is spent platform-wide, so this lookup is by reference alone.
-            CREATE INDEX IF NOT EXISTS lifecycle_transition_by_signature
-                ON lifecycle_transition (signature_reference)
-                WHERE signature_reference IS NOT NULL;
-
-            -- CREATE TABLE IF NOT EXISTS does nothing at all to a table that already exists,
-            -- so a column added later never appears in a database that predates it, and the
-            -- first write afterwards fails. Nullable rather than backfilled with a default:
-            -- inventing a registration time for rows written before the column existed would
-            -- put a false timestamp in an evidentiary table, and absence of a recorded time is
-            -- not evidence that the version did not exist. This is a bootstrap, not a
-            -- migration - D3 Section 10.3 is where the real one belongs.
-            ALTER TABLE lifecycle_version ADD COLUMN IF NOT EXISTS registered_at TIMESTAMPTZ NULL;
-
-            CREATE OR REPLACE FUNCTION lifecycle_is_append_only() RETURNS TRIGGER AS $$
-            BEGIN
-                RAISE EXCEPTION '% is append-only: % is not permitted', TG_TABLE_NAME, TG_OP
-                    USING ERRCODE = 'restrict_violation';
-            END;
-            $$ LANGUAGE plpgsql;
-
-            DROP TRIGGER IF EXISTS lifecycle_version_no_change ON lifecycle_version;
-            CREATE TRIGGER lifecycle_version_no_change
-                BEFORE UPDATE OR DELETE ON lifecycle_version
-                FOR EACH ROW EXECUTE FUNCTION lifecycle_is_append_only();
-
-            DROP TRIGGER IF EXISTS lifecycle_transition_no_change ON lifecycle_transition;
-            CREATE TRIGGER lifecycle_transition_no_change
-                BEFORE UPDATE OR DELETE ON lifecycle_transition
-                FOR EACH ROW EXECUTE FUNCTION lifecycle_is_append_only();
-            """);
-
-        await command.ExecuteNonQueryAsync(cancellationToken);
-    }
 
     public async Task RegisterAsync(
         VersionRef version, string author, string initialState, DateTimeOffset registeredAt,
@@ -219,28 +158,109 @@ public sealed class PostgresLifecycleStore(string connectionString)
     }
 
     public async Task AppendAsync(
-        StateTransition transition, CancellationToken cancellationToken = default)
+        StateTransition transition, PinnedContext? pin = null,
+        CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(transition);
 
-        await using var command = _source.Value.CreateCommand("""
+        // One transaction, because a transition that lands without its pin leaves an approved
+        // version with no record of what it was approved against (ADR-024 decision 1).
+        await using var connection = await _source.Value.OpenConnectionAsync(cancellationToken);
+        await using var transacted = await connection.BeginTransactionAsync(cancellationToken);
+
+        await using (var command = new NpgsqlCommand("""
             INSERT INTO lifecycle_transition
                 (document_identifier, document_version, from_state, to_state, action, actor,
                  occurred_at, reason, signature_reference)
             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+            """, connection, transacted))
+        {
+            command.Parameters.AddWithValue(transition.Version.DocumentIdentifier);
+            command.Parameters.AddWithValue(transition.Version.Version);
+            command.Parameters.AddWithValue(transition.From);
+            command.Parameters.AddWithValue(transition.To);
+            command.Parameters.AddWithValue(transition.Action);
+            command.Parameters.AddWithValue(transition.Actor);
+            command.Parameters.AddWithValue(transition.At);
+            command.Parameters.AddWithValue((object?)transition.Reason ?? DBNull.Value);
+            command.Parameters.AddWithValue((object?)transition.SignatureReference ?? DBNull.Value);
+
+            await command.ExecuteNonQueryAsync(cancellationToken);
+        }
+
+        if (pin is not null)
+        {
+            await using var pinning = new NpgsqlCommand("""
+                INSERT INTO pinned_context
+                    (document_identifier, document_version, content_hash, state_model, state,
+                     packages, identifier_authority, pinned_at, template, template_version)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+                """, connection, transacted);
+
+            pinning.Parameters.AddWithValue(pin.Version.DocumentIdentifier);
+            pinning.Parameters.AddWithValue(pin.Version.Version);
+            pinning.Parameters.AddWithValue(pin.ContentHash);
+            pinning.Parameters.AddWithValue(pin.StateModel);
+            pinning.Parameters.AddWithValue(pin.State);
+            pinning.Parameters.Add(new NpgsqlParameter
+            {
+                Value = JsonSerializer.Serialize(pin.Packages, Json),
+                NpgsqlDbType = NpgsqlTypes.NpgsqlDbType.Jsonb,
+            });
+            pinning.Parameters.AddWithValue(pin.IdentifierAuthority);
+            pinning.Parameters.AddWithValue(pin.PinnedAt);
+            pinning.Parameters.AddWithValue((object?)pin.Template ?? DBNull.Value);
+            pinning.Parameters.AddWithValue((object?)pin.TemplateVersion ?? DBNull.Value);
+
+            try
+            {
+                await pinning.ExecuteNonQueryAsync(cancellationToken);
+            }
+            catch (PostgresException duplicate)
+                when (duplicate.SqlState == PostgresErrorCodes.UniqueViolation)
+            {
+                // The primary key is the control, not a check performed first: two approvals
+                // racing must not both write, and only the database can decide that. Rolling
+                // back takes the transition with it, which is the point.
+                await transacted.RollbackAsync(cancellationToken);
+                throw new ContextAlreadyPinnedException(pin.Version);
+            }
+        }
+
+        await transacted.CommitAsync(cancellationToken);
+    }
+
+    public async Task<PinnedContext?> ForAsync(
+        VersionRef version, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(version);
+
+        await using var command = _source.Value.CreateCommand("""
+            SELECT content_hash, state_model, state, packages, identifier_authority, pinned_at,
+                   template, template_version
+            FROM pinned_context
+            WHERE document_identifier = $1 AND document_version = $2
             """);
 
-        command.Parameters.AddWithValue(transition.Version.DocumentIdentifier);
-        command.Parameters.AddWithValue(transition.Version.Version);
-        command.Parameters.AddWithValue(transition.From);
-        command.Parameters.AddWithValue(transition.To);
-        command.Parameters.AddWithValue(transition.Action);
-        command.Parameters.AddWithValue(transition.Actor);
-        command.Parameters.AddWithValue(transition.At);
-        command.Parameters.AddWithValue((object?)transition.Reason ?? DBNull.Value);
-        command.Parameters.AddWithValue((object?)transition.SignatureReference ?? DBNull.Value);
+        command.Parameters.AddWithValue(version.DocumentIdentifier);
+        command.Parameters.AddWithValue(version.Version);
 
-        await command.ExecuteNonQueryAsync(cancellationToken);
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        if (!await reader.ReadAsync(cancellationToken))
+        {
+            return null;
+        }
+
+        return new PinnedContext(
+            version,
+            reader.GetString(0),
+            reader.GetString(1),
+            reader.GetString(2),
+            JsonSerializer.Deserialize<List<PinnedPackage>>(reader.GetString(3), Json) ?? [],
+            reader.GetString(4),
+            reader.GetFieldValue<DateTimeOffset>(5),
+            reader.IsDBNull(6) ? null : reader.GetString(6),
+            reader.IsDBNull(7) ? null : reader.GetInt32(7));
     }
 
     public async ValueTask DisposeAsync()

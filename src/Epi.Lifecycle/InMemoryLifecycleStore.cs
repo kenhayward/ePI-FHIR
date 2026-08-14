@@ -4,12 +4,13 @@ namespace Epi.Lifecycle;
 /// An in-memory lifecycle store. The durable one is a table alongside the audit trail; this is
 /// the reference implementation, as elsewhere in the platform.
 /// </summary>
-public sealed class InMemoryLifecycleStore : ILifecycleStore
+public sealed class InMemoryLifecycleStore : ILifecycleStore, IPinnedContextStore
 {
     private readonly Dictionary<string, string> _authors = [];
     private readonly Dictionary<string, string> _states = [];
     private readonly Dictionary<string, DateTimeOffset> _registered = [];
     private readonly List<StateTransition> _transitions = [];
+    private readonly Dictionary<VersionRef, PinnedContext> _pins = [];
     private readonly Lock _gate = new();
 
     public Task RegisterAsync(VersionRef version, string author, string initialState,
@@ -88,16 +89,36 @@ public sealed class InMemoryLifecycleStore : ILifecycleStore
         }
     }
 
-    public Task AppendAsync(StateTransition transition, CancellationToken cancellationToken = default)
+    public Task AppendAsync(
+        StateTransition transition, PinnedContext? pin = null,
+        CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(transition);
 
         lock (_gate)
         {
+            // Under one lock, so the reference implementation makes the same guarantee the
+            // durable one does with a transaction (ADR-024 decision 1).
+            if (pin is not null && !_pins.TryAdd(pin.Version, pin))
+            {
+                throw new ContextAlreadyPinnedException(pin.Version);
+            }
+
             _transitions.Add(transition);
             _states[transition.Version.ToString()] = transition.To;
         }
 
         return Task.CompletedTask;
+    }
+
+    public Task<PinnedContext?> ForAsync(
+        VersionRef version, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(version);
+
+        lock (_gate)
+        {
+            return Task.FromResult(_pins.GetValueOrDefault(version));
+        }
     }
 }
