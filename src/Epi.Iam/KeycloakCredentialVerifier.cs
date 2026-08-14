@@ -93,18 +93,25 @@ public sealed class KeycloakCredentialVerifier(HttpClient client, string realm, 
         var profile = JsonSerializer.Deserialize<UserInfo>(
             await response.Content.ReadAsStringAsync(cancellationToken), Json);
 
-        if (string.IsNullOrWhiteSpace(profile?.PreferredUsername))
+        if (string.IsNullOrWhiteSpace(profile?.Subject))
         {
             throw new HttpRequestException(
-                "The identity provider returned a profile with no username to attribute the "
+                "The identity provider returned a profile with no subject to attribute the "
                 + "signature to.");
         }
 
-        // Section 11.50 wants a printed name recorded. A username is a worse name than a real
-        // one and a far better one than nothing.
-        return new SignerIdentity(
-            profile.PreferredUsername,
-            string.IsNullOrWhiteSpace(profile.Name) ? profile.PreferredUsername : profile.Name);
+        // The subject, not the username. It is the identifier every other part of the platform
+        // attributes by, so a signature naming a username could never be matched to the actor
+        // making the transition. It is also the only one that cannot be reassigned, and
+        // 21 CFR Part 11 Section 11.100(a) requires a signature to belong to one individual and
+        // never be reused by anyone else - which a recycled username would not survive.
+        //
+        // Section 11.50 wants a printed name recorded alongside it. A username is a worse name
+        // than a real one and a far better one than nothing.
+        var printed = new[] { profile.Name, profile.PreferredUsername, profile.Subject }
+            .First(candidate => !string.IsNullOrWhiteSpace(candidate));
+
+        return new SignerIdentity(profile.Subject, printed!);
     }
 
     // Named explicitly rather than left to a naming policy. These are OAuth 2.0 and OIDC
@@ -115,6 +122,7 @@ public sealed class KeycloakCredentialVerifier(HttpClient client, string realm, 
         [property: JsonPropertyName("access_token")] string? AccessToken);
 
     private sealed record UserInfo(
+        [property: JsonPropertyName("sub")] string? Subject,
         [property: JsonPropertyName("preferred_username")] string? PreferredUsername,
         [property: JsonPropertyName("name")] string? Name);
 }

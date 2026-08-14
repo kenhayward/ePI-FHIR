@@ -18,7 +18,7 @@ public sealed class KeycloakCredentialVerifierTests
         """;
 
     private const string UserInfoResponse = """
-        {"preferred_username":"user-anna","name":"Anna Novak","email":"anna@example.org"}
+        {"sub":"018f2a10-anna","preferred_username":"user-anna","name":"Anna Novak"}
         """;
 
     private static KeycloakCredentialVerifier Verifier(
@@ -33,8 +33,11 @@ public sealed class KeycloakCredentialVerifierTests
 
         var signer = await Verifier(handler).VerifyAsync("user-anna", "correct-horse");
 
+        // The subject, not the username: it is what every other part of the platform
+        // attributes by, and the only identifier that cannot be reassigned to someone else
+        // (21 CFR Part 11 Section 11.100(a)).
         Assert.NotNull(signer);
-        Assert.Equal("user-anna", signer!.Identifier);
+        Assert.Equal("018f2a10-anna", signer!.Identifier);
         Assert.Equal("Anna Novak", signer.PrintedName);
     }
 
@@ -44,11 +47,13 @@ public sealed class KeycloakCredentialVerifierTests
         // A signer with no profile name still has to be signable, and Section 11.50 wants a
         // printed name recorded. The username is a worse name than a real one and a much
         // better one than nothing.
-        var handler = new RouteHandler(TokenResponse, """{"preferred_username":"user-ben"}""");
+        var handler = new RouteHandler(
+            TokenResponse, """{"sub":"018f2a10-ben","preferred_username":"user-ben"}""");
 
         var signer = await Verifier(handler).VerifyAsync("user-ben", "battery-staple");
 
-        Assert.Equal("user-ben", signer!.PrintedName);
+        Assert.Equal("018f2a10-ben", signer!.Identifier);
+        Assert.Equal("user-ben", signer.PrintedName);
     }
 
     [Fact]

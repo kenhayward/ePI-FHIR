@@ -27,6 +27,12 @@ builder.Services
         options.Authority = builder.Configuration["Epi:Authentication:Authority"];
         options.Audience = builder.Configuration["Epi:Authentication:Audience"];
         options.RequireHttpsMetadata = !builder.Environment.IsDevelopment();
+
+        // Claims arrive named as the identity provider issued them. The default mapping
+        // rewrites well-known names to legacy WS-* URIs, which silently emptied the roles
+        // the platform reads - authorisation then failed with a policy decision of deny and
+        // nothing to say the roles had gone missing on the way in.
+        options.MapInboundClaims = false;
     });
 builder.Services.AddAuthorization();
 
@@ -66,7 +72,11 @@ var fhirServer = builder.Configuration["Epi:Content:FhirServerUrl"];
 builder.Services.AddSingleton<IContentStore>(_ => string.IsNullOrWhiteSpace(fhirServer)
     ? new InMemoryContentStore()
     : new FhirRestContentStore(FhirContentClient.Create(fhirServer)));
-builder.Services.AddSingleton(_ => new StructuralValidator(ProfileSource.FromPinnedPackages()));
+// The pinned conformance packages are found by walking up to the repository root when this
+// runs from a checkout, which a container has no way to do - it holds the application, not
+// the repository. Configuration names the directory where there is no root to find.
+builder.Services.AddSingleton(_ => new StructuralValidator(
+    ProfileSource.FromPinnedPackages(builder.Configuration["Epi:Validation:PackagesPath"])));
 
 // Governance records - lifecycle, per-market approval, and signatures - share one database.
 // They are separate tables for the reasons ADR-005 and ADR-019 give; they are one connection
