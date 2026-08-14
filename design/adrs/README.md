@@ -20,6 +20,7 @@ of them next needs revising, not as a bulk exercise.
 | [ADR-020](0020-electronic-signature.md) | Electronic signature | accepted |
 | [ADR-021](0021-template-representation.md) | Template representation | accepted |
 | [ADR-022](0022-permission-scoped-search.md) | Permission-scoped search and current-approved retrieval | accepted |
+| [ADR-023](0023-historical-version-reconstruction.md) | Reconstructing a historical version | accepted |
 
 A record stays `proposed` until the pull request carrying it is merged, at which point it
 becomes `accepted`. Superseding a decision means a new record that says so, never editing the
