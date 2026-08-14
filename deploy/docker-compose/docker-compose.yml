@@ -184,7 +184,12 @@ services:
   # ---- Identity provider (OIDC/SAML) ----
   keycloak:
     image: quay.io/keycloak/keycloak:26.0
-    command: start-dev
+    # The demonstration realm is imported at start-up rather than clicked together, so the
+    # identity provider is reproducible and reviewable like every other piece of configuration
+    # here. Import is skipped silently if the realm already exists, so this is safe to leave on.
+    command: start-dev --import-realm
+    volumes:
+      - ./init/keycloak-epi-realm.json:/opt/keycloak/data/import/epi-realm.json:ro
     environment:
       KC_BOOTSTRAP_ADMIN_USERNAME: ${KEYCLOAK_ADMIN}
       KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
@@ -223,6 +228,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      keycloak:
+        condition: service_started
     environment:
       # Each dependency is real here. Left unset, the service falls back to in-memory
       # components and says so loudly at start-up.
@@ -230,10 +237,17 @@ services:
       Epi__Audit__ConnectionString: "Host=postgres;Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD};Database=epi_operational"
       Epi__Events__BootstrapServers: kafka:9092
       Epi__Authorization__OpaUrl: http://opa:8181
-      # Authentication is delegated to Keycloak; create the realm and client before use
-      # (see README). Without an authority configured, every content call is refused.
+      # Authentication is delegated to Keycloak. The realm, its clients and its people are
+      # imported at start-up from init/keycloak-epi-realm.json - nothing to create by hand.
+      # Without an authority configured, every content call is refused.
       Epi__Authentication__Authority: http://keycloak:8080/realms/epi
       Epi__Authentication__Audience: epi-api
+      # Signing re-checks the signer's password at the gate (ADR-020 decision 1). Left unset,
+      # the platform refuses every signature rather than accepting any, and says so at start-up.
+      Epi__Signing__KeycloakUrl: http://keycloak:8080
+      Epi__Signing__Realm: epi
+      Epi__Signing__ClientId: epi-signing
+      Epi__Governance__ConnectionString: "Host=postgres;Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD};Database=epi_operational"
       ASPNETCORE_ENVIRONMENT: Development
     volumes:
       # Configuration and the pinned conformance packages are mounted, so changing a market or

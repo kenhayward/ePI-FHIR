@@ -1,0 +1,188 @@
+{
+  "realm": "epi",
+  "enabled": true,
+  "sslRequired": "none",
+  "registrationAllowed": false,
+  "loginWithEmailAllowed": false,
+  "passwordPolicy": "length(12) and notUsername and notEmail and passwordHistory(3)",
+  "clients": [
+    {
+      "clientId": "epi-api",
+      "name": "ePI platform API",
+      "description": "The resource server. Validates tokens; never obtains them.",
+      "enabled": true,
+      "publicClient": false,
+      "bearerOnly": true,
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": false
+    },
+    {
+      "clientId": "epi-signing",
+      "name": "ePI signing and sign-in",
+      "description": "Public client used to sign a person in, and by the platform to re-check their password at a signing gate (ADR-020 decision 1).",
+      "enabled": true,
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": true,
+      "redirectUris": [
+        "http://localhost:8080/*"
+      ],
+      "webOrigins": [
+        "http://localhost:8080"
+      ],
+      "protocolMappers": [
+        {
+          "name": "audience-epi-api",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "config": {
+            "included.client.audience": "epi-api",
+            "access.token.claim": "true",
+            "id.token.claim": "false"
+          }
+        },
+        {
+          "name": "affiliates",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "config": {
+            "user.attribute": "affiliates",
+            "claim.name": "affiliates",
+            "jsonType.label": "String",
+            "multivalued": "true",
+            "access.token.claim": "true",
+            "id.token.claim": "true",
+            "userinfo.token.claim": "true"
+          }
+        },
+        {
+          "name": "markets",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "config": {
+            "user.attribute": "markets",
+            "claim.name": "markets",
+            "jsonType.label": "String",
+            "multivalued": "true",
+            "access.token.claim": "true",
+            "id.token.claim": "true",
+            "userinfo.token.claim": "true"
+          }
+        },
+        {
+          "name": "roles",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-realm-role-mapper",
+          "config": {
+            "claim.name": "roles",
+            "jsonType.label": "String",
+            "multivalued": "true",
+            "access.token.claim": "true",
+            "id.token.claim": "true",
+            "userinfo.token.claim": "true"
+          }
+        }
+      ]
+    }
+  ],
+  "roles": {
+    "realm": [
+      {
+        "name": "author",
+        "description": "May create and submit label content."
+      },
+      {
+        "name": "approver",
+        "description": "May approve content someone else authored."
+      },
+      {
+        "name": "regulatory",
+        "description": "May submit to a regulator and record its decision."
+      }
+    ]
+  },
+  "users": [
+    {
+      "username": "user-anna",
+      "firstName": "Anna",
+      "lastName": "Novak",
+      "enabled": true,
+      "emailVerified": true,
+      "attributes": {
+        "affiliates": [
+          "uk-affiliate"
+        ],
+        "markets": [
+          "GB"
+        ]
+      },
+      "realmRoles": [
+        "author"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Demo-Passw0rd!",
+          "temporary": false
+        }
+      ],
+      "email": "anna.novak@example.org",
+      "requiredActions": []
+    },
+    {
+      "username": "user-ben",
+      "firstName": "Ben",
+      "lastName": "Okafor",
+      "enabled": true,
+      "emailVerified": true,
+      "attributes": {
+        "affiliates": [
+          "uk-affiliate"
+        ],
+        "markets": [
+          "GB"
+        ]
+      },
+      "realmRoles": [
+        "approver"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Demo-Passw0rd!",
+          "temporary": false
+        }
+      ],
+      "email": "ben.okafor@example.org",
+      "requiredActions": []
+    },
+    {
+      "username": "user-rae",
+      "firstName": "Rae",
+      "lastName": "Lindqvist",
+      "enabled": true,
+      "emailVerified": true,
+      "attributes": {
+        "affiliates": [
+          "uk-affiliate"
+        ],
+        "markets": [
+          "GB",
+          "EU"
+        ]
+      },
+      "realmRoles": [
+        "regulatory"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Demo-Passw0rd!",
+          "temporary": false
+        }
+      ],
+      "email": "rae.lindqvist@example.org",
+      "requiredActions": []
+    }
+  ]
+}

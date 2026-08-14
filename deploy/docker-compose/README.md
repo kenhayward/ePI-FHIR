@@ -64,6 +64,44 @@ netstat -ano | findstr :9001
 then `Get-Process -Id <pid>` in PowerShell to name it. Move our port rather than the
 agent's - set `MINIO_CONSOLE_PORT=9101` in `.env` and bring the stack up again.
 
+## The demonstration realm (identity, and who can sign)
+
+Keycloak imports `init/keycloak-epi-realm.json` at start-up, so the realm, its clients and
+its people are reproducible rather than clicked together. Import is skipped if the realm
+already exists; to re-import after editing, delete the realm in the admin console (or via
+the admin API) and restart the container.
+
+Three fictional people, enough to demonstrate segregation of duties. **All passwords are
+`Demo-Passw0rd!`** and every one of these is a development default.
+
+| User | Name | Role | Affiliate | Markets |
+|---|---|---|---|---|
+| `user-anna` | Anna Novak | author | uk-affiliate | GB |
+| `user-ben` | Ben Okafor | approver | uk-affiliate | GB |
+| `user-rae` | Rae Lindqvist | regulatory | uk-affiliate | GB, EU |
+
+Anna authors and submits; Ben approves, because the author of a version may not approve it.
+Rae holds EU as well as GB, so the same content can hold different regulatory-approval state
+in two markets (ADR-005).
+
+Two clients: `epi-api` is the resource server and never obtains tokens, and `epi-signing` is
+a public client with direct access grants - used both to sign a person in and by the platform
+itself to re-check a password at a signing gate (ADR-020 decision 1).
+
+The realm sets a password policy (`length(12) and notUsername and notEmail and
+passwordHistory(3)`). ADR-020 names password ageing and complexity as met by configuration
+rather than by the platform; this is that configuration, set so the claim is demonstrable
+rather than asserted.
+
+To get a token:
+
+```
+curl -s -X POST http://localhost:8081/realms/epi/protocol/openid-connect/token   -d client_id=epi-signing -d grant_type=password   -d username=user-anna -d "password=Demo-Passw0rd!"
+```
+
+The access token carries `affiliates`, `markets` and `roles`, which is what the platform
+reads to scope every operation, and `aud=epi-api` so the API accepts it.
+
 ## WORM / object-lock (audit and retention)
 The `minio-init` one-shot creates buckets with **object-lock (WORM)** enabled:
 `epi-content`, `epi-artwork`, `epi-rendered`, `epi-audit`, `epi-archive`. The `epi-audit`
