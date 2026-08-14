@@ -104,6 +104,26 @@ builder.Services.AddSingleton(services => new LifecycleService(
     signatureCheck: services.GetRequiredService<ISignatureCheck>(),
     spent: services.GetRequiredService<ISpentSignatures>()));
 
+// Signing needs an identity provider to check credentials against. Where none is configured
+// the verifier refuses everyone rather than accepting anyone: a permissive default here would
+// be a control that is not one, and it would look like it was working (ADR-020 decision 1).
+var signingRealm = builder.Configuration["Epi:Signing:Realm"];
+var signingAuthority = builder.Configuration["Epi:Signing:KeycloakUrl"];
+builder.Services.AddSingleton<ICredentialVerifier>(_ =>
+    string.IsNullOrWhiteSpace(signingAuthority) || string.IsNullOrWhiteSpace(signingRealm)
+        ? new NoIdentityProvider()
+        : new KeycloakCredentialVerifier(
+            new HttpClient { BaseAddress = new Uri(signingAuthority) },
+            signingRealm,
+            builder.Configuration["Epi:Signing:ClientId"] ?? "epi-signing"));
+
+// Auditing is a decorator, so no signing path can avoid being recorded (ADR-018).
+builder.Services.AddSingleton<IElectronicSignatureService>(services => new AuditingSignatureService(
+    new ElectronicSignatureService(
+        services.GetRequiredService<ICredentialVerifier>(),
+        services.GetRequiredService<ISignatureStore>()),
+    services.GetRequiredService<IAuditSink>()));
+
 builder.Services.AddSingleton(services => new MarketApprovalService(
     LifecycleModelConfiguration.LoadFrom(marketStates),
     services.GetRequiredService<IMarketApprovalStore>(),
@@ -127,6 +147,14 @@ if (string.IsNullOrWhiteSpace(auditConnection) || string.IsNullOrWhiteSpace(brok
         string.IsNullOrWhiteSpace(auditConnection) ? "in-memory" : "PostgreSQL",
         string.IsNullOrWhiteSpace(brokers) ? "in-memory" : "Kafka",
         string.IsNullOrWhiteSpace(governanceConnection) ? "in-memory" : "PostgreSQL");
+}
+
+if (string.IsNullOrWhiteSpace(signingAuthority) || string.IsNullOrWhiteSpace(signingRealm))
+{
+    app.Logger.LogWarning(
+        "No identity provider is configured for signing, so every signature will be refused. "
+        + "Approval gates cannot be passed until Epi:Signing:KeycloakUrl and Epi:Signing:Realm "
+        + "are set.");
 }
 
 // The audit table and its append-only trigger must exist before the first record. In a
@@ -305,7 +333,140 @@ app.MapGet("/labels/{id}/versions/{version:int}/state", async (
         });
 }).RequireAuthorization();
 
+app.MapPost("/signatures", async (
+    SignatureRequest body,
+    ClaimsPrincipal principal,
+    IContentStore store,
+    IPolicyDecisionPoint policy,
+    IElectronicSignatureService signing,
+    IdentifierAuthority authority,
+    CancellationToken cancellationToken) =>
+{
+    var subject = SubjectFactory.From(principal);
+    if (subject is null)
+    {
+        return Results.Unauthorized();
+    }
+
+    if (!Enum.TryParse<SignatureMeaning>(body.Meaning, ignoreCase: true, out var meaning))
+    {
+        return Results.BadRequest(new
+        {
+            problems = new[]
+            {
+                $"'{body.Meaning}' is not a signature meaning. Permitted meanings are "
+                + string.Join(", ", Enum.GetNames<SignatureMeaning>()) + ".",
+            },
+        });
+    }
+
+    // Read through scope: a signer may only sign content they are allowed to see. Otherwise
+    // signing becomes a way of discovering that a document exists, and of attesting to
+    // content the signer was never permitted to read.
+    var scoped = new ScopedContentStore(store, policy, subject);
+    var document = await scoped.GetAsync(
+        new DocumentIdentity(authority.DocumentSystem, body.DocumentIdentifier),
+        body.Version,
+        cancellationToken);
+
+    if (document is null)
+    {
+        return Results.NotFound();
+    }
+
+    try
+    {
+        // The identifier is the authenticated caller's, never the request body's: a caller
+        // able to name the signer could sign as somebody else (ADR-020 decision 3).
+        var manifest = await signing.SignAsync(
+            document, subject.Id, body.Password, meaning, body.Reason, cancellationToken);
+
+        return Results.Ok(new
+        {
+            reference = manifest.Reference,
+            signer = manifest.SignerIdentifier,
+            printedName = manifest.SignerPrintedName,
+            meaning = manifest.Meaning.ToString(),
+            contentHash = manifest.ContentHash,
+            signedAt = manifest.SignedAt,
+        });
+    }
+    catch (SignatureRefusedException refused)
+    {
+        // One message for every refusal, so an approval screen cannot be used to work out
+        // who holds an account.
+        return Results.Problem(refused.Reason, statusCode: StatusCodes.Status403Forbidden);
+    }
+}).RequireAuthorization();
+
+app.MapPost("/labels/{id}/versions/{version:int}/transitions", async (
+    string id,
+    int version,
+    TransitionRequest body,
+    ClaimsPrincipal principal,
+    IContentStore store,
+    IPolicyDecisionPoint policy,
+    LifecycleService lifecycle,
+    IdentifierAuthority authority,
+    CancellationToken cancellationToken) =>
+{
+    var subject = SubjectFactory.From(principal);
+    if (subject is null)
+    {
+        return Results.Unauthorized();
+    }
+
+    var scoped = new ScopedContentStore(store, policy, subject);
+    var document = await scoped.GetAsync(
+        new DocumentIdentity(authority.DocumentSystem, id), version, cancellationToken);
+
+    if (document is null)
+    {
+        return Results.NotFound();
+    }
+
+    try
+    {
+        var transition = await lifecycle.TransitionAsync(
+            new VersionRef(id, version), body.Action, subject.Id, body.Reason,
+            body.SignatureReference, cancellationToken);
+
+        return Results.Ok(new
+        {
+            from = transition.From,
+            to = transition.To,
+            action = transition.Action,
+            actor = transition.Actor,
+            at = transition.At,
+        });
+    }
+    catch (TransitionRefusedException refused)
+    {
+        // 409 rather than 400: the request is well formed and the platform understood it. It
+        // is the state of the version, or who is asking, that makes it impossible.
+        return Results.Problem(refused.Reason, statusCode: StatusCodes.Status409Conflict);
+    }
+}).RequireAuthorization();
+
 app.Run();
+
+/// <summary>What a caller asks for when signing. The signer is the token, never the body.</summary>
+internal sealed record SignatureRequest(
+    string DocumentIdentifier, int Version, string Meaning, string Password, string? Reason);
+
+/// <summary>What a caller asks for when moving a version between states.</summary>
+internal sealed record TransitionRequest(string Action, string? Reason, string? SignatureReference);
+
+/// <summary>
+/// Stands in where no identity provider is configured. Refuses everyone, so a deployment that
+/// forgot to configure signing cannot sign rather than signing freely.
+/// </summary>
+internal sealed class NoIdentityProvider : ICredentialVerifier
+{
+    public Task<SignerIdentity?> VerifyAsync(
+        string identifier, string password, CancellationToken cancellationToken = default) =>
+        Task.FromResult<SignerIdentity?>(null);
+}
 
 // Exposed so the test host can reference the entry point generated from top-level statements.
 public partial class Program;
