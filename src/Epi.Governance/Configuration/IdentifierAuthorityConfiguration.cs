@@ -50,11 +50,15 @@ public static class IdentifierAuthorityConfiguration
         var template = Absolute(problems, file, "templateSystem", parsed?.TemplateSystem);
         var templateVersion = Absolute(
             problems, file, "templateVersionTagSystem", parsed?.TemplateVersionTagSystem);
+        var unit = Absolute(problems, file, "unitSystem", parsed?.UnitSystem);
+        var unitReference = Absolute(
+            problems, file, "unitReferenceExtension", parsed?.UnitReferenceExtension);
 
         return problems.Count > 0
             ? throw new MarketConfigurationException(problems)
             : new IdentifierAuthority(
-                document, version, affiliate, market, template, templateVersion);
+                document, version, affiliate, market, template, templateVersion,
+                unit, unitReference);
     }
 
     private static string Absolute(List<string> problems, string file, string field, string? value)
@@ -82,5 +86,7 @@ public static class IdentifierAuthorityConfiguration
         string? AffiliateTagSystem,
         string? MarketTagSystem,
         string? TemplateSystem,
-        string? TemplateVersionTagSystem);
+        string? TemplateVersionTagSystem,
+        string? UnitSystem,
+        string? UnitReferenceExtension);
 }

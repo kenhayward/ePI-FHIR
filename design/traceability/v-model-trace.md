@@ -19,7 +19,7 @@ set is in [requirements-traceability-matrix.md](requirements-traceability-matrix
 
 ## Coverage of scheduled requirements
 
-- Scheduled requirements: **34**
+- Scheduled requirements: **35**
 - With at least one design function: **32**
 - With at least one integration test: **28**
 - Design functions awaiting a unit test: **5** of 42
@@ -30,6 +30,7 @@ set is in [requirements-traceability-matrix.md](requirements-traceability-matrix
 | Requirement | Phase | Iteration | Design functions | Unit tests | Integration tests | Implementations |
 |---|---|---|---|---|---|---|
 | CAP-SCM-001 | P0 | 1 | FN-CC-001, FN-CC-004, FN-CC-005 | `FN_CC_001_reads_a_document_bundle_anchored_by_a_composition` (src/Epi.ContentCore.Tests/EpiBundleReaderTests.cs)<br>`FN_CC_001_rejects_a_bundle_that_is_not_of_type_document` (src/Epi.ContentCore.Tests/EpiBundleReaderTests.cs)<br>`FN_CC_001_rejects_a_bundle_with_no_entries` (src/Epi.ContentCore.Tests/EpiBundleReaderTests.cs)<br>`FN_CC_001_rejects_a_document_bundle_whose_first_entry_is_not_a_composition` (src/Epi.ContentCore.Tests/EpiBundleReaderTests.cs)<br>`FN_CC_001_rejects_content_carrying_elements_that_are_not_in_the_model` (src/Epi.ContentCore.Tests/EpiBundleReaderTests.cs)<br>`FN_CC_001_rejects_content_that_is_not_a_bundle` (src/Epi.ContentCore.Tests/EpiBundleReaderTests.cs)<br>`FN_CC_001_rejects_malformed_json_without_leaking_a_parser_stack_trace` (src/Epi.ContentCore.Tests/EpiBundleReaderTests.cs)<br>`FN_CC_004_content_persists_on_the_server_and_is_readable_by_a_new_client` (src/Epi.ContentCore.IntegrationTests/FhirPersistenceTests.cs)<br>`FN_CC_004_the_server_assigns_its_own_identifiers_which_we_do_not_use_as_identity` (src/Epi.ContentCore.IntegrationTests/FhirPersistenceTests.cs)<br>`FN_CC_004_two_versions_are_two_resources_on_the_server_not_an_overwrite` (src/Epi.ContentCore.IntegrationTests/FhirPersistenceTests.cs)<br>`FN_CC_005_retrieves_a_specific_version_and_the_latest` (src/Epi.ContentCore.Tests/ContentStoreConformance.cs)<br>`FN_CC_005_returns_nothing_for_an_unknown_document_or_version` (src/Epi.ContentCore.Tests/ContentStoreConformance.cs) | IT-001 | `IT_001_a_conformant_bundle_round_trips_through_create_and_read_without_content_loss` (src/Epi.ContentCore.Tests/ContentStoreConformance.cs) |
+| CAP-SCM-004 | P0 | 3 | **none** | - | **none** | - |
 | CAP-SCM-007 | P0 | 1-2 | FN-CC-002, FN-CC-003, FN-CC-007, FN-CC-008, FN-CC-009 | `FN_CC_002_assigns_a_canonical_identifier_the_caller_did_not_supply` (src/Epi.ContentCore.Tests/ContentStoreConformance.cs)<br>`FN_CC_002_encodes_no_business_meaning_in_the_identifier` (src/Epi.ContentCore.Tests/ContentStoreConformance.cs)<br>`FN_CC_002_mints_a_distinct_identifier_for_every_document` (src/Epi.ContentCore.Tests/ContentStoreConformance.cs)<br>`FN_CC_003_records_the_identifier_on_the_stored_bundle` (src/Epi.ContentCore.Tests/ContentStoreConformance.cs)<br>`FN_CC_003_rejects_a_new_version_of_a_document_that_does_not_exist` (src/Epi.ContentCore.Tests/ContentStoreConformance.cs)<br>`FN_CC_003_starts_at_version_one_and_increments_monotonically` (src/Epi.ContentCore.Tests/ContentStoreConformance.cs)<br>`FN_CC_007_a_caller_mutating_a_retrieved_document_does_not_change_the_store` (src/Epi.ContentCore.Tests/ContentStoreConformance.cs)<br>`FN_CC_007_creating_a_new_version_leaves_the_previous_one_untouched` (src/Epi.ContentCore.Tests/ContentStoreConformance.cs)<br>`FN_CC_007_rejects_a_bundle_that_already_claims_an_identifier_in_our_namespace` (src/Epi.ContentCore.Tests/ContentStoreConformance.cs)<br>`FN_CC_008_every_section_is_given_an_identifier` (src/Epi.ContentCore.Tests/SectionIdentityTests.cs)<br>`FN_CC_008_identifiers_are_opaque_and_distinct` (src/Epi.ContentCore.Tests/SectionIdentityTests.cs)<br>`FN_CC_008_nested_sections_are_identified_too` (src/Epi.ContentCore.Tests/SectionIdentityTests.cs)<br>`FN_CC_009_a_new_section_added_later_is_identified_without_disturbing_the_others` (src/Epi.ContentCore.Tests/SectionIdentityTests.cs)<br>`FN_CC_009_an_identifier_that_is_already_present_is_left_alone` (src/Epi.ContentCore.Tests/SectionIdentityTests.cs)<br>`FN_CC_009_assigning_twice_changes_nothing_the_second_time` (src/Epi.ContentCore.Tests/SectionIdentityTests.cs) | IT-006, IT-015 | `IT_006_an_attempt_to_mutate_an_existing_version_is_rejected_and_history_is_reconstructable` (src/Epi.ContentCore.Tests/ContentStoreConformance.cs) |
 | CAP-SCM-010 | P0 | 1 | FN-CC-006 | `FN_CC_006_preserves_narrative_markup_exactly` (src/Epi.ContentCore.Tests/EpiBundleReaderTests.cs)<br>`FN_CC_006_serialises_and_reparses_without_content_loss` (src/Epi.ContentCore.Tests/EpiBundleReaderTests.cs) | IT-001 | `IT_001_a_conformant_bundle_round_trips_through_create_and_read_without_content_loss` (src/Epi.ContentCore.Tests/ContentStoreConformance.cs) |
 | CAP-TPL-004 | P1 | 2 | FN-TPL-001 | - | IT-014 | - |
@@ -69,9 +70,9 @@ set is in [requirements-traceability-matrix.md](requirements-traceability-matrix
 Gaps are reported, not enforced: a requirement scheduled but not yet decomposed is
 normal work in progress. Referential errors, by contrast, fail the build.
 
-**Scheduled requirements with no design function:** CAP-SCH-003, CAP-SCH-006
+**Scheduled requirements with no design function:** CAP-SCM-004, CAP-SCH-003, CAP-SCH-006
 
-**Scheduled requirements with no integration test:** CAP-LCM-011, CAP-SCH-001, CAP-SCH-003, CAP-SCH-006, CAP-WFL-001, CAP-CFG-007
+**Scheduled requirements with no integration test:** CAP-SCM-004, CAP-LCM-011, CAP-SCH-001, CAP-SCH-003, CAP-SCH-006, CAP-WFL-001, CAP-CFG-007
 
 **Design functions with no unit test:** FN-AUD-001, FN-TPL-001, FN-TPL-002, FN-WFL-001, FN-WFL-002
 

@@ -6,5 +6,7 @@
   "affiliateTagSystem": "https://epi.example.org/tag/affiliate",
   "marketTagSystem": "https://epi.example.org/tag/market",
   "templateSystem": "https://epi.example.org/tag/template",
-  "templateVersionTagSystem": "https://epi.example.org/tag/template-version"
+  "templateVersionTagSystem": "https://epi.example.org/tag/template-version",
+  "unitSystem": "https://epi.example.org/tag/reusable-unit",
+  "unitReferenceExtension": "https://epi.example.org/extension/unit-reference"
 }
