@@ -137,4 +137,63 @@ check("approved internally, still unsubmitted in every market",
       and set(state["markets"].values()) == {"not-submitted"},
       f"{status} {state}")
 
+print("\nAnna searches for it")
+status, results = call("GET", "/labels/search?state=approved", anna)
+check("search finds the approved label", status == 200
+      and any(hit["documentIdentifier"] == identifier for hit in results.get("hits", [])),
+      f"{status} {str(results)[:200]}")
+
+status, results = call("GET", "/labels/search?market=EU", anna)
+check("a market Anna does not hold returns nothing, and no count either",
+      status == 200 and results["total"] == 0 and results["hits"] == [],
+      f"{status} {str(results)[:200]}")
+
+status, results = call("GET", "/labels/search?text=Examplinum", anna)
+check("free text matches the narrative", status == 200 and results["total"] >= 1,
+      f"{status} {str(results)[:200]}")
+
+print("\nAnna tries to deal with the regulator herself")
+status, refused = call("POST", f"/labels/{identifier}/versions/1/markets/GB/transitions", anna,
+                       {"action": "submit", "reason": "not mine to make"})
+check("an author may read the label and may not submit it", status == 403, str(status))
+
+print("\nRae submits it to the Great Britain regulator and records the decision")
+rae = token("user-rae")
+status, unapproved = call("GET", f"/labels/{identifier}/current-approved?market=GB", rae)
+check("no market has approved anything yet", status == 404, str(status))
+
+status, signature = call("POST", "/signatures", rae,
+                         {"documentIdentifier": identifier, "version": 1,
+                          "meaning": "Responsibility", "password": PASSWORD,
+                          "reason": "submitting to the regulator"})
+check("Rae signs for the submission", status == 200, f"{status} {str(signature)[:200]}")
+
+if status == 200:
+    market_path = f"/labels/{identifier}/versions/1/markets/GB/transitions"
+    status, submitted = call("POST", market_path, rae,
+                             {"action": "submit", "reason": "initial submission",
+                              "signatureReference": signature["reference"]})
+    check("submitted under signature", status == 200 and submitted["to"] == "submitted",
+          f"{status} {str(submitted)[:200]}")
+
+    status, assessing = call("POST", market_path, rae, {"action": "begin-assessment"})
+    check("under assessment", status == 200 and assessing["to"] == "under-assessment",
+          f"{status} {str(assessing)[:200]}")
+
+    # Unsigned on purpose: recording what a regulator decided is a factual entry about an
+    # event outside this organisation's control, not an act of it (CAP-LCM-012, ADR-020).
+    status, decision = call("POST", market_path, rae, {"action": "record-approval"})
+    check("the regulator's decision is recorded without a signature",
+          status == 200 and decision["to"] == "approved", f"{status} {str(decision)[:200]}")
+
+    status, current = call("GET", f"/labels/{identifier}/current-approved?market=GB", rae)
+    check("Great Britain now has a current-approved version",
+          status == 200 and current["version"] == 1, f"{status} {str(current)[:200]}")
+
+    status, elsewhere = call("GET", f"/labels/{identifier}/current-approved?market=EU", rae)
+    check("the European Union has not, on the same content", status == 404, str(status))
+
+    status, unseen = call("GET", f"/labels/{identifier}/current-approved?market=EU", anna)
+    check("and a caller outside that market is told nothing either", status == 404, str(status))
+
 print("\n" + ("ALL CHECKS PASSED" if not failures else f"FAILURES: {failures}"))

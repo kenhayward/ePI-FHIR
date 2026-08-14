@@ -130,10 +130,27 @@ def phases_from_d2():
 
 
 def registry(path):
-    """Load a hand-maintained registry, dropping "_" keys used for notes."""
+    """Load a hand-maintained registry, dropping "_" keys used for notes.
+
+    JSON permits a duplicate key and every parser silently keeps one of them, which in a
+    hand-maintained registry means an entry can be written, reviewed, merged, and never read:
+    the delivery map carried two CAP-TPL-004 entries for a release, and the placeholder was the
+    one the matrix showed. Refused here rather than trusted to review.
+    """
     if not path.exists():
         return {}
-    raw = json.loads(path.read_text(encoding="utf-8"))
+
+    def no_duplicates(pairs):
+        seen = [k for k, _ in pairs]
+        repeated = sorted({k for k in seen if seen.count(k) > 1})
+        if repeated:
+            sys.exit(
+                f"{path.name}: duplicate keys {', '.join(repeated)} - one entry is silently "
+                "discarded, so the evidence it records would never reach the matrices."
+            )
+        return dict(pairs)
+
+    raw = json.loads(path.read_text(encoding="utf-8"), object_pairs_hook=no_duplicates)
     return {k: v for k, v in raw.items() if not k.startswith("_")}
 
 

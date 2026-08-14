@@ -19,7 +19,8 @@ public sealed record LifecycleTransition(
 /// an organisation with a different approval process changes a file (capability 21, ADR-012).
 /// </summary>
 public sealed class LifecycleModel(
-    string name, string initial, IReadOnlyList<string> states, IReadOnlyList<LifecycleTransition> transitions)
+    string name, string initial, IReadOnlyList<string> states, IReadOnlyList<LifecycleTransition> transitions,
+    string? approvedState = null)
 {
     public string Name { get; } = name;
 
@@ -28,6 +29,18 @@ public sealed class LifecycleModel(
     public IReadOnlyList<string> States { get; } = states;
 
     public IReadOnlyList<LifecycleTransition> Transitions { get; } = transitions;
+
+    /// <summary>
+    /// Which of the states means approved, where the model has one (ADR-022 decision 7).
+    /// </summary>
+    /// <remarks>
+    /// Search has to be able to ask for the current-approved version without knowing how an
+    /// organisation spells approval, and a model need not have such a state at all - a review
+    /// workflow that ends in "published" is a legitimate model. Named in configuration rather
+    /// than inferred, because inferring it from a state called "approved" would work on the
+    /// shipped file and quietly fail on anyone else's.
+    /// </remarks>
+    public string? ApprovedState { get; } = approvedState;
 
     /// <summary>The transition for this action from this state, or null if none is permitted.</summary>
     /// <remarks>

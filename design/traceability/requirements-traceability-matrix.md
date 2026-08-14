@@ -13,8 +13,8 @@ For the full V model see [v-model-trace.md](v-model-trace.md).
 ## Coverage
 
 - Requirements specified: **221** across **24** capabilities
-- Requirements with delivery evidence: **31**
-- Requirements not yet scheduled: **190**
+- Requirements with delivery evidence: **33**
+- Requirements not yet scheduled: **188**
 
 ## Capabilities
 
@@ -81,10 +81,10 @@ Status values: `planned` (scheduled, not built), `partial` (some aspect delivere
 | CAP-TPL-001 | 3 | M | P1 | Authoring & Template Service | - | - | - |
 | CAP-TPL-002 | 3 | M | P1 | Authoring & Template Service | - | - | - |
 | CAP-TPL-003 | 3 | M | P1 | Authoring & Template Service | - | - | - |
-| CAP-TPL-004 | 3 | M | P1 | Authoring & Template Service | 2 | planned | iteration-2 (see design/iteration-2.md) |
+| CAP-TPL-004 | 3 | M | P1 | Authoring & Template Service | 2 | partial | ADR-021 plus CAP_TPL_004 tests: a template scaffolds a document Bundle anchored by a Composition, sections in the order the template gives them, optional ones included and boilerplate as narrative. The template library and its own lifecycle (CAP-TPL-001, CAP-TPL-008) follow |
 | CAP-TPL-005 | 3 | M | P1 | Authoring & Template Service | - | - | - |
 | CAP-TPL-006 | 3 | M | P1 | Authoring & Template Service | - | - | - |
-| CAP-TPL-007 | 3 | M | P1 | Authoring & Template Service | 2 | planned | iteration-2 (see design/iteration-2.md) |
+| CAP-TPL-007 | 3 | M | P1 | Authoring & Template Service | 2 | partial | CAP_TPL_007 tests: instantiated content records the template and template version on itself, in the deployment's configured namespaces. Effective dating of templates follows with the library |
 | CAP-TPL-008 | 3 | M | P1 | Authoring & Template Service | - | - | - |
 | CAP-TPL-009 | 3 | M | P1 | Authoring & Template Service | - | - | - |
 | CAP-TPL-010 | 3 | S | P1 | Authoring & Template Service | - | - | - |
@@ -195,12 +195,12 @@ Status values: `planned` (scheduled, not built), `partial` (some aspect delivere
 | CAP-PUB-007 | 14 | S | P2 | Publishing Service | - | - | - |
 | CAP-PUB-008 | 14 | M | P2 | Publishing Service | - | - | - |
 | CAP-PUB-009 | 14 | S | P2 | Publishing Service | - | - | - |
-| CAP-SCH-001 | 15 | M | P1 | Search Service | 2 | planned | iteration-2 (see design/iteration-2.md) |
-| CAP-SCH-002 | 15 | M | P1 | Search Service | 2 | planned | iteration-2 (see design/iteration-2.md) |
-| CAP-SCH-003 | 15 | M | P1 | Search Service | - | - | - |
-| CAP-SCH-004 | 15 | M | P1 | Search Service | 2 | planned | iteration-2 (see design/iteration-2.md) |
+| CAP-SCH-001 | 15 | M | P1 | Search Service | 2 | partial | FN_SCH_001 across the search conformance suite and GET /labels/search; effective date waits for effective dating, and product binds to what the content names as its subject until master data exists |
+| CAP-SCH-002 | 15 | M | P1 | Search Service | 2 | partial | FN_SCH_002 and IT_016: the current-approved version per market, resolved from per-market approval state; per-language resolution waits for localisation |
+| CAP-SCH-003 | 15 | M | P1 | Search Service | 2 | partial | CAP_SCH_003 over title and section narrative in the projection; a dedicated index with tokenisation and relevance is a later implementation of the same port (ADR-022) |
+| CAP-SCH-004 | 15 | M | P1 | Search Service | 2 | partial | FN_IAM_005 plus the scoping cases of the search conformance suite and IT_016; scope is a query predicate, not a post-filter (ADR-022), and partial evaluation of the policy is the production path |
 | CAP-SCH-005 | 15 | M | P1 | Search Service | - | - | - |
-| CAP-SCH-006 | 15 | S | P1 | Search Service | - | - | - |
+| CAP-SCH-006 | 15 | S | P1 | Search Service | 2 | partial | CAP_SCH_006: every page is bounded and capped, and the total is the scoped total; query cost bounds are not yet measured |
 | CAP-SCH-007 | 15 | S | P1 | Search Service | - | - | - |
 | CAP-SCH-008 | 15 | S | P1 | Search Service | - | - | - |
 | CAP-WFL-001 | 16 | M | P1 | Lifecycle & Workflow Service | 2 | planned | iteration-2 (see design/iteration-2.md) |

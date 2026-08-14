@@ -4,6 +4,7 @@
   "name": "market-approval",
   "initial": "not-submitted",
   "states": ["not-submitted", "submitted", "under-assessment", "approved", "rejected", "withdrawn"],
+  "approvedState": "approved",
   "transitions": [
     {"from": "not-submitted", "to": "submitted", "action": "submit", "requiresSignature": true, "signatureMeaning": "responsibility"},
     {"from": "submitted", "to": "under-assessment", "action": "begin-assessment"},

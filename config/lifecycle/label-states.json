@@ -4,6 +4,7 @@
   "name": "label",
   "initial": "draft",
   "states": ["draft", "in-review", "approved", "superseded", "withdrawn"],
+  "approvedState": "approved",
   "transitions": [
     {"from": "draft", "to": "in-review", "action": "submit"},
     {"from": "in-review", "to": "draft", "action": "return"},

@@ -142,27 +142,27 @@
   },
   "CAP-SCH-001": {
     "iteration": "2",
-    "status": "planned",
-    "evidence": "iteration-2 (see design/iteration-2.md)"
+    "status": "partial",
+    "evidence": "FN_SCH_001 across the search conformance suite and GET /labels/search; effective date waits for effective dating, and product binds to what the content names as its subject until master data exists"
   },
   "CAP-SCH-002": {
     "iteration": "2",
-    "status": "planned",
-    "evidence": "iteration-2 (see design/iteration-2.md)"
+    "status": "partial",
+    "evidence": "FN_SCH_002 and IT_016: the current-approved version per market, resolved from per-market approval state; per-language resolution waits for localisation"
   },
   "CAP-SCH-004": {
     "iteration": "2",
-    "status": "planned",
-    "evidence": "iteration-2 (see design/iteration-2.md)"
+    "status": "partial",
+    "evidence": "FN_IAM_005 plus the scoping cases of the search conformance suite and IT_016; scope is a query predicate, not a post-filter (ADR-022), and partial evaluation of the policy is the production path"
   },
-  "CAP-TPL-004": {
+  "CAP-SCH-003": {
     "iteration": "2",
-    "status": "planned",
-    "evidence": "iteration-2 (see design/iteration-2.md)"
+    "status": "partial",
+    "evidence": "CAP_SCH_003 over title and section narrative in the projection; a dedicated index with tokenisation and relevance is a later implementation of the same port (ADR-022)"
   },
-  "CAP-TPL-007": {
+  "CAP-SCH-006": {
     "iteration": "2",
-    "status": "planned",
-    "evidence": "iteration-2 (see design/iteration-2.md)"
+    "status": "partial",
+    "evidence": "CAP_SCH_006: every page is bounded and capped, and the total is the scoped total; query cost bounds are not yet measured"
   }
 }

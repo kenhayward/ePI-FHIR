@@ -55,6 +55,16 @@ public static class LifecycleModelConfiguration
             problems.Add($"{file}: initial state '{parsed?.Initial}' is not one of the declared states.");
         }
 
+        // A model need not name an approved state - a review workflow ending in "published" is
+        // a legitimate model - but one naming a state it does not declare would leave search
+        // unable to find anything, silently (ADR-022 decision 7).
+        if (parsed?.ApprovedState is not null && !states.Contains(parsed.ApprovedState))
+        {
+            problems.Add(
+                $"{file}: 'approvedState' names '{parsed.ApprovedState}', which is not one of the "
+                + "declared states.");
+        }
+
         var transitions = new List<LifecycleTransition>();
         var seen = new HashSet<string>(StringComparer.Ordinal);
 
@@ -113,7 +123,8 @@ public static class LifecycleModelConfiguration
 
         return problems.Count > 0
             ? throw new LifecycleConfigurationException(problems)
-            : new LifecycleModel(parsed!.Name!, parsed.Initial!, states, transitions);
+            : new LifecycleModel(
+                parsed!.Name!, parsed.Initial!, states, transitions, parsed.ApprovedState);
     }
 
     private sealed record ModelFile(
@@ -121,7 +132,8 @@ public static class LifecycleModelConfiguration
         string? Name,
         string? Initial,
         IReadOnlyList<string>? States,
-        IReadOnlyList<TransitionFile>? Transitions);
+        IReadOnlyList<TransitionFile>? Transitions,
+        string? ApprovedState = null);
 
     private sealed record TransitionFile(
         string? From, string? To, string? Action,
