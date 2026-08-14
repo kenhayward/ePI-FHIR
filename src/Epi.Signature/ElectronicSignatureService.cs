@@ -13,6 +13,7 @@ namespace Epi.Signature;
 /// </remarks>
 public sealed class ElectronicSignatureService(
     ICredentialVerifier verifier, ISignatureStore store, TimeProvider? time = null)
+    : IElectronicSignatureService
 {
     /// <summary>
     /// One refusal message for every failure, deliberately. Distinguishing an unknown signer

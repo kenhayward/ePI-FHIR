@@ -83,6 +83,22 @@ public interface ISignatureStore
 }
 
 /// <summary>
+/// Signing, as its callers see it. An interface so that cross-cutting concerns are decorators
+/// rather than branches inside the service (ADR-018).
+/// </summary>
+public interface IElectronicSignatureService
+{
+    /// <summary>Signs a version, or explains why the signature was refused.</summary>
+    Task<SignatureManifest> SignAsync(
+        EpiDocument document,
+        string signerIdentifier,
+        string password,
+        SignatureMeaning meaning,
+        string? reason = null,
+        CancellationToken cancellationToken = default);
+}
+
+/// <summary>
 /// Raised when a signature is refused. Carries why, in terms safe to show the person signing.
 /// </summary>
 /// <remarks>
