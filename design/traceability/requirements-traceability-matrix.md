@@ -69,7 +69,7 @@ Status values: `planned` (scheduled, not built), `partial` (some aspect delivere
 | CAP-SCM-001 | 2 | M | P0 | Content Core (FHIR) | 1 | partial | EpiBundleReader plus the store conformance suite run against both the in-memory store and HAPI; coded section typing is a later iteration |
 | CAP-SCM-002 | 2 | M | P0 | Content Core (FHIR) | - | - | - |
 | CAP-SCM-003 | 2 | M | P0 | Content Core (FHIR) | - | - | - |
-| CAP-SCM-004 | 2 | M | P0 | Content Core (FHIR) | 3 | partial | ADR-026 plus CAP_SCM_004 tests: a unit is content marked as such, and a section records the unit and version it borrows, pinned by default (ADR-007). Materialisation at the write gate and track-latest propagation follow in delivery rows 3 and 4 |
+| CAP-SCM-004 | 2 | M | P0 | Content Core (FHIR) | 3 | partial | ADR-026 plus CAP_SCM_004 tests: a unit is content marked as such, a section records the unit and version it borrows pinned by default (ADR-007), and the referenced text is materialised at the write gate so a later unit version cannot change a label already written. Track-latest resolves to the newest version and records which; noticing that a newer version exists is change impact (capability 8) |
 | CAP-SCM-005 | 2 | M | P0 | Content Core (FHIR) | - | - | - |
 | CAP-SCM-006 | 2 | M | P0 | Content Core (FHIR) | - | - | - |
 | CAP-SCM-007 | 2 | M | P0 | Content Core (FHIR) | 1-2 | partial | ADR-015 plus FN-CC-002/003/007 for documents and FN-CC-008/009 for sections; reusable-unit identity is a later iteration |

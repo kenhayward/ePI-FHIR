@@ -119,6 +119,24 @@ public sealed class ReconstructionEndpointTests(WebApplicationFactory<Program> f
     }
 
     [Fact]
+    public async Task CAP_SCM_004_a_label_borrowing_a_unit_nobody_can_see_is_refused_over_http()
+    {
+        // Over HTTP, and without saying whether the unit exists: a borrow must not be a way of
+        // discovering one (ADR-026, CAP-SCH-004).
+        var host = Host();
+        var bundle = EpiBundleReader.Read(DocumentJson("SYNTHETIC - borrows a ghost"));
+        var composition = (Hl7.Fhir.Model.Composition)bundle.Entry[0].Resource!;
+        ReusableUnits.Borrow(
+            composition.Section[0],
+            new UnitReference(ContentIdentity.Mint(), 1));
+
+        using var response = await As(host, "user-anna").PostAsync("/fhir/Bundle",
+            new StringContent(EpiBundleReader.Write(bundle), Encoding.UTF8, "application/fhir+json"));
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
     public async Task CAP_SCH_002_a_version_that_does_not_exist_is_not_found()
     {
         var host = Host();
