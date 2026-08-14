@@ -221,4 +221,68 @@ public sealed class LifecycleModelTests : IDisposable
         Assert.True(approval!.RequiresSignature);
         Assert.True(approval.SegregatedFromAuthor);
     }
+
+    [Fact]
+    public void FN_LCM_001_a_model_may_name_which_of_its_states_means_approved()
+    {
+        // Search has to answer "the current-approved version" without knowing how an
+        // organisation spells approval (ADR-022 decision 7).
+        var model = LifecycleModelConfiguration.LoadFrom(Write("""
+            {
+              "name": "label",
+              "initial": "draft",
+              "states": ["draft", "in-review", "signed-off"],
+              "approvedState": "signed-off",
+              "transitions": [{"from": "draft", "to": "in-review", "action": "submit"}]
+            }
+            """));
+
+        Assert.Equal("signed-off", model.ApprovedState);
+    }
+
+    [Fact]
+    public void FN_LCM_001_a_model_need_not_name_an_approved_state()
+    {
+        // A review workflow ending in "published" is a legitimate model. Absent is null, not a
+        // guess: inferring a state called "approved" would work on the shipped file and fail
+        // silently on anyone else's.
+        Assert.Null(LifecycleModelConfiguration.LoadFrom(Write(Valid)).ApprovedState);
+    }
+
+    [Fact]
+    public void FN_LCM_001_a_named_approved_state_must_be_one_of_the_declared_states()
+    {
+        var path = Write("""
+            {
+              "name": "label",
+              "initial": "draft",
+              "states": ["draft", "in-review", "approved"],
+              "approvedState": "signed-off",
+              "transitions": [{"from": "draft", "to": "in-review", "action": "submit"}]
+            }
+            """);
+
+        var error = Assert.Throws<LifecycleConfigurationException>(
+            () => LifecycleModelConfiguration.LoadFrom(path));
+
+        Assert.Contains(error.Problems, p => p.Contains("approvedState"));
+    }
+
+    [Fact]
+    public void FN_SCH_002_the_shipped_market_model_names_the_state_that_means_approved()
+    {
+        // Without it the platform cannot answer CAP-SCH-002 for the demonstration at all, and
+        // the failure would be a null rather than anything anyone notices.
+        var repository = new DirectoryInfo(AppContext.BaseDirectory);
+        while (repository is not null && !File.Exists(Path.Combine(repository.FullName, "EpiPlatform.sln")))
+        {
+            repository = repository.Parent;
+        }
+
+        var model = LifecycleModelConfiguration.LoadFrom(Path.Combine(
+            repository!.FullName, "config", "lifecycle", "market-approval-states.json"));
+
+        Assert.Equal("approved", model.ApprovedState);
+        Assert.Contains(model.ApprovedState, model.States);
+    }
 }

@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>Epi.Search</RootNamespace>
+  </PropertyGroup>
+
+  <!--
+    Search consumes content (#2) and lifecycle state (#7), exactly as D2.5 Section 15.8 says.
+    It deliberately does not reference Epi.Iam: search knows about permitted scopes, not about
+    subjects or tokens, so the decision of who a caller is stays outside it (ADR-022).
+  -->
+  <ItemGroup>
+    <ProjectReference Include="..\Epi.ContentCore\Epi.ContentCore.csproj" />
+    <ProjectReference Include="..\Epi.Lifecycle\Epi.Lifecycle.csproj" />
+  </ItemGroup>
+
+</Project>

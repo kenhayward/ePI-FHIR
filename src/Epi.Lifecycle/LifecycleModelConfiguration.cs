@@ -121,7 +121,8 @@ public static class LifecycleModelConfiguration
         string? Name,
         string? Initial,
         IReadOnlyList<string>? States,
-        IReadOnlyList<TransitionFile>? Transitions);
+        IReadOnlyList<TransitionFile>? Transitions,
+        string? ApprovedState = null);
 
     private sealed record TransitionFile(
         string? From, string? To, string? Action,
