@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>Epi.Signature</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Epi.ContentCore\Epi.ContentCore.csproj" />
+  </ItemGroup>
+
+</Project>

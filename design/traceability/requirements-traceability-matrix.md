@@ -228,7 +228,7 @@ Status values: `planned` (scheduled, not built), `partial` (some aspect delivere
 | CAP-SEC-007 | 18 | S | P0 | Security | - | - | - |
 | CAP-AUD-001 | 19 | M | P0 | Audit & e-Signature | 1 | partial | FN_AUD_001 and IT_003 for content writes and access decisions; other capabilities write as they arrive |
 | CAP-AUD-002 | 19 | M | P0 | Audit & e-Signature | 1 | partial | FN_AUD_002 and FN_AUD_003: append-only by interface, and enforced by the database in the PostgreSQL sink; sealed WORM export is capability 22 |
-| CAP-AUD-003 | 19 | M | P0 | Audit & e-Signature | 2 | planned | iteration-2 (see design/iteration-2.md) |
+| CAP-AUD-003 | 19 | M | P0 | Audit & e-Signature | 2 | partial | ADR-020 plus FN_AUD_005: the manifest binds signer, printed name, meaning, time and a SHA-256 hash of the version, and every signing attempt is audited. Invoking it at the approval gate, and the single-use rule that stops a signature being replayed, are the next pull request; the durable signature store follows |
 | CAP-AUD-004 | 19 | M | P0 | Audit & e-Signature | - | - | - |
 | CAP-AUD-005 | 19 | M | P0 | Audit & e-Signature | - | - | - |
 | CAP-AUD-006 | 19 | M | P0 | Audit & e-Signature | - | - | - |
