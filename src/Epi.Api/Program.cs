@@ -285,13 +285,19 @@ app.MapPost("/fhir/Bundle", async (
         // one, then scope, then validation, then registration closest to the store - so
         // content that is invalid or out of scope never reaches registration, and nothing is
         // stored that was not registered first (ADR-025 decision 3).
+        // Materialising outermost of the content concerns, so what validation sees is what is
+        // stored, and resolving units through the caller's own scoped store, so borrowing
+        // cannot be used to read a unit they may not see (ADR-026 decision 4).
         var gated = new AuditingContentStore(
             new PublishingContentStore(
-                new ValidatingContentStore(
-                    new ScopedContentStore(
-                        new RegisteringContentStore(store, lifecycle, subject.Id),
-                        policy, subject),
-                    validator),
+                new MaterialisingContentStore(
+                    new ValidatingContentStore(
+                        new ScopedContentStore(
+                            new RegisteringContentStore(store, lifecycle, subject.Id),
+                            policy, subject),
+                        validator),
+                    new ScopedContentStore(store, policy, subject),
+                    authority),
                 events),
             audit,
             subject.Id);
@@ -324,6 +330,16 @@ app.MapPost("/fhir/Bundle", async (
     catch (AccessDeniedException denied)
     {
         return Results.Problem(denied.Message, statusCode: StatusCodes.Status403Forbidden);
+    }
+    catch (UnitNotAvailableException unavailable)
+    {
+        // 400, and without saying whether the unit exists: a caller must not learn from a
+        // borrow that there is a unit they may not see (ADR-026, CAP-SCH-004).
+        return Results.BadRequest(new { problems = new[] { unavailable.Message } });
+    }
+    catch (VersionConflictException conflict)
+    {
+        return Results.Problem(conflict.Message, statusCode: StatusCodes.Status409Conflict);
     }
 }).RequireAuthorization();
 
@@ -709,13 +725,19 @@ app.MapPost("/fhir/Bundle/{id}/versions", async (
         // rather than a silent interleave (ADR-025 decision 4).
         var next = (await scoped.VersionsAsync(identity, cancellationToken))[^1] + 1;
 
+        // Materialising outermost of the content concerns, so what validation sees is what is
+        // stored, and resolving units through the caller's own scoped store, so borrowing
+        // cannot be used to read a unit they may not see (ADR-026 decision 4).
         var gated = new AuditingContentStore(
             new PublishingContentStore(
-                new ValidatingContentStore(
-                    new ScopedContentStore(
-                        new RegisteringContentStore(store, lifecycle, subject.Id),
-                        policy, subject),
-                    validator),
+                new MaterialisingContentStore(
+                    new ValidatingContentStore(
+                        new ScopedContentStore(
+                            new RegisteringContentStore(store, lifecycle, subject.Id),
+                            policy, subject),
+                        validator),
+                    new ScopedContentStore(store, policy, subject),
+                    authority),
                 events),
             audit,
             subject.Id);
@@ -754,6 +776,12 @@ app.MapPost("/fhir/Bundle/{id}/versions", async (
     catch (UnknownDocumentException)
     {
         return Results.NotFound();
+    }
+    catch (UnitNotAvailableException unavailable)
+    {
+        // 400 rather than 404: the request named a unit this caller cannot borrow from, and
+        // saying which would tell them whether it exists (ADR-026, CAP-SCH-004).
+        return Results.BadRequest(new { problems = new[] { unavailable.Message } });
     }
     catch (VersionConflictException conflict)
     {
