@@ -43,3 +43,9 @@ venv/
 
 # Docker volumes (if bind-mounted locally)
 **/data/
+
+# ...but policy data is source, not a volume. The rule above silently swallowed it, and an
+# OPA with no roles data denies every request - which is correct behaviour and an entirely
+# broken checkout.
+!policies/data/
+!policies/data/**
