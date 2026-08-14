@@ -14,15 +14,28 @@ public sealed class ContentHashTests
     private static readonly DocumentIdentity Document =
         new(ContentCoreDefaults.DocumentIdentifierSystem, "018f2a10-0000-7000-8000-000000000001");
 
+    /// <summary>
+    /// One stamped bundle that every case here derives a copy from.
+    /// </summary>
+    /// <remarks>
+    /// Stamping assigns section identifiers where there are none (ADR-015 decision 6), and they
+    /// are fresh opaque values, so two independent stampings of the same source file are
+    /// genuinely different content and hash differently - see the test that asserts exactly
+    /// that. Deriving every case from one anchor is what makes the assertions below about
+    /// version and identity rather than about identifiers that happened to differ anyway.
+    /// </remarks>
+    private static readonly Bundle Anchor = ContentIdentity.Stamp(
+        EpiBundleReader.Read(File.ReadAllText(TestFixtures.Path("epi", "minimal-epi-document.json"))),
+        Document,
+        1);
+
     /// <summary>The anchoring Composition, asserted present rather than assumed.</summary>
     private static Composition CompositionOf(Bundle bundle) =>
         Assert.IsType<Composition>(bundle.Entry[0].Resource);
 
+    /// <summary>A version as it is stored: stamped, and therefore hashable.</summary>
     private static Bundle Stamped(int version = 1, DocumentIdentity? identity = null) =>
-        ContentIdentity.Stamp(
-            EpiBundleReader.Read(File.ReadAllText(TestFixtures.Path("epi", "minimal-epi-document.json"))),
-            identity ?? Document,
-            version);
+        ContentIdentity.Stamp((Bundle)Anchor.DeepCopy(), identity ?? Document, version);
 
     [Fact]
     public void FN_AUD_005_names_the_algorithm_it_used()
@@ -90,6 +103,22 @@ public sealed class ContentHashTests
             ContentCoreDefaults.DocumentIdentifierSystem, "018f2a10-0000-7000-8000-000000000002");
 
         Assert.NotEqual(ContentHash.Of(Stamped()), ContentHash.Of(Stamped(identity: other)));
+    }
+
+    [Fact]
+    public void FN_AUD_005_the_hash_covers_the_section_identifiers_the_platform_assigned()
+    {
+        // A constraint on callers, asserted so it cannot be forgotten: sign the version as
+        // stored, never the submission it arrived as. Section identifiers are assigned during
+        // stamping, so a hash taken before that covers different content from the one taken
+        // after, and a signature made over the submission would not verify against the record.
+        var source = EpiBundleReader.Read(
+            File.ReadAllText(TestFixtures.Path("epi", "minimal-epi-document.json")));
+
+        var once = ContentIdentity.Stamp((Bundle)source.DeepCopy(), Document, 1);
+        var again = ContentIdentity.Stamp((Bundle)source.DeepCopy(), Document, 1);
+
+        Assert.NotEqual(ContentHash.Of(once), ContentHash.Of(again));
     }
 
     [Fact]
