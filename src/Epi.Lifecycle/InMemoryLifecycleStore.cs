@@ -52,6 +52,20 @@ public sealed class InMemoryLifecycleStore : ILifecycleStore
         }
     }
 
+    public Task<bool> IsSignatureUsedAsync(
+        string reference, CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(reference);
+
+        lock (_gate)
+        {
+            // Across every version, not only the one being transitioned: a reference is unique
+            // platform-wide, so re-use is refused wherever it is attempted.
+            return Task.FromResult(_transitions.Any(
+                t => string.Equals(t.SignatureReference, reference, StringComparison.Ordinal)));
+        }
+    }
+
     public Task AppendAsync(StateTransition transition, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(transition);

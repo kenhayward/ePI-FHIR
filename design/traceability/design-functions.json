@@ -299,6 +299,16 @@
     "iteration": "2",
     "status": "planned"
   },
+  "FN-WFL-003": {
+    "name": "Require a valid, unused signature at a gate the model says must be signed",
+    "component": "Lifecycle & Workflow Service",
+    "satisfies": [
+      "CAP-WFL-003",
+      "CAP-AUD-003"
+    ],
+    "iteration": "2",
+    "status": "planned"
+  },
   "FN-AUD-005": {
     "name": "Capture an electronic signature over the hash of the pinned version",
     "component": "Audit & e-Signature",
@@ -306,7 +316,7 @@
       "CAP-AUD-003"
     ],
     "iteration": "2",
-    "status": "done"
+    "status": "planned"
   },
   "FN-SCH-001": {
     "name": "Search labels by market, status and identifier, scoped to the caller",

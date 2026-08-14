@@ -47,6 +47,16 @@ public interface ILifecycleStore
     Task<IReadOnlyList<StateTransition>> HistoryAsync(VersionRef version,
         CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Whether any transition, on any version, has already cited this signature reference.
+    /// </summary>
+    /// <remarks>
+    /// This is how a signature is made single-use. Nothing is written back to the signature to
+    /// mark it spent - an append-only store could not do that - so the question is answered from
+    /// the transition history, which is the record of what has actually been signed for.
+    /// </remarks>
+    Task<bool> IsSignatureUsedAsync(string reference, CancellationToken cancellationToken = default);
+
     Task AppendAsync(StateTransition transition, CancellationToken cancellationToken = default);
 }
 

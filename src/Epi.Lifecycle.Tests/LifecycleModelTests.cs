@@ -16,7 +16,8 @@ public sealed class LifecycleModelTests : IDisposable
           "transitions": [
             {"from": "draft", "to": "in-review", "action": "submit"},
             {"from": "in-review", "to": "approved", "action": "approve",
-             "requiresSignature": true, "segregatedFromAuthor": true}
+             "requiresSignature": true, "signatureMeaning": "approval",
+             "segregatedFromAuthor": true}
           ]
         }
         """;
@@ -141,6 +142,63 @@ public sealed class LifecycleModelTests : IDisposable
         var error = Assert.Throws<LifecycleConfigurationException>(() => LifecycleModelConfiguration.LoadFrom(path));
 
         Assert.Contains(error.Problems, p => p.Contains("submit"));
+    }
+
+    [Fact]
+    public void FN_WFL_003_a_transition_that_requires_a_signature_must_say_what_it_means()
+    {
+        // A gate that demanded a signature without saying what it must assert would accept a
+        // signature captured as a review in place of an approval, and record assent nobody
+        // gave. The model has to be specific, and configuration that is not is refused.
+        var path = Write("""
+            {
+              "name": "label", "initial": "draft",
+              "states": ["draft", "approved"],
+              "transitions": [
+                {"from": "draft", "to": "approved", "action": "approve", "requiresSignature": true}
+              ]
+            }
+            """);
+
+        var error = Assert.Throws<LifecycleConfigurationException>(() => LifecycleModelConfiguration.LoadFrom(path));
+
+        Assert.Contains(error.Problems, p => p.Contains("signatureMeaning"));
+    }
+
+    [Fact]
+    public void FN_WFL_003_a_signature_meaning_on_a_gate_that_needs_no_signature_is_refused()
+    {
+        // Otherwise the model reads as though the gate were signed when it is not, which is a
+        // worse failure than either honest state.
+        var path = Write("""
+            {
+              "name": "label", "initial": "draft",
+              "states": ["draft", "in-review"],
+              "transitions": [
+                {"from": "draft", "to": "in-review", "action": "submit", "signatureMeaning": "approval"}
+              ]
+            }
+            """);
+
+        var error = Assert.Throws<LifecycleConfigurationException>(() => LifecycleModelConfiguration.LoadFrom(path));
+
+        Assert.Contains(error.Problems, p => p.Contains("signatureMeaning"));
+    }
+
+    [Fact]
+    public void FN_WFL_003_the_shipped_model_requires_an_approval_at_the_approval_gate()
+    {
+        var repository = new DirectoryInfo(AppContext.BaseDirectory);
+        while (repository is not null && !File.Exists(Path.Combine(repository.FullName, "EpiPlatform.sln")))
+        {
+            repository = repository.Parent;
+        }
+
+        var model = LifecycleModelConfiguration.LoadFrom(
+            Path.Combine(repository!.FullName, "config", "lifecycle", "label-states.json"));
+
+        Assert.Equal("approval", model.Find("in-review", "approve")!.SignatureMeaning);
+        Assert.Equal("approval", model.Find("approved", "withdraw")!.SignatureMeaning);
     }
 
     [Fact]

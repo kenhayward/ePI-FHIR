@@ -13,8 +13,8 @@ Name unit tests for the function they verify, for example
 
 ## Coverage
 
-- Design functions declared: **38**
-- Verified by at least one unit test: **28**
+- Design functions declared: **39**
+- Verified by at least one unit test: **29**
 - Not yet verified: **10**
 
 ## Matrix
@@ -59,6 +59,7 @@ Name unit tests for the function they verify, for example
 | FN-VAL-003 | Produce structured issues carrying severity and element location | Validation Service | CAP-VAL-005 | 1 | verified | `FN_VAL_003_a_valid_document_reports_no_issues_at_all_rather_than_silence` (src/Epi.Validation.Tests/StructuralValidatorTests.cs)<br>`FN_VAL_003_an_issue_carries_a_severity_and_the_element_it_is_about` (src/Epi.Validation.Tests/StructuralValidatorTests.cs) |
 | FN-WFL-001 | Route a version for review and approval | Lifecycle & Workflow Service | CAP-WFL-001 | 2 | planned | - |
 | FN-WFL-002 | Refuse an approval by the author of the version, by any route | Lifecycle & Workflow Service | CAP-WFL-005, CAP-IAM-006 | 2 | planned | - |
+| FN-WFL-003 | Require a valid, unused signature at a gate the model says must be signed | Lifecycle & Workflow Service | CAP-WFL-003, CAP-AUD-003 | 2 | verified | `FN_WFL_003_a_model_with_a_signed_gate_refuses_to_start_without_a_signature_check` (src/Epi.Lifecycle.Tests/LifecycleServiceTests.cs)<br>`FN_WFL_003_a_reference_that_names_no_signature_is_not_valid` (src/Epi.Signature.Tests/SignatureCheckTests.cs)<br>`FN_WFL_003_a_signature_already_spent_cannot_be_used_again` (src/Epi.Lifecycle.Tests/LifecycleServiceTests.cs)<br>`FN_WFL_003_a_signature_by_someone_else_is_not_valid_for_this_actor` (src/Epi.Signature.Tests/SignatureCheckTests.cs)<br>`FN_WFL_003_a_signature_by_this_actor_over_this_version_meaning_this_is_valid` (src/Epi.Signature.Tests/SignatureCheckTests.cs)<br>`FN_WFL_003_a_signature_meaning_on_a_gate_that_needs_no_signature_is_refused` (src/Epi.Lifecycle.Tests/LifecycleModelTests.cs)<br>`FN_WFL_003_a_signature_meaning_review_is_not_valid_at_an_approval_gate` (src/Epi.Signature.Tests/SignatureCheckTests.cs)<br>`FN_WFL_003_a_signature_over_another_document_is_not_valid_here` (src/Epi.Signature.Tests/SignatureCheckTests.cs)<br>`FN_WFL_003_a_signature_over_another_version_is_not_valid_here` (src/Epi.Signature.Tests/SignatureCheckTests.cs)<br>`FN_WFL_003_a_signature_spent_on_one_document_cannot_be_used_on_another` (src/Epi.Lifecycle.Tests/LifecycleServiceTests.cs)<br>`FN_WFL_003_a_signature_the_check_rejects_refuses_the_transition` (src/Epi.Lifecycle.Tests/LifecycleServiceTests.cs)<br>`FN_WFL_003_a_transition_that_requires_a_signature_must_say_what_it_means` (src/Epi.Lifecycle.Tests/LifecycleModelTests.cs)<br>`FN_WFL_003_the_gate_demands_the_meaning_the_model_requires` (src/Epi.Lifecycle.Tests/LifecycleServiceTests.cs)<br>`FN_WFL_003_the_shipped_model_requires_an_approval_at_the_approval_gate` (src/Epi.Lifecycle.Tests/LifecycleModelTests.cs) |
 
 ## Requirements covered by these functions
 
@@ -66,7 +67,7 @@ Name unit tests for the function they verify, for example
 |---|---|---|
 | CAP-AUD-001 | FN-AUD-001 | Capture a comprehensive audit trail of all GxP-relevant actions (who, what, when, why, before/after values). |
 | CAP-AUD-002 | FN-AUD-002, FN-AUD-003 | Store audit records tamper-evidently/immutably (append-only). |
-| CAP-AUD-003 | FN-AUD-005 | Provide electronic signatures per 21 CFR Part 11 & EU Annex 11: signing events, signature meaning/manifest, and binding to the signed record and signer identity. |
+| CAP-AUD-003 | FN-AUD-005, FN-WFL-003 | Provide electronic signatures per 21 CFR Part 11 & EU Annex 11: signing events, signature meaning/manifest, and binding to the signed record and signer identity. |
 | CAP-CFG-001 | FN-CFG-001, FN-CFG-002 | Externalise configuration for markets/regulators, lifecycle state models, workflows, validation/compliance rules, terminology bindings, publishing routing, and event schemas. |
 | CAP-CFG-004 | FN-CFG-001 | Onboard a new market/regulator via configuration without a code release. |
 | CAP-CFG-006 | FN-CFG-003 | Validate configuration consistency before activation. |
@@ -92,4 +93,5 @@ Name unit tests for the function they verify, for example
 | CAP-VAL-003 | FN-VAL-001, FN-VAL-002 | Validate structural well-formedness and reference integrity (#2), including no dangling references in approval candidates. |
 | CAP-VAL-005 | FN-VAL-003 | Produce structured, actionable issues with severity and precise location (section/element). |
 | CAP-WFL-001 | FN-WFL-001 | Configurable multi-step review/approval workflows per market and label type (config-as-data, #21). |
+| CAP-WFL-003 | FN-WFL-003 | Invoke electronic signature at approval gates (#19). |
 | CAP-WFL-005 | FN-WFL-002 | Drive lifecycle transitions in #7 on step completion. |
