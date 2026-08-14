@@ -29,19 +29,34 @@ public sealed class KafkaEventPublisher : IEventPublisher, IDisposable
     private readonly IProducer<string, string> _producer;
     private readonly string _topic;
 
-    public KafkaEventPublisher(string bootstrapServers, string? topic = null)
+    /// <param name="messageTimeout">
+    /// How long a publish may wait before it is reported as failed. Left unset it is
+    /// librdkafka's default of five minutes, which is a long time for a caller to discover that
+    /// a broker is unreachable; tests set it low so an unreachable broker fails quickly rather
+    /// than looking like a slow one.
+    /// </param>
+    public KafkaEventPublisher(
+        string bootstrapServers, string? topic = null, TimeSpan? messageTimeout = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(bootstrapServers);
 
         _topic = topic ?? DefaultTopic;
-        _producer = new ProducerBuilder<string, string>(new ProducerConfig
+
+        var configuration = new ProducerConfig
         {
             BootstrapServers = bootstrapServers,
             // Acknowledged by all in-sync replicas, and retried idempotently, so a retry after
             // a timeout cannot produce a duplicate that consumers would process twice.
             Acks = Acks.All,
             EnableIdempotence = true,
-        }).Build();
+        };
+
+        if (messageTimeout is { } timeout)
+        {
+            configuration.MessageTimeoutMs = (int)timeout.TotalMilliseconds;
+        }
+
+        _producer = new ProducerBuilder<string, string>(configuration).Build();
     }
 
     public async Task PublishAsync(ContentEvent published, CancellationToken cancellationToken = default)

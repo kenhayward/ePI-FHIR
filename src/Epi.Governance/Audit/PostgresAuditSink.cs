@@ -18,9 +18,20 @@ namespace Epi.Governance.Audit;
 /// this table.
 /// </para>
 /// </remarks>
-public sealed class PostgresAuditSink(string connectionString, TimeProvider? time = null) : IAuditSink
+public sealed class PostgresAuditSink(string connectionString, TimeProvider? time = null)
+    : IAuditSink, IAsyncDisposable
 {
     private readonly TimeProvider _time = time ?? TimeProvider.System;
+
+    /// <remarks>
+    /// One data source for the life of the sink, built on first use. A data source owns the
+    /// connection pool, so building and disposing one per statement - as this did - opens and
+    /// tears down a TCP connection for every append and every read. Under a test suite doing
+    /// that in a tight loop it surfaced as "attempted to read past the end of the stream": the
+    /// server closing a connection the client still believed it held.
+    /// </remarks>
+    private readonly Lazy<NpgsqlDataSource> _source =
+        new(() => new NpgsqlDataSourceBuilder(connectionString).Build());
 
     /// <summary>Creates the table and the trigger that makes it append-only.</summary>
     /// <remarks>
@@ -30,8 +41,7 @@ public sealed class PostgresAuditSink(string connectionString, TimeProvider? tim
     /// </remarks>
     public async Task InitialiseAsync(CancellationToken cancellationToken = default)
     {
-        await using var source = new NpgsqlDataSourceBuilder(connectionString).Build();
-        await using var command = source.CreateCommand("""
+        await using var command = _source.Value.CreateCommand("""
             CREATE TABLE IF NOT EXISTS audit_record (
                 id            BIGINT      GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
                 actor         TEXT        NOT NULL,
@@ -64,8 +74,7 @@ public sealed class PostgresAuditSink(string connectionString, TimeProvider? tim
     {
         ArgumentNullException.ThrowIfNull(record);
 
-        await using var source = new NpgsqlDataSourceBuilder(connectionString).Build();
-        await using var command = source.CreateCommand("""
+        await using var command = _source.Value.CreateCommand("""
             INSERT INTO audit_record
                 (actor, action, target, outcome, recorded_at, before_state, after_state, reason)
             VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
@@ -86,8 +95,7 @@ public sealed class PostgresAuditSink(string connectionString, TimeProvider? tim
 
     public async Task<IReadOnlyList<AuditRecord>> ReadAsync(CancellationToken cancellationToken = default)
     {
-        await using var source = new NpgsqlDataSourceBuilder(connectionString).Build();
-        await using var command = source.CreateCommand("""
+        await using var command = _source.Value.CreateCommand("""
             SELECT actor, action, target, outcome, recorded_at, before_state, after_state, reason
             FROM audit_record
             ORDER BY id
@@ -109,5 +117,13 @@ public sealed class PostgresAuditSink(string connectionString, TimeProvider? tim
         }
 
         return records;
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_source.IsValueCreated)
+        {
+            await _source.Value.DisposeAsync();
+        }
     }
 }
