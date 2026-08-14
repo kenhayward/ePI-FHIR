@@ -27,7 +27,10 @@ public sealed class KafkaBroker : IAsyncLifetime
         .WithEnvironment("KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR", "1")
         .WithEnvironment("KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR", "1")
         .WithEnvironment("KAFKA_TRANSACTION_STATE_LOG_MIN_ISR", "1")
-        .WithWaitStrategy(Wait.ForUnixContainer().UntilPortIsAvailable(Port))
+        // Kafka speaks its own protocol rather than HTTP, so there is no request to poll. The
+        // broker logs this line once it is actually accepting connections; waiting on the port
+        // alone would let a test connect before the listener is ready.
+        .WithWaitStrategy(Wait.ForUnixContainer().UntilMessageIsLogged("Kafka Server started"))
         .Build();
 
     public string BootstrapServers => $"{_container.Hostname}:{_container.GetMappedPublicPort(Port)}";
