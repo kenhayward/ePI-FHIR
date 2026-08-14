@@ -4,5 +4,7 @@
   "documentSystem": "https://epi.example.org/identifier/document",
   "versionTagSystem": "https://epi.example.org/tag/document-version",
   "affiliateTagSystem": "https://epi.example.org/tag/affiliate",
-  "marketTagSystem": "https://epi.example.org/tag/market"
+  "marketTagSystem": "https://epi.example.org/tag/market",
+  "templateSystem": "https://epi.example.org/tag/template",
+  "templateVersionTagSystem": "https://epi.example.org/tag/template-version"
 }

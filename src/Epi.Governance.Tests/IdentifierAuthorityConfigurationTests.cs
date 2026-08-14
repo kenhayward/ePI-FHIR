@@ -27,7 +27,9 @@ public sealed class IdentifierAuthorityConfigurationTests : IDisposable
               "documentSystem": "https://id.example-pharma.test/epi/document",
               "versionTagSystem": "https://id.example-pharma.test/epi/version",
               "affiliateTagSystem": "https://id.example-pharma.test/epi/affiliate",
-              "marketTagSystem": "https://id.example-pharma.test/epi/market"
+              "marketTagSystem": "https://id.example-pharma.test/epi/market",
+              "templateSystem": "https://id.example-pharma.test/epi/template",
+              "templateVersionTagSystem": "https://id.example-pharma.test/epi/template-version"
             }
             """);
 
@@ -48,7 +50,9 @@ public sealed class IdentifierAuthorityConfigurationTests : IDisposable
               "documentSystem": "urn:oid:2.16.840.1.113883.3.9999",
               "versionTagSystem": "https://id.example-pharma.test/epi/version",
               "affiliateTagSystem": "https://id.example-pharma.test/epi/affiliate",
-              "marketTagSystem": "https://id.example-pharma.test/epi/market"
+              "marketTagSystem": "https://id.example-pharma.test/epi/market",
+              "templateSystem": "https://id.example-pharma.test/epi/template",
+              "templateVersionTagSystem": "https://id.example-pharma.test/epi/template-version"
             }
             """));
 
@@ -67,7 +71,9 @@ public sealed class IdentifierAuthorityConfigurationTests : IDisposable
               "documentSystem": "https://id.example-pharma.test/epi/document",
               "versionTagSystem": "",
               "affiliateTagSystem": "https://id.example-pharma.test/epi/affiliate",
-              "marketTagSystem": "https://id.example-pharma.test/epi/market"
+              "marketTagSystem": "https://id.example-pharma.test/epi/market",
+              "templateSystem": "https://id.example-pharma.test/epi/template",
+              "templateVersionTagSystem": "https://id.example-pharma.test/epi/template-version"
             }
             """);
 
@@ -87,7 +93,9 @@ public sealed class IdentifierAuthorityConfigurationTests : IDisposable
               "documentSystem": "our-company",
               "versionTagSystem": "https://id.example-pharma.test/epi/version",
               "affiliateTagSystem": "https://id.example-pharma.test/epi/affiliate",
-              "marketTagSystem": "https://id.example-pharma.test/epi/market"
+              "marketTagSystem": "https://id.example-pharma.test/epi/market",
+              "templateSystem": "https://id.example-pharma.test/epi/template",
+              "templateVersionTagSystem": "https://id.example-pharma.test/epi/template-version"
             }
             """);
 
