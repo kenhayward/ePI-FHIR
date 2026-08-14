@@ -18,6 +18,9 @@ COPY --from=build /app ./
 # and not a rebuild (ADR-012, ADR-017).
 ENV Epi__MarketsPath=/config/markets \
     Epi__IdentifiersPath=/config/identifiers.json \
+    Epi__Lifecycle__StatesPath=/config/lifecycle/label-states.json \
+    Epi__Lifecycle__MarketStatesPath=/config/lifecycle/market-approval-states.json \
+    Epi__Validation__PackagesPath=/app/profiles/packages \
     ASPNETCORE_HTTP_PORTS=8080
 
 # Never root: the process needs no privileges it cannot be given explicitly.

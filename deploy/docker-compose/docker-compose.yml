@@ -191,6 +191,14 @@ services:
     volumes:
       - ./init/keycloak-epi-realm.json:/opt/keycloak/data/import/epi-realm.json:ro
     environment:
+      # The issuer a token carries has to be one both sides agree on. Callers reach Keycloak
+      # from the host, so tokens are issued as http://localhost:8081/realms/epi; the API
+      # reaches it over the compose network and would otherwise expect an issuer of
+      # http://keycloak:8080/realms/epi and reject every token as coming from a stranger.
+      # Fixing the hostname settles the issuer, and the dynamic backchannel lets the API keep
+      # fetching discovery and keys over the internal network.
+      KC_HOSTNAME: http://localhost:${KEYCLOAK_PORT:-8081}
+      KC_HOSTNAME_BACKCHANNEL_DYNAMIC: "true"
       KC_BOOTSTRAP_ADMIN_USERNAME: ${KEYCLOAK_ADMIN}
       KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
       KC_DB: postgres
@@ -206,8 +214,24 @@ services:
 
   # ---- Policy decision point (RBAC/ABAC) ----
   opa:
-    image: openpolicyagent/opa:latest-rootless
-    command: ["run", "--server", "--addr", ":8181", "--log-level", "info"]
+    # Pinned, and not the -rootless variant: that tag has been deprecated since OPA v0.50.0
+    # and is frozen on 0.x, while CI runs 1.x and the policies here are written for 1.x. The
+    # dev stack therefore refused to load its own policy on syntax CI accepts. The default
+    # image has run as a non-root user since the rootless variant was retired.
+    image: openpolicyagent/opa:1.19.0
+    # The repository's policies and their data, loaded rather than left to be added by hand.
+    # An OPA with no policy answers undefined, the platform reads undefined as deny, and every
+    # request is refused with nothing to say why - which is correct behaviour and an
+    # unhelpful demonstration.
+    # Tests are excluded deliberately. They belong to CI, not to a running decision point,
+    # and loading them here made the server refuse to start on test syntax its version parses
+    # differently from the one CI runs.
+    command:
+      ["run", "--server", "--addr", ":8181", "--log-level", "info",
+       "--ignore=*_test.rego", "--set=decision_logs.console=true",
+       "/policies/authz", "/policies/data"]
+    volumes:
+      - ../../policies:/policies:ro
     ports:
       - "${OPA_PORT:-8181}:8181"
     networks: [epi]
