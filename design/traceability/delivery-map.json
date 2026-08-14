@@ -82,8 +82,8 @@
   },
   "CAP-LCM-003": {
     "iteration": "2",
-    "status": "planned",
-    "evidence": "iteration-2 (see design/iteration-2.md)"
+    "status": "partial",
+    "evidence": "FN_LCM_004 and IT_013: per-market regulatory-approval state in its own model, store and service, with a test that a market transition leaves internal state untouched. Effective dating (CAP-LCM-004) and the durable store follow"
   },
   "CAP-LCM-006": {
     "iteration": "2",

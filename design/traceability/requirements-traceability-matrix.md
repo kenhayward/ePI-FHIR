@@ -124,7 +124,7 @@ Status values: `planned` (scheduled, not built), `partial` (some aspect delivere
 | CAP-TRM-010 | 6 | S | P0 | Terminology Service | - | - | - |
 | CAP-LCM-001 | 7 | M | P1 | Lifecycle & Workflow Service | 2 | partial | FN_LCM_001/002 and IT_010: model loaded from configuration and unpermitted transitions refused |
 | CAP-LCM-002 | 7 | M | P1 | Lifecycle & Workflow Service | - | - | - |
-| CAP-LCM-003 | 7 | M | P1 | Lifecycle & Workflow Service | 2 | planned | iteration-2 (see design/iteration-2.md) |
+| CAP-LCM-003 | 7 | M | P1 | Lifecycle & Workflow Service | 2 | partial | FN_LCM_004 and IT_013: per-market regulatory-approval state in its own model, store and service, with a test that a market transition leaves internal state untouched. Effective dating (CAP-LCM-004) and the durable store follow |
 | CAP-LCM-004 | 7 | M | P1 | Lifecycle & Workflow Service | - | - | - |
 | CAP-LCM-005 | 7 | M | P1 | Lifecycle & Workflow Service | - | - | - |
 | CAP-LCM-006 | 7 | M | P1 | Lifecycle & Workflow Service | 2 | planned | iteration-2 (see design/iteration-2.md) |
