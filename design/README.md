@@ -7,7 +7,9 @@ How the platform is built. Prescriptive architecture and the decisions behind it
   NFRs, the technology stack (open-source primary; Azure future target), runtime scenarios, and ADRs.
 - `iteration-1.md` - the first buildable increment: the walking skeleton. Delivered.
 - `iteration-2.md` - the second increment: lifecycle, approvals, and electronic signature.
-  Proposed, with open questions for the programme in Section 8.
+  Delivered, except for the scope recorded in `iteration-3.md` Section 2.2.
+- `iteration-3.md` - the third increment: content reuse, effective dating, localisation, and
+  rendering. Proposed, with open questions for the programme in Section 8.
 - `adrs/` - Architecture Decision Records (currently summarised inline in D3 Section 14; split into
   individual records here as they evolve).
 - `traceability/` - V-model traceability: requirement -> design function -> unit test, and
