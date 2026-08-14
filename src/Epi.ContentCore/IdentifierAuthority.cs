@@ -14,7 +14,9 @@ public sealed record IdentifierAuthority(
     string DocumentSystem,
     string VersionTagSystem,
     string AffiliateTagSystem,
-    string MarketTagSystem)
+    string MarketTagSystem,
+    string TemplateSystem = "",
+    string TemplateVersionTagSystem = "")
 {
     /// <summary>
     /// The authority used when none is configured.
@@ -29,7 +31,9 @@ public sealed record IdentifierAuthority(
         "https://epi.example.org/identifier/document",
         "https://epi.example.org/tag/document-version",
         "https://epi.example.org/tag/affiliate",
-        "https://epi.example.org/tag/market");
+        "https://epi.example.org/tag/market",
+        "https://epi.example.org/tag/template",
+        "https://epi.example.org/tag/template-version");
 
     /// <summary>True when this is the demonstration placeholder rather than a real authority.</summary>
     public bool IsDemonstration => this == Demonstration;
