@@ -84,6 +84,11 @@ jobs:
       - name: Vendored profile packages match their digests
         run: python3 tools/verify-profile-packages.py
 
+      # A moving tag looks exactly like a fixed one, which is why reading for them has now
+      # missed four (PR 38 and PR 58). ADR-014 wants a deployment that can be reproduced.
+      - name: Container images are pinned
+        run: python3 tools/verify-image-pins.py
+
       - name: Relative Markdown links resolve
         run: |
           fail=0
