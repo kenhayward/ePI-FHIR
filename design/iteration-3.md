@@ -84,6 +84,7 @@ iteration or a stated reason for waiting. Nothing is dropped by omission.
 | The Firely SDK expands the core specification into one cache directory under the temporary path, and nothing outside this repository serialises it. A lock file closes it for this platform's own construction path; any other code calling `ZipSource.CreateValidationSource` directly would race again | PR 53 | Watch. If it recurs, the answer is a cache directory per process rather than a lock |
 | Configuration paths that differ only inside a container have now caused three defects, each found by the walkthrough and invisible to CI. A start-up check naming every configuration file the platform expects, refusing to run without them rather than treating absence as a default, would turn all three into a failure to start | PR 53 | Before a deployment anyone relies on |
 | Section-level translation status (CAP-LOC-005) is possible because section identity is shared between a variant and its source, and is not built: staleness is answered per variant rather than per section | ADR-032, PR 55 | With change impact (capability 8), which is what needs the granularity |
+| A renderer upgrade may change output for the same inputs, which is a change to a template's toolchain rather than to the template. Storing the rendered bytes makes the artefact the evidence, and the toolchain version belongs in the same record as the template version | ADR-033, PR 56 | With the print engine, delivery row 10b |
 | Inert registrations accumulate at whatever rate a content write fails after its registration, and nothing surfaces them | ADR-025 | Delivery row 1c. They are harmless individually and invisible in aggregate, which is the wrong pair of properties to leave together |
 | Terminology versions are absent from the pinned validating context | ADR-023 | With the terminology binding points. A context that omits the terminology a version was validated against is incomplete in exactly the way ADR-023 exists to prevent |
 | Validation is serialised outright, a correctness-first stopgap | PR 6a | Rendering and translation multiply validations per label by the number of languages. Measured here, and fixed if the measurement says so |
@@ -300,7 +301,8 @@ Provisional, and dependent on Section 8. Each row is a pull request, test-first,
 | 7c | Multi-step routing and per-market rules, which CAP-WFL-001 asks for and one review step does not give | M |
 | 8 | ADR: translation as a version relationship; language variants linked to a source version | L |
 | 9 | Linguistic review routed and signed; source change marks translations out of date | M |
-| 10 | ADR and mechanism: deterministic rendering to HTML and PDF, keyed to a render-template version | L |
+| 10a | ADR and mechanism: deterministic rendering to HTML, keyed to a render-template version | M |
+| 10b | PDF from that HTML through the print engine, and determinism across it | M |
 | 11 | Render storage in the asset store, with the rendered/artwork lineage enforced by type | M |
 | 12 | Master-data and terminology binding points; terminology version in the pinned context; ADR-016 amendment | M |
 | 13 | ADR: tags as code systems; secondary identifiers - **delivered early**, while the content model was open | S |

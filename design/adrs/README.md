@@ -30,6 +30,7 @@ of them next needs revising, not as a bulk exercise.
 | [ADR-030](0030-supersession.md) | Supersession | accepted |
 | [ADR-031](0031-workflow-routing.md) | Workflow routing | accepted |
 | [ADR-032](0032-translation-as-a-variant.md) | Translation as a variant, linked to a source version | accepted |
+| [ADR-033](0033-rendering.md) | Deterministic rendering, and the two PDF lineages | accepted |
 
 A record stays `proposed` until the pull request carrying it is merged, at which point it
 becomes `accepted`. Superseding a decision means a new record that says so, never editing the

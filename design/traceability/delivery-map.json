@@ -209,5 +209,30 @@
     "iteration": "3",
     "status": "partial",
     "evidence": "CAP_LOC_007 test: the translator may not approve their own translation, which falls out of the author-approver segregation already enforced on every route (CAP-IAM-006). Affiliate and market scoping applies to variants as to any content"
+  },
+  "CAP-RND-001": {
+    "iteration": "3",
+    "status": "partial",
+    "evidence": "ADR-033 plus CAP_RND_001 tests: structured HTML carrying the document's language and its section identity, with narrative emitted as it was approved. Accessibility conformance (CAP-RND-005) is a property of the template and is not asserted"
+  },
+  "CAP-RND-003": {
+    "iteration": "3",
+    "status": "partial",
+    "evidence": "CAP_RND_003 tests: a render is keyed to a versioned template whose stylesheet travels with it, and the render records both versions it came from. Market and QRD templates themselves are content and are not shipped"
+  },
+  "CAP-RND-007": {
+    "iteration": "3",
+    "status": "partial",
+    "evidence": "CAP_RND_007 tests: the same label version and render-template version render byte-identically, and nothing time-varying is embedded. The PDF step is not yet rendered, so determinism is proven for HTML only"
+  },
+  "CAP-RND-002": {
+    "iteration": "3",
+    "status": "partial",
+    "evidence": "CAP_RND_002 tests: rendered and artwork are separate types, so neither can be stored as the other, and an artefact cannot be edited after it is produced. The PDF lineage itself arrives with the print engine"
+  },
+  "CAP-RND-004": {
+    "iteration": "3",
+    "status": "partial",
+    "evidence": "CAP_RND_004 test: a render of an unapproved version is marked draft on the artefact. Watermarking is a template concern"
   }
 }
