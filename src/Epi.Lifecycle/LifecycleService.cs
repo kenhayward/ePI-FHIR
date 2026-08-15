@@ -206,8 +206,59 @@ public sealed class LifecycleService(
         // only the ingredients (ADR-024 decision 3).
         var pin = PinFor(transition, approvalContext);
 
-        await _store.AppendAsync(transition, pin, cancellationToken);
+        // Approving a version says something about the one it displaces, and says it in the
+        // same transaction: otherwise the window in which two versions are both approved simply
+        // moves to between the two writes (ADR-030 decision 3).
+        var superseded = await SupersededByAsync(transition, cancellationToken);
+
+        await _store.AppendAsync(transition, pin, superseded, cancellationToken);
         return transition;
+    }
+
+    /// <summary>
+    /// The supersession this transition causes, or null where it causes none.
+    /// </summary>
+    /// <remarks>
+    /// Only an approved version is superseded: a draft, one already superseded and a withdrawn
+    /// one were not the version in force to begin with, so nothing is written for them and the
+    /// history says only what happened (ADR-030 decision 4).
+    /// </remarks>
+    private async Task<StateTransition?> SupersededByAsync(
+        StateTransition transition, CancellationToken cancellationToken)
+    {
+        if (_model.ApprovedState is null
+            || !string.Equals(transition.To, _model.ApprovedState, StringComparison.Ordinal))
+        {
+            return null;
+        }
+
+        var supersede = _model.Find(_model.ApprovedState, "supersede");
+        if (supersede is null)
+        {
+            // A model with no route out of approval supersedes nothing. Inventing a state it
+            // does not declare would be the engine overruling the configuration.
+            return null;
+        }
+
+        var approved = await _store.VersionsInStateAsync(
+            transition.Version.DocumentIdentifier, _model.ApprovedState, cancellationToken);
+
+        var displaced = approved
+            .Where(version => version != transition.Version.Version)
+            .OrderByDescending(version => version)
+            .Select(version => (int?)version)
+            .FirstOrDefault();
+
+        return displaced is null
+            ? null
+            : new StateTransition(
+                new VersionRef(transition.Version.DocumentIdentifier, displaced.Value),
+                _model.ApprovedState,
+                supersede.To,
+                supersede.Action,
+                transition.Actor,
+                transition.At,
+                $"superseded by version {transition.Version.Version}");
     }
 
     /// <summary>

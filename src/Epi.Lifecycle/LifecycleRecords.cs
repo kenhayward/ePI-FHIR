@@ -65,9 +65,25 @@ public interface ILifecycleStore : ISpentSignatures
     /// If a context is supplied for a version that already has one. Neither the transition nor
     /// the pin is written in that case: an approval happens once.
     /// </exception>
+    /// <param name="consequence">
+    /// A transition this one causes - the supersession of the version it displaces (ADR-030).
+    /// Written in the same transaction, because otherwise the window it exists to close simply
+    /// moves to between the two writes.
+    /// </param>
     Task AppendAsync(
         StateTransition transition, PinnedContext? pin = null,
+        StateTransition? consequence = null,
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Every version of a document that holds this state now, ascending.
+    /// </summary>
+    /// <remarks>
+    /// What supersession is worked out from: approving a version has to find the one it
+    /// displaces, and that is a question about the document rather than about any one version.
+    /// </remarks>
+    Task<IReadOnlyList<int>> VersionsInStateAsync(
+        string documentIdentifier, string state, CancellationToken cancellationToken = default);
 }
 
 /// <summary>Raised when a transition is refused. Carries why, because the caller must be told.</summary>

@@ -178,8 +178,13 @@ public sealed class RegisteringContentStoreTests
 
         public Task AppendAsync(
             StateTransition transition, PinnedContext? pin = null,
+            StateTransition? consequence = null,
             CancellationToken cancellationToken = default) =>
-            _inner.AppendAsync(transition, pin, cancellationToken);
+            _inner.AppendAsync(transition, pin, consequence, cancellationToken);
+
+        public Task<IReadOnlyList<int>> VersionsInStateAsync(
+            string documentIdentifier, string state, CancellationToken cancellationToken = default) =>
+            _inner.VersionsInStateAsync(documentIdentifier, state, cancellationToken);
 
         public Task<bool> IsSignatureUsedAsync(string reference, CancellationToken cancellationToken = default) =>
             _inner.IsSignatureUsedAsync(reference, cancellationToken);

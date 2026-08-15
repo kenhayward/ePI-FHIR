@@ -13,8 +13,8 @@ For the full V model see [v-model-trace.md](v-model-trace.md).
 ## Coverage
 
 - Requirements specified: **221** across **24** capabilities
-- Requirements with delivery evidence: **37**
-- Requirements not yet scheduled: **184**
+- Requirements with delivery evidence: **38**
+- Requirements not yet scheduled: **183**
 
 ## Capabilities
 
@@ -126,8 +126,8 @@ Status values: `planned` (scheduled, not built), `partial` (some aspect delivere
 | CAP-LCM-002 | 7 | M | P1 | Lifecycle & Workflow Service | - | - | - |
 | CAP-LCM-003 | 7 | M | P1 | Lifecycle & Workflow Service | 2 | partial | FN_LCM_004 and IT_013: per-market regulatory-approval state in its own model, store and service, with a test that a market transition leaves internal state untouched. Held in a durable append-only table keyed by version and market, with UPDATE and DELETE refused by a database trigger. Effective dating (CAP-LCM-004) follows |
 | CAP-LCM-004 | 7 | M | P1 | Lifecycle & Workflow Service | 3 | partial | ADR-029 plus CAP_LCM_004 tests: an effective date belongs to a market approval, is required when one is recorded and may not precede it, and 'which version is in force here on this date' is derived from the append-only history rather than stored. Supersession in a market follows from it; the internal superseded state is delivery row 6 |
-| CAP-LCM-005 | 7 | M | P1 | Lifecycle & Workflow Service | - | - | - |
-| CAP-LCM-006 | 7 | M | P1 | Lifecycle & Workflow Service | 2 | partial | IT_017 plus FN_LCM_005: content by version, the full transition history with the signature used, and the validating context recorded at approval (ADR-023). Effective dating and supersession are not yet part of what is reconstructed |
+| CAP-LCM-005 | 7 | M | P1 | Lifecycle & Workflow Service | 3 | partial | ADR-030 plus CAP_LCM_005 tests: approving a version supersedes the one it displaces, recorded with actor, time and reason in the same transaction as the approval. Supersession in a market follows from effective dating (ADR-029). Withdrawal remains a manual act |
+| CAP-LCM-006 | 7 | M | P1 | Lifecycle & Workflow Service | 2-3 | partial | IT_017 plus FN_LCM_005 for the pinned validating context, and CAP_LCM_006 for a superseded version keeping its content, history, author and pin. Effective dating is not yet part of what a reconstruction reports |
 | CAP-LCM-007 | 7 | M | P1 | Lifecycle & Workflow Service | 2 | partial | FN_LCM_003: transitions recorded with actor, time and reason, in a durable append-only table with UPDATE and DELETE refused by a database trigger; workflow routing is a later PR |
 | CAP-LCM-008 | 7 | S | P1 | Lifecycle & Workflow Service | - | - | - |
 | CAP-LCM-009 | 7 | M | P1 | Lifecycle & Workflow Service | - | - | - |

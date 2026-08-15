@@ -157,8 +157,44 @@ public sealed class PostgresLifecycleStore(string connectionString)
         return await command.ExecuteScalarAsync(cancellationToken) is true;
     }
 
+    public async Task<IReadOnlyList<int>> VersionsInStateAsync(
+        string documentIdentifier, string state, CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(documentIdentifier);
+        ArgumentException.ThrowIfNullOrWhiteSpace(state);
+
+        // The state a version holds now is the last transition it made, or the state it was
+        // registered in when it has made none - derived, never stored (ADR-019 decision 1).
+        await using var command = _source.Value.CreateCommand("""
+            SELECT v.document_version
+            FROM lifecycle_version v
+            LEFT JOIN LATERAL (
+                SELECT to_state FROM lifecycle_transition t
+                WHERE t.document_identifier = v.document_identifier
+                  AND t.document_version = v.document_version
+                ORDER BY t.id DESC LIMIT 1
+            ) latest ON TRUE
+            WHERE v.document_identifier = $1
+              AND COALESCE(latest.to_state, v.initial_state) = $2
+            ORDER BY v.document_version
+            """);
+
+        command.Parameters.AddWithValue(documentIdentifier);
+        command.Parameters.AddWithValue(state);
+
+        var versions = new List<int>();
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        while (await reader.ReadAsync(cancellationToken))
+        {
+            versions.Add(reader.GetInt32(0));
+        }
+
+        return versions;
+    }
+
     public async Task AppendAsync(
         StateTransition transition, PinnedContext? pin = null,
+        StateTransition? consequence = null,
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(transition);
@@ -168,24 +204,11 @@ public sealed class PostgresLifecycleStore(string connectionString)
         await using var connection = await _source.Value.OpenConnectionAsync(cancellationToken);
         await using var transacted = await connection.BeginTransactionAsync(cancellationToken);
 
-        await using (var command = new NpgsqlCommand("""
-            INSERT INTO lifecycle_transition
-                (document_identifier, document_version, from_state, to_state, action, actor,
-                 occurred_at, reason, signature_reference)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-            """, connection, transacted))
-        {
-            command.Parameters.AddWithValue(transition.Version.DocumentIdentifier);
-            command.Parameters.AddWithValue(transition.Version.Version);
-            command.Parameters.AddWithValue(transition.From);
-            command.Parameters.AddWithValue(transition.To);
-            command.Parameters.AddWithValue(transition.Action);
-            command.Parameters.AddWithValue(transition.Actor);
-            command.Parameters.AddWithValue(transition.At);
-            command.Parameters.AddWithValue((object?)transition.Reason ?? DBNull.Value);
-            command.Parameters.AddWithValue((object?)transition.SignatureReference ?? DBNull.Value);
+        await InsertAsync(transition, connection, transacted, cancellationToken);
 
-            await command.ExecuteNonQueryAsync(cancellationToken);
+        if (consequence is not null)
+        {
+            await InsertAsync(consequence, connection, transacted, cancellationToken);
         }
 
         if (pin is not null)
@@ -261,6 +284,30 @@ public sealed class PostgresLifecycleStore(string connectionString)
             reader.GetFieldValue<DateTimeOffset>(5),
             reader.IsDBNull(6) ? null : reader.GetString(6),
             reader.IsDBNull(7) ? null : reader.GetInt32(7));
+    }
+
+    private static async Task InsertAsync(
+        StateTransition transition, NpgsqlConnection connection, NpgsqlTransaction transacted,
+        CancellationToken cancellationToken)
+    {
+        await using var command = new NpgsqlCommand("""
+            INSERT INTO lifecycle_transition
+                (document_identifier, document_version, from_state, to_state, action, actor,
+                 occurred_at, reason, signature_reference)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+            """, connection, transacted);
+
+        command.Parameters.AddWithValue(transition.Version.DocumentIdentifier);
+        command.Parameters.AddWithValue(transition.Version.Version);
+        command.Parameters.AddWithValue(transition.From);
+        command.Parameters.AddWithValue(transition.To);
+        command.Parameters.AddWithValue(transition.Action);
+        command.Parameters.AddWithValue(transition.Actor);
+        command.Parameters.AddWithValue(transition.At);
+        command.Parameters.AddWithValue((object?)transition.Reason ?? DBNull.Value);
+        command.Parameters.AddWithValue((object?)transition.SignatureReference ?? DBNull.Value);
+
+        await command.ExecuteNonQueryAsync(cancellationToken);
     }
 
     public async ValueTask DisposeAsync()

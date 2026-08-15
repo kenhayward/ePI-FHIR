@@ -101,9 +101,9 @@
     "evidence": "FN_LCM_004 and IT_013: per-market regulatory-approval state in its own model, store and service, with a test that a market transition leaves internal state untouched. Held in a durable append-only table keyed by version and market, with UPDATE and DELETE refused by a database trigger. Effective dating (CAP-LCM-004) follows"
   },
   "CAP-LCM-006": {
-    "iteration": "2",
+    "iteration": "2-3",
     "status": "partial",
-    "evidence": "IT_017 plus FN_LCM_005: content by version, the full transition history with the signature used, and the validating context recorded at approval (ADR-023). Effective dating and supersession are not yet part of what is reconstructed"
+    "evidence": "IT_017 plus FN_LCM_005 for the pinned validating context, and CAP_LCM_006 for a superseded version keeping its content, history, author and pin. Effective dating is not yet part of what a reconstruction reports"
   },
   "CAP-LCM-007": {
     "iteration": "2",
@@ -184,5 +184,10 @@
     "iteration": "3",
     "status": "partial",
     "evidence": "ADR-029 plus CAP_LCM_004 tests: an effective date belongs to a market approval, is required when one is recorded and may not precede it, and 'which version is in force here on this date' is derived from the append-only history rather than stored. Supersession in a market follows from it; the internal superseded state is delivery row 6"
+  },
+  "CAP-LCM-005": {
+    "iteration": "3",
+    "status": "partial",
+    "evidence": "ADR-030 plus CAP_LCM_005 tests: approving a version supersedes the one it displaces, recorded with actor, time and reason in the same transaction as the approval. Supersession in a market follows from effective dating (ADR-029). Withdrawal remains a manual act"
   }
 }

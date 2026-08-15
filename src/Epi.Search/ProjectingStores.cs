@@ -78,11 +78,22 @@ public sealed class ProjectingLifecycleStore(
 
     public async Task AppendAsync(
         StateTransition transition, PinnedContext? pin = null,
+        StateTransition? consequence = null,
         CancellationToken cancellationToken = default)
     {
-        await _inner.AppendAsync(transition, pin, cancellationToken);
+        await _inner.AppendAsync(transition, pin, consequence, cancellationToken);
         await _projection.ProjectStateAsync(transition.Version, transition.To, cancellationToken);
+
+        if (consequence is not null)
+        {
+            await _projection.ProjectStateAsync(
+                consequence.Version, consequence.To, cancellationToken);
+        }
     }
+
+    public Task<IReadOnlyList<int>> VersionsInStateAsync(
+        string documentIdentifier, string state, CancellationToken cancellationToken = default) =>
+        _inner.VersionsInStateAsync(documentIdentifier, state, cancellationToken);
 
     public Task<string?> AuthorOfAsync(VersionRef version, CancellationToken cancellationToken = default) =>
         _inner.AuthorOfAsync(version, cancellationToken);
