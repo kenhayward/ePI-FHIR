@@ -93,6 +93,17 @@ status, moved = call("POST", f"/labels/{identifier}/versions/1/transitions", ann
                      {"action": "submit", "reason": "ready for review"})
 check("submitted", status == 200 and moved["to"] == "in-review", f"{status} {moved}")
 
+print("\nBen sees what is waiting for him")
+status, waiting = call("GET", "/tasks", ben)
+check("submitting for review asked an approver to approve",
+      status == 200 and any(t["documentIdentifier"] == identifier and t["action"] == "approve"
+                            for t in waiting),
+      f"{status} {str(waiting)[:160]}")
+
+status, annas = call("GET", "/tasks", anna)
+check("and it is not waiting for the author who wrote it", annas == [], str(annas)[:120])
+
+
 print("\nAnna tries to approve her own work")
 status, signed = call("POST", "/signatures", anna,
                       {"documentIdentifier": identifier, "version": 1,
@@ -137,6 +148,11 @@ check("approved internally, still unsubmitted in every market",
       status == 200 and state["state"] == "approved"
       and set(state["markets"].values()) == {"not-submitted"},
       f"{status} {state}")
+
+print("\nThe task Ben answered is no longer waiting")
+status, remaining = call("GET", "/tasks", ben)
+check("approving closed the task that asked for it", remaining == [], str(remaining)[:120])
+
 
 print("\nAnna searches for it")
 status, results = call("GET", "/labels/search?state=approved", anna)

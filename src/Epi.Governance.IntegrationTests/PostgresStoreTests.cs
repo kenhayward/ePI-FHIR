@@ -67,6 +67,20 @@ public sealed class PostgresPinnedContextStoreConformanceTests(PostgresServer se
     }
 }
 
+/// <summary>The durable workflow store, held to the same contract.</summary>
+[Collection(PostgresCollection.Name)]
+[Trait("Category", "Container")]
+public sealed class PostgresWorkflowStoreConformanceTests(PostgresServer server)
+    : WorkflowStoreConformance
+{
+    protected override async Task<IWorkflowStore> CreateStoreAsync()
+    {
+        var connectionString = await server.CreateDatabaseAsync();
+        await GovernanceSchema.ApplyAsync(connectionString);
+        return new PostgresWorkflowStore(connectionString);
+    }
+}
+
 /// <summary>
 /// The guarantee the durable stores exist to provide, and which an in-memory one cannot make:
 /// append-only enforced by the database rather than by the application.
@@ -113,6 +127,11 @@ public sealed class PostgresGovernanceRecordsAreAppendOnlyTests(PostgresServer s
                 [new PinnedPackage("hl7.fhir.uv.emedicinal-product-info", "1.0.0", "c99767")],
                 "https://epi.example.org/identifier/document", DateTimeOffset.UtcNow, "smpc-gb", 3));
 
+        var workflow = new PostgresWorkflowStore(connectionString);
+        await workflow.AppendAsync(new TaskEvent(
+            "task-1", Version, TaskEventKind.Raised, "approve", "approver", "user-anna",
+            DateTimeOffset.UtcNow));
+
         return connectionString;
     }
 
@@ -122,6 +141,7 @@ public sealed class PostgresGovernanceRecordsAreAppendOnlyTests(PostgresServer s
     [InlineData("market_approval_transition", "actor")]
     [InlineData("signature_manifest", "signer_identifier")]
     [InlineData("pinned_context", "content_hash")]
+    [InlineData("workflow_task_event", "assignee")]
     public async Task FN_AUD_003_the_database_refuses_an_update_even_from_a_direct_connection(
         string table, string column)
     {
@@ -142,6 +162,7 @@ public sealed class PostgresGovernanceRecordsAreAppendOnlyTests(PostgresServer s
     [InlineData("market_approval_transition")]
     [InlineData("signature_manifest")]
     [InlineData("pinned_context")]
+    [InlineData("workflow_task_event")]
     public async Task FN_AUD_003_the_database_refuses_a_delete_even_from_a_direct_connection(
         string table)
     {

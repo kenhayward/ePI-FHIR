@@ -45,7 +45,7 @@ public sealed class InMemoryWorkflowStore : IWorkflowStore
         {
             return Task.FromResult<IReadOnlyList<WorkflowTask>>(
             [
-                .. Derive(_events.Where(e => e.Version == version)),
+                .. WorkflowTasks.Derive(_events.Where(e => e.Version == version)),
             ]);
         }
     }
@@ -63,33 +63,10 @@ public sealed class InMemoryWorkflowStore : IWorkflowStore
         {
             return Task.FromResult<IReadOnlyList<WorkflowTask>>(
             [
-                .. Derive(_events).Where(task => task.IsOpen && wanted.Contains(task.Assignee)),
+                .. WorkflowTasks.Derive(_events)
+                    .Where(task => task.IsOpen && wanted.Contains(task.Assignee)),
             ]);
         }
     }
 
-    /// <summary>
-    /// Each task as it stands now, from its events.
-    /// </summary>
-    /// <remarks>
-    /// Derived rather than stored: a field is correct when it is written, and the history is
-    /// correct always. Reassignment in particular has to be visible as a sequence, because who
-    /// a task moved between is part of how a version came to be approved.
-    /// </remarks>
-    private static IEnumerable<WorkflowTask> Derive(IEnumerable<TaskEvent> events) =>
-        events
-            .GroupBy(e => e.TaskIdentifier, StringComparer.Ordinal)
-            .Select(group =>
-            {
-                var raised = group.First(e => e.Kind == TaskEventKind.Raised);
-                var last = group.Last();
-
-                return new WorkflowTask(
-                    group.Key,
-                    raised.Version,
-                    raised.Action,
-                    last.Assignee,
-                    raised.At,
-                    last.Kind != TaskEventKind.Closed);
-            });
 }

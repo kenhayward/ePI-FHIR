@@ -59,6 +59,43 @@ public sealed record WorkflowTask(
 }
 
 /// <summary>
+/// How a task's standing is worked out from its events.
+/// </summary>
+/// <remarks>
+/// Shared by every store rather than implemented in each, because two derivations of one rule
+/// drift - and the one that drifts is the one that decides whether somebody still has a job to
+/// do. Derived rather than stored for the reason ADR-019 gives about state: a field is correct
+/// when it is written, and the history is correct always.
+/// </remarks>
+public static class WorkflowTasks
+{
+    public static IReadOnlyList<WorkflowTask> Derive(IEnumerable<TaskEvent> events)
+    {
+        ArgumentNullException.ThrowIfNull(events);
+
+        return
+        [
+            .. events
+                .GroupBy(e => e.TaskIdentifier, StringComparer.Ordinal)
+                .Where(group => group.Any(e => e.Kind == TaskEventKind.Raised))
+                .Select(group =>
+                {
+                    var raised = group.First(e => e.Kind == TaskEventKind.Raised);
+                    var last = group.Last();
+
+                    return new WorkflowTask(
+                        group.Key,
+                        raised.Version,
+                        raised.Action,
+                        last.Assignee,
+                        raised.At,
+                        last.Kind != TaskEventKind.Closed);
+                }),
+        ];
+    }
+}
+
+/// <summary>
 /// The tasks routing has raised, append-only (CAP-WFL-001, ADR-031).
 /// </summary>
 /// <remarks>

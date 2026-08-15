@@ -78,8 +78,11 @@ iteration or a stated reason for waiting. Nothing is dropped by omission.
 | Cross-reference anchors are written by whatever produces the content, because there is no authoring surface to insert them. An author writing them by hand would be writing section identifiers by hand | ADR-028 | With the authoring surface, iteration 4 |
 | "Which version is in force here" is a scan of a version's market history on every ask. It is the obvious thing to project into the search index, and doing so is a projection change rather than a model one | ADR-029 | When in-force is queried at volume, or with publishing (capability 14) |
 | A migrated approval will have taken effect before the row recording it was written, which ADR-029 decision 5 refuses. The constraint has to hold against the original approval date rather than the date of the write | ADR-029 | With migration (capability 4) |
-| Tasks are held in memory only, so a restart loses what has been asked of whom. The record is a governance record and belongs in the migrated governance store alongside the rest | ADR-031, PR 52 | Delivery row 7b, before any demonstration of routing |
+| ~~Tasks are held in memory only~~ - **paid**, PR 53: durable, migrated and held to the same conformance suite as the in-memory store | ADR-031, PR 52 | Done |
+| Routing is one rule per state, so CAP-WFL-001's "multi-step, per market and label type" is not met: the shipped model has a single review step and nothing selects a different model per market | ADR-031, PR 53 | Delivery row 7c |
 | Nothing tells anyone a task exists. Routing records the ask; carrying it is capability 20's, and that seam is not wired | ADR-031 | With notifications |
+| The Firely SDK expands the core specification into one cache directory under the temporary path, and nothing outside this repository serialises it. A lock file closes it for this platform's own construction path; any other code calling `ZipSource.CreateValidationSource` directly would race again | PR 53 | Watch. If it recurs, the answer is a cache directory per process rather than a lock |
+| Configuration paths that differ only inside a container have now caused three defects, each found by the walkthrough and invisible to CI. A start-up check naming every configuration file the platform expects, refusing to run without them rather than treating absence as a default, would turn all three into a failure to start | PR 53 | Before a deployment anyone relies on |
 | Inert registrations accumulate at whatever rate a content write fails after its registration, and nothing surfaces them | ADR-025 | Delivery row 1c. They are harmless individually and invisible in aggregate, which is the wrong pair of properties to leave together |
 | Terminology versions are absent from the pinned validating context | ADR-023 | With the terminology binding points. A context that omits the terminology a version was validated against is incomplete in exactly the way ADR-023 exists to prevent |
 | Validation is serialised outright, a correctness-first stopgap | PR 6a | Rendering and translation multiply validations per label by the number of languages. Measured here, and fixed if the measurement says so |
@@ -293,6 +296,7 @@ Provisional, and dependent on Section 8. Each row is a pull request, test-first,
 | 6 | Supersession and withdrawal, with the predecessor retrievable | M |
 | 7a | Workflow routing: the model, config-as-data, and tasks raised and closed by transitions | M |
 | 7b | The durable task store, and the API surface for what is waiting and reassigning it | M |
+| 7c | Multi-step routing and per-market rules, which CAP-WFL-001 asks for and one review step does not give | M |
 | 8 | ADR: translation as a version relationship; language variants linked to a source version | L |
 | 9 | Linguistic review routed and signed; source change marks translations out of date | M |
 | 10 | ADR and mechanism: deterministic rendering to HTML and PDF, keyed to a render-template version | L |

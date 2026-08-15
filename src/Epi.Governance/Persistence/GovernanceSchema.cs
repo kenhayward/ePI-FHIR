@@ -215,6 +215,42 @@ public static class GovernanceSchema
             ALTER TABLE market_approval_transition
                 ADD COLUMN IF NOT EXISTS effective_from TIMESTAMPTZ NULL;
             """),
+
+        // What routing has asked of whom (ADR-031). Append-only like the rest: a task's current
+        // assignment and whether it is open are derived from its events, never stored as
+        // fields, because who a task moved between is part of how a version came to be approved.
+        new("0008-workflow-task-event", """
+            CREATE TABLE IF NOT EXISTS workflow_task_event (
+                id                  BIGINT      GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+                task_identifier     TEXT        NOT NULL,
+                document_identifier TEXT        NOT NULL,
+                document_version    INTEGER     NOT NULL,
+                kind                TEXT        NOT NULL,
+                action              TEXT        NOT NULL,
+                assignee            TEXT        NOT NULL,
+                actor               TEXT        NOT NULL,
+                occurred_at         TIMESTAMPTZ NOT NULL,
+                reason              TEXT        NULL
+            );
+
+            CREATE INDEX IF NOT EXISTS workflow_task_event_by_task
+                ON workflow_task_event (task_identifier, id);
+
+            CREATE INDEX IF NOT EXISTS workflow_task_event_by_version
+                ON workflow_task_event (document_identifier, document_version, id);
+
+            CREATE OR REPLACE FUNCTION workflow_task_event_is_append_only() RETURNS TRIGGER AS $$
+            BEGIN
+                RAISE EXCEPTION 'workflow_task_event is append-only: % is not permitted',
+                    TG_OP USING ERRCODE = 'restrict_violation';
+            END;
+            $$ LANGUAGE plpgsql;
+
+            DROP TRIGGER IF EXISTS workflow_task_event_no_change ON workflow_task_event;
+            CREATE TRIGGER workflow_task_event_no_change
+                BEFORE UPDATE OR DELETE ON workflow_task_event
+                FOR EACH ROW EXECUTE FUNCTION workflow_task_event_is_append_only();
+            """),
     ];
 
     /// <summary>

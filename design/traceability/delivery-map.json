@@ -118,7 +118,7 @@
   "CAP-WFL-001": {
     "iteration": "3",
     "status": "partial",
-    "evidence": "ADR-031 plus CAP_WFL_001 tests: routing is config-as-data per label type, tasks are raised and closed by transitions and never consulted to decide whether one may happen, assignment is to a role, reassignment is recorded and overdue is derived. The durable store and the API surface are delivery row 7b"
+    "evidence": "ADR-031 plus CAP_WFL_001 tests and FN_WFL_001 across the workflow store conformance suite, run against both stores: routing is config-as-data, tasks are raised and closed by transitions and never consulted to decide whether one may happen, assignment is to a role, reassignment is recorded and overdue is derived. Multi-step routing beyond one review step, and per-market rules, follow"
   },
   "CAP-WFL-003": {
     "iteration": "2",

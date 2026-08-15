@@ -186,6 +186,22 @@ public sealed class WorkflowRoutingTests
     }
 
     [Fact]
+    public async Task CAP_WFL_001_a_task_identifier_is_opaque_and_addressable()
+    {
+        // Minted like every other identifier the platform assigns (ADR-015). A composite of the
+        // version, the action and the timestamp carried meaning - and slashes and colons, so
+        // the task it named could not be addressed in a URL at all.
+        var (service, tasks) = Build();
+        await service.RegisterAsync(Version, "user-anna");
+        await service.TransitionAsync(Version, "submit", "user-anna");
+
+        var identifier = (await tasks.ForVersionAsync(Version))[0].Identifier;
+
+        Assert.True(Guid.TryParse(identifier, out _));
+        Assert.Equal(identifier, Uri.EscapeDataString(identifier));
+    }
+
+    [Fact]
     public void CAP_WFL_001_the_shipped_routing_asks_an_approver_to_approve()
     {
         var model = WorkflowConfiguration.LoadFrom(

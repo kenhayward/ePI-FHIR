@@ -39,7 +39,23 @@ public static class ProfileSource
 
         // Core R5 definitions ship with the validator rather than being vendored; see
         // ADR-016 and profiles/packages/manifest.json "notProvidedHere".
-        var core = ZipSource.CreateValidationSource();
+        //
+        // Built under a lock file, because the SDK expands the core specification into one
+        // cache directory under the temporary path and two processes doing that at once
+        // collide - "Directory not empty", reported as a validation error against every
+        // document, which reads as content being invalid rather than as a race. A lock inside
+        // the process is not enough: the test run puts several assemblies in separate
+        // processes, which is where CI found it.
+        var core = UnderCacheLock(() =>
+        {
+            var source = ZipSource.CreateValidationSource();
+
+            // Forced inside the lock, because the SDK expands the specification on first use
+            // rather than on construction - so a lock around construction alone protects
+            // nothing, which is what the first attempt at this did.
+            _ = source.ListSummaries().Count();
+            return source;
+        });
 
         var vendored = new DirectorySource(expanded, new DirectorySourceSettings
         {
@@ -58,6 +74,36 @@ public static class ProfileSource
         // Vendored profiles take precedence over core, so an IG constraint wins where both
         // define the same canonical.
         return new SerialisedResolver(new CachedResolver(new MultiResolver(vendored, core)));
+    }
+
+    /// <summary>
+    /// Runs a build of the core source with an exclusive lock held across every process.
+    /// </summary>
+    /// <remarks>
+    /// A lock file rather than a named mutex: named mutexes are not shared between processes on
+    /// Unix, which is the platform CI runs on and therefore the only one where this matters.
+    /// Serialising a few seconds of unzip is cheap; a validation error that appears only when
+    /// two assemblies start together is not.
+    /// </remarks>
+    private static T UnderCacheLock<T>(Func<T> build)
+    {
+        var lockFile = Path.Combine(Path.GetTempPath(), "epi-fhir-artifact-cache.lock");
+        var deadline = DateTimeOffset.UtcNow.AddMinutes(2);
+
+        while (true)
+        {
+            try
+            {
+                using var held = new FileStream(
+                    lockFile, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None);
+                return build();
+            }
+            catch (IOException) when (DateTimeOffset.UtcNow < deadline)
+            {
+                // Somebody else is expanding the cache. Waiting is the whole point.
+                Thread.Sleep(250);
+            }
+        }
     }
 
     /// <summary>Expands each vendored tarball once into a per-user cache directory.</summary>
