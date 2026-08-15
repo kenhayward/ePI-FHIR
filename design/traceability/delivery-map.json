@@ -116,9 +116,9 @@
     "evidence": "CAP_LCM_011 across the pinned-context conformance suite, run against both stores. The pin is now written in the same transaction as the transition that approves the version, and an approval with nothing to pin is refused (ADR-024); reusable-unit versions follow with reuse"
   },
   "CAP-WFL-001": {
-    "iteration": "2",
-    "status": "planned",
-    "evidence": "iteration-2 (see design/iteration-2.md)"
+    "iteration": "3",
+    "status": "partial",
+    "evidence": "ADR-031 plus CAP_WFL_001 tests: routing is config-as-data per label type, tasks are raised and closed by transitions and never consulted to decide whether one may happen, assignment is to a role, reassignment is recorded and overdue is derived. The durable store and the API surface are delivery row 7b"
   },
   "CAP-WFL-003": {
     "iteration": "2",
