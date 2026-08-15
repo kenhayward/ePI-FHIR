@@ -240,7 +240,10 @@ services:
 
   # ---- Rendering: HTML -> PDF (rendered lineage; distinct from artwork) ----
   gotenberg:
-    image: gotenberg/gotenberg:8
+    # Pinned to the version this stack has been verified on. PR 38 pinned every image and
+    # missed this one: ":8" is a major-version tag that moves, which is the thing that pull
+    # request existed to stop (ADR-014).
+    image: gotenberg/gotenberg:8.35.0
     command: ["gotenberg", "--api-port=3000"]
     ports:
       - "${GOTENBERG_PORT:-3000}:3000"

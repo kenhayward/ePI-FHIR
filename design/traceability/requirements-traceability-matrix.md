@@ -178,12 +178,12 @@ Status values: `planned` (scheduled, not built), `partial` (some aspect delivere
 | CAP-CMP-007 | 12 | M | P2 | Compliance Service | - | - | - |
 | CAP-CMP-008 | 12 | S | P2 | Compliance Service | - | - | - |
 | CAP-RND-001 | 13 | M | P2 | Rendering Service | 3 | partial | ADR-033 plus CAP_RND_001 tests: structured HTML carrying the document's language and its section identity, with narrative emitted as it was approved. Accessibility conformance (CAP-RND-005) is a property of the template and is not asserted |
-| CAP-RND-002 | 13 | M | P2 | Rendering Service | 3 | partial | CAP_RND_002 tests: rendered and artwork are separate types, so neither can be stored as the other, and an artefact cannot be edited after it is produced. The PDF lineage itself arrives with the print engine |
+| CAP-RND-002 | 13 | M | P2 | Rendering Service | 3 | partial | ADR-033 plus CAP_RND_002 tests: rendered and artwork are separate types so neither can be stored as the other, and a label version renders to PDF carrying both versions it came from. Proven against a stand-in engine; IT-019 against a real one is outstanding |
 | CAP-RND-003 | 13 | M | P2 | Rendering Service | 3 | partial | CAP_RND_003 tests: a render is keyed to a versioned template whose stylesheet travels with it, and the render records both versions it came from. Market and QRD templates themselves are content and are not shipped |
 | CAP-RND-004 | 13 | M | P2 | Rendering Service | 3 | partial | CAP_RND_004 test: a render of an unapproved version is marked draft on the artefact. Watermarking is a template concern |
 | CAP-RND-005 | 13 | S | P2 | Rendering Service | - | - | - |
 | CAP-RND-006 | 13 | S | P2 | Rendering Service | - | - | - |
-| CAP-RND-007 | 13 | M | P2 | Rendering Service | 3 | partial | CAP_RND_007 tests: the same label version and render-template version render byte-identically, and nothing time-varying is embedded. The PDF step is not yet rendered, so determinism is proven for HTML only |
+| CAP-RND-007 | 13 | M | P2 | Rendering Service | 3 | partial | CAP_RND_007 tests: two renders of one label version and render-template version are byte-identical in HTML, and in PDF against an engine that reproduces the measured behaviour. The measurement against the real engine is recorded in ADR-033; IT-019 automating it is outstanding |
 | CAP-RND-008 | 13 | S | P2 | Rendering Service | - | - | - |
 | CAP-RND-009 | 13 | M | P2 | Rendering Service | - | - | - |
 | CAP-PUB-001 | 14 | M | P2 | Publishing Service | - | - | - |
