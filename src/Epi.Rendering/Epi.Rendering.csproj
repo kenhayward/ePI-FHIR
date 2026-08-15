@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>Epi.Rendering</RootNamespace>
+  </PropertyGroup>
+
+  <!--
+    Rendering reads content and nothing else. No lifecycle, no store, no clock: a render is a
+    pure function of a label version and a render-template version (ADR-033 decision 1), and a
+    project that could not reach a clock cannot accidentally embed one.
+  -->
+  <ItemGroup>
+    <ProjectReference Include="..\Epi.ContentCore\Epi.ContentCore.csproj" />
+  </ItemGroup>
+
+</Project>
