@@ -10,12 +10,26 @@ public sealed class SecondaryIdentifiersTests
     private static readonly SecondaryIdentifier Legacy =
         new("https://legacy.example.test/labels", "SPL-000123");
 
+    /// <summary>
+    /// A Composition carrying the elements R5 requires of one. The round-trip case reads its
+    /// output back through the parser, which enforces cardinality - so a fixture missing them
+    /// fails there and nowhere else.
+    /// </summary>
     private static Bundle Document() => new()
     {
         Type = Bundle.BundleType.Document,
         Entry = [new Bundle.EntryComponent
         {
-            Resource = new Composition { Title = "SYNTHETIC TEST LABEL" },
+            Resource = new Composition
+            {
+                Title = "SYNTHETIC TEST LABEL",
+                Status = CompositionStatus.Final,
+                Type = new CodeableConcept(
+                    "http://example.org/fhir/CodeSystem/synthetic-epi-document-type",
+                    "package-leaflet"),
+                Date = "2026-01-01T00:00:00+00:00",
+                Author = [new ResourceReference { Display = "Synthetic Pharma Ltd" }],
+            },
         }],
     };
 
