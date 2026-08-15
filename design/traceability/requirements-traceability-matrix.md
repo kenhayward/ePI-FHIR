@@ -203,7 +203,7 @@ Status values: `planned` (scheduled, not built), `partial` (some aspect delivere
 | CAP-SCH-006 | 15 | S | P1 | Search Service | 2 | partial | CAP_SCH_006: every page is bounded and capped, and the total is the scoped total; query cost bounds are not yet measured |
 | CAP-SCH-007 | 15 | S | P1 | Search Service | - | - | - |
 | CAP-SCH-008 | 15 | S | P1 | Search Service | - | - | - |
-| CAP-WFL-001 | 16 | M | P1 | Lifecycle & Workflow Service | 3 | partial | ADR-031 plus CAP_WFL_001 tests: routing is config-as-data per label type, tasks are raised and closed by transitions and never consulted to decide whether one may happen, assignment is to a role, reassignment is recorded and overdue is derived. The durable store and the API surface are delivery row 7b |
+| CAP-WFL-001 | 16 | M | P1 | Lifecycle & Workflow Service | 3 | partial | ADR-031 plus CAP_WFL_001 tests and FN_WFL_001 across the workflow store conformance suite, run against both stores: routing is config-as-data, tasks are raised and closed by transitions and never consulted to decide whether one may happen, assignment is to a role, reassignment is recorded and overdue is derived. Multi-step routing beyond one review step, and per-market rules, follow |
 | CAP-WFL-002 | 16 | M | P1 | Lifecycle & Workflow Service | - | - | - |
 | CAP-WFL-003 | 16 | M | P1 | Lifecycle & Workflow Service | 2 | partial | FN_WFL_003 and IT_012: a gate the model says must be signed accepts only a signature by the transitioning actor, over that version, meaning what the gate requires, and not already spent. Signature at gates other than approval arrives with the workflow routing that owns them |
 | CAP-WFL-004 | 16 | M | P1 | Lifecycle & Workflow Service | - | - | - |

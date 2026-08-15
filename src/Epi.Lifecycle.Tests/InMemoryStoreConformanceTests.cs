@@ -25,3 +25,10 @@ public sealed class InMemoryPinnedContextStoreConformanceTests : PinnedContextSt
     protected override Task<ILifecycleStore> CreateStoreAsync() =>
         Task.FromResult<ILifecycleStore>(new InMemoryLifecycleStore());
 }
+
+/// <summary>The in-memory workflow store, held to the same contract.</summary>
+public sealed class InMemoryWorkflowStoreConformanceTests : WorkflowStoreConformance
+{
+    protected override Task<IWorkflowStore> CreateStoreAsync() =>
+        Task.FromResult<IWorkflowStore>(new InMemoryWorkflowStore());
+}

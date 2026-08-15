@@ -28,6 +28,7 @@
     <Compile Include="../Epi.Lifecycle.Tests/LifecycleStoreConformance.cs" Link="LifecycleStoreConformance.cs" />
     <Compile Include="../Epi.Lifecycle.Tests/MarketApprovalStoreConformance.cs" Link="MarketApprovalStoreConformance.cs" />
     <Compile Include="../Epi.Lifecycle.Tests/PinnedContextStoreConformance.cs" Link="PinnedContextStoreConformance.cs" />
+    <Compile Include="../Epi.Lifecycle.Tests/WorkflowStoreConformance.cs" Link="WorkflowStoreConformance.cs" />
     <Compile Include="../Epi.Signature.Tests/SignatureStoreConformance.cs" Link="SignatureStoreConformance.cs" />
   </ItemGroup>
 

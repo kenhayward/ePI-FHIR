@@ -130,6 +130,19 @@ var signatureStore = string.IsNullOrWhiteSpace(governanceConnection)
 // transition it belongs to, so they are one store (ADR-024 decision 2).
 builder.Services.AddSingleton((IPinnedContextStore)lifecycleStore);
 
+var workflowStore = string.IsNullOrWhiteSpace(governanceConnection)
+    ? new InMemoryWorkflowStore()
+    : (IWorkflowStore)new PostgresWorkflowStore(governanceConnection);
+builder.Services.AddSingleton(workflowStore);
+
+// Routing is configuration like every other model the platform applies (ADR-031 decision 3).
+// A deployment that has configured none raises no tasks, and the approval gate is unaffected
+// either way: a task never decides whether a transition may happen.
+var routingPath = builder.Configuration["Epi:Workflow:RoutingPath"]
+    ?? Path.Combine(builder.Environment.ContentRootPath, "config", "workflow", "label-routing.json");
+var routing = new Lazy<WorkflowModel?>(
+    () => File.Exists(routingPath) ? WorkflowConfiguration.LoadFrom(routingPath) : null);
+
 // What the platform validates against, read once and recorded at every approval (ADR-023).
 // Lazy for the same reason the state models are: a host that never approves anything need not
 // have the vendored packages present.
@@ -158,7 +171,9 @@ builder.Services.AddSingleton(services => new LifecycleService(
     services.GetRequiredService<ILifecycleStore>(),
     time: null,
     signatureCheck: services.GetRequiredService<ISignatureCheck>(),
-    spent: services.GetRequiredService<ISpentSignatures>()));
+    spent: services.GetRequiredService<ISpentSignatures>(),
+    workflow: routing.Value,
+    tasks: services.GetRequiredService<IWorkflowStore>()));
 
 // Signing needs an identity provider to check credentials against. Where none is configured
 // the verifier refuses everyone rather than accepting anyone: a permissive default here would
@@ -920,6 +935,80 @@ app.MapGet("/labels/{id}/versions/{version:int}/reconstruction", async (
     });
 }).RequireAuthorization();
 
+app.MapGet("/tasks", async (
+    ClaimsPrincipal principal,
+    IWorkflowStore tasks,
+    CancellationToken cancellationToken) =>
+{
+    var subject = SubjectFactory.From(principal);
+    if (subject is null)
+    {
+        return Results.Unauthorized();
+    }
+
+    // What is waiting for the caller: the tasks held by a role they hold, or by them
+    // personally. A caller holding no roles is asked nothing, which is what an empty set of
+    // assignees has to mean rather than "everything" (ADR-031 decision 4).
+    var open = await tasks.OpenForAsync([.. subject.Roles, subject.Id], cancellationToken);
+
+    return Results.Ok(open.Select(task => new
+    {
+        identifier = task.Identifier,
+        documentIdentifier = task.Version.DocumentIdentifier,
+        version = task.Version.Version,
+        action = task.Action,
+        assignee = task.Assignee,
+        raisedAt = task.RaisedAt,
+    }));
+}).RequireAuthorization();
+
+app.MapPost("/tasks/{identifier}/assignment", async (
+    string identifier,
+    ReassignmentRequest body,
+    ClaimsPrincipal principal,
+    IWorkflowStore tasks,
+    CancellationToken cancellationToken) =>
+{
+    var subject = SubjectFactory.From(principal);
+    if (subject is null)
+    {
+        return Results.Unauthorized();
+    }
+
+    if (string.IsNullOrWhiteSpace(body.Assignee))
+    {
+        return Results.BadRequest(new
+        {
+            problems = new[] { "A reassignment must name who the task now sits with." },
+        });
+    }
+
+    var history = await tasks.HistoryAsync(identifier, cancellationToken);
+    var task = WorkflowTasks.Derive(history).FirstOrDefault();
+
+    if (task is null)
+    {
+        return Results.NotFound();
+    }
+
+    if (!task.IsOpen)
+    {
+        // 409: the request is well formed and the platform understood it. A closed task is not
+        // waiting for anyone, so moving it would record an ask nobody can answer.
+        return Results.Problem(
+            "That task is closed, so it cannot be reassigned.",
+            statusCode: StatusCodes.Status409Conflict);
+    }
+
+    await tasks.AppendAsync(
+        new TaskEvent(
+            identifier, task.Version, TaskEventKind.Reassigned, task.Action, body.Assignee,
+            subject.Id, DateTimeOffset.UtcNow, body.Reason),
+        cancellationToken);
+
+    return Results.Ok(new { identifier, assignee = body.Assignee });
+}).RequireAuthorization();
+
 app.Run();
 
 /// <summary>One search result on the wire.</summary>
@@ -958,6 +1047,9 @@ static class Pinning
             TemplateInstantiation.TemplateOf(document.Bundle, authority),
             TemplateInstantiation.TemplateVersionOf(document.Bundle, authority));
 }
+
+/// <summary>What a caller asks for when moving a task to somebody else.</summary>
+internal sealed record ReassignmentRequest(string Assignee, string? Reason);
 
 /// <summary>What a caller asks for when signing. The signer is the token, never the body.</summary>
 internal sealed record SignatureRequest(

@@ -256,7 +256,11 @@ public sealed class LifecycleService(
         {
             await _tasks.AppendAsync(
                 new TaskEvent(
-                    $"{transition.Version}/{rule.Action}/{transition.At:O}",
+                    // Opaque and minted, like every other identifier the platform assigns
+                    // (ADR-015). A composite of the version, the action and the timestamp
+                    // carried meaning, and it also carried slashes and colons - so the task it
+                    // named could not be addressed in a URL at all.
+                    Guid.CreateVersion7().ToString(),
                     transition.Version, TaskEventKind.Raised, rule.Action, rule.Assignee,
                     transition.Actor, transition.At,
                     $"{transition.Version} reached {transition.To}"),
