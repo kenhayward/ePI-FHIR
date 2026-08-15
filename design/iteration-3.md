@@ -302,7 +302,7 @@ Provisional, and dependent on Section 8. Each row is a pull request, test-first,
 | 8 | ADR: translation as a version relationship; language variants linked to a source version | L |
 | 9 | Linguistic review routed and signed; source change marks translations out of date | M |
 | 10a | ADR and mechanism: deterministic rendering to HTML, keyed to a render-template version | M |
-| 10b | PDF from that HTML through the print engine, and determinism across it | M |
+| 10b | PDF from that HTML through the print engine, normalising the two dates Chromium writes for itself (measured - see ADR-033) | M |
 | 11 | Render storage in the asset store, with the rendered/artwork lineage enforced by type | M |
 | 12 | Master-data and terminology binding points; terminology version in the pinned context; ADR-016 amendment | M |
 | 13 | ADR: tags as code systems; secondary identifiers - **delivered early**, while the content model was open | S |
