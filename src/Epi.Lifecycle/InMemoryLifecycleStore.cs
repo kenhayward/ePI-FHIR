@@ -89,8 +89,30 @@ public sealed class InMemoryLifecycleStore : ILifecycleStore, IPinnedContextStor
         }
     }
 
+    public Task<IReadOnlyList<int>> VersionsInStateAsync(
+        string documentIdentifier, string state, CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(documentIdentifier);
+        ArgumentException.ThrowIfNullOrWhiteSpace(state);
+
+        lock (_gate)
+        {
+            return Task.FromResult<IReadOnlyList<int>>(
+            [
+                .. _states
+                    .Where(e => string.Equals(e.Value, state, StringComparison.Ordinal))
+                    .Select(e => e.Key.Split('@'))
+                    .Where(parts => parts.Length == 2
+                        && string.Equals(parts[0], documentIdentifier, StringComparison.Ordinal))
+                    .Select(parts => int.Parse(parts[1], System.Globalization.CultureInfo.InvariantCulture))
+                    .Order(),
+            ]);
+        }
+    }
+
     public Task AppendAsync(
         StateTransition transition, PinnedContext? pin = null,
+        StateTransition? consequence = null,
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(transition);
@@ -106,6 +128,12 @@ public sealed class InMemoryLifecycleStore : ILifecycleStore, IPinnedContextStor
 
             _transitions.Add(transition);
             _states[transition.Version.ToString()] = transition.To;
+
+            if (consequence is not null)
+            {
+                _transitions.Add(consequence);
+                _states[consequence.Version.ToString()] = consequence.To;
+            }
         }
 
         return Task.CompletedTask;
