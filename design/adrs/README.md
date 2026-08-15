@@ -26,6 +26,7 @@ of them next needs revising, not as a bulk exercise.
 | [ADR-026](0026-reusable-content-units.md) | Reusable content units, and how a label refers to one | accepted |
 | [ADR-027](0027-secondary-identifiers-and-platform-code-systems.md) | Secondary identifiers, and the platform's own code systems | accepted |
 | [ADR-028](0028-cross-references.md) | Cross-references between sections | accepted |
+| [ADR-029](0029-effective-dating.md) | Effective dating, per market | accepted |
 
 A record stays `proposed` until the pull request carrying it is merged, at which point it
 becomes `accepted`. Superseding a decision means a new record that says so, never editing the

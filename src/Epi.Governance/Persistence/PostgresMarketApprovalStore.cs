@@ -44,7 +44,8 @@ public sealed class PostgresMarketApprovalStore(string connectionString)
         ArgumentNullException.ThrowIfNull(subject);
 
         await using var command = _source.Value.CreateCommand("""
-            SELECT from_state, to_state, action, actor, occurred_at, reason, signature_reference
+            SELECT from_state, to_state, action, actor, occurred_at, reason, signature_reference,
+                   effective_from
             FROM market_approval_transition
             WHERE document_identifier = $1 AND document_version = $2 AND market = $3
             ORDER BY id
@@ -66,7 +67,44 @@ public sealed class PostgresMarketApprovalStore(string connectionString)
                 reader.GetString(3),
                 reader.GetFieldValue<DateTimeOffset>(4),
                 reader.IsDBNull(5) ? null : reader.GetString(5),
-                reader.IsDBNull(6) ? null : reader.GetString(6)));
+                reader.IsDBNull(6) ? null : reader.GetString(6),
+                reader.IsDBNull(7) ? null : reader.GetFieldValue<DateTimeOffset>(7)));
+        }
+
+        return transitions;
+    }
+
+    public async Task<IReadOnlyList<MarketStateTransition>> DocumentHistoryAsync(
+        string documentIdentifier, string market, CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(documentIdentifier);
+        ArgumentException.ThrowIfNullOrWhiteSpace(market);
+
+        await using var command = _source.Value.CreateCommand("""
+            SELECT document_version, from_state, to_state, action, actor, occurred_at, reason,
+                   signature_reference, effective_from
+            FROM market_approval_transition
+            WHERE document_identifier = $1 AND market = $2
+            ORDER BY id
+            """);
+
+        command.Parameters.AddWithValue(documentIdentifier);
+        command.Parameters.AddWithValue(market);
+
+        var transitions = new List<MarketStateTransition>();
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        while (await reader.ReadAsync(cancellationToken))
+        {
+            transitions.Add(new MarketStateTransition(
+                new MarketVersion(new VersionRef(documentIdentifier, reader.GetInt32(0)), market),
+                reader.GetString(1),
+                reader.GetString(2),
+                reader.GetString(3),
+                reader.GetString(4),
+                reader.GetFieldValue<DateTimeOffset>(5),
+                reader.IsDBNull(6) ? null : reader.GetString(6),
+                reader.IsDBNull(7) ? null : reader.GetString(7),
+                reader.IsDBNull(8) ? null : reader.GetFieldValue<DateTimeOffset>(8)));
         }
 
         return transitions;
@@ -119,8 +157,8 @@ public sealed class PostgresMarketApprovalStore(string connectionString)
         await using var command = _source.Value.CreateCommand("""
             INSERT INTO market_approval_transition
                 (document_identifier, document_version, market, from_state, to_state, action,
-                 actor, occurred_at, reason, signature_reference)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+                 actor, occurred_at, reason, signature_reference, effective_from)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
             """);
 
         command.Parameters.AddWithValue(transition.Subject.Version.DocumentIdentifier);
@@ -133,6 +171,7 @@ public sealed class PostgresMarketApprovalStore(string connectionString)
         command.Parameters.AddWithValue(transition.At);
         command.Parameters.AddWithValue((object?)transition.Reason ?? DBNull.Value);
         command.Parameters.AddWithValue((object?)transition.SignatureReference ?? DBNull.Value);
+        command.Parameters.AddWithValue((object?)transition.EffectiveFrom ?? DBNull.Value);
 
         await command.ExecuteNonQueryAsync(cancellationToken);
     }

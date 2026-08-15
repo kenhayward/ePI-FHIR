@@ -10,6 +10,23 @@ public sealed class InMemoryMarketApprovalStore : IMarketApprovalStore
     private readonly List<MarketStateTransition> _transitions = [];
     private readonly Lock _gate = new();
 
+    public Task<IReadOnlyList<MarketStateTransition>> DocumentHistoryAsync(
+        string documentIdentifier, string market, CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(documentIdentifier);
+        ArgumentException.ThrowIfNullOrWhiteSpace(market);
+
+        lock (_gate)
+        {
+            return Task.FromResult<IReadOnlyList<MarketStateTransition>>(
+            [
+                .. _transitions.Where(t =>
+                    string.Equals(t.Subject.Version.DocumentIdentifier, documentIdentifier, StringComparison.Ordinal)
+                    && string.Equals(t.Subject.Market, market, StringComparison.Ordinal)),
+            ]);
+        }
+    }
+
     public Task<string?> CurrentStateAsync(
         MarketVersion subject, CancellationToken cancellationToken = default)
     {

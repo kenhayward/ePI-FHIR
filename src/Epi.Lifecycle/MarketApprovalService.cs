@@ -132,7 +132,69 @@ public sealed class MarketApprovalService
             StringComparer.Ordinal);
     }
 
+    /// <summary>
+    /// Which version of a document is in force in a market at an instant, or null if none is.
+    /// </summary>
+    /// <remarks>
+    /// Derived at the moment of asking and never stored (ADR-029 decision 2). A stored flag is
+    /// correct when it is written and wrong from the first midnight afterwards, and nothing
+    /// notices, because no write happened: the failure needs a clock and there is no clock in
+    /// the write path.
+    /// <para>
+    /// In force means the latest version whose approval here took effect at or before the
+    /// instant asked about and has not since been withdrawn. Answerable for any past instant,
+    /// because it is a query over an append-only history.
+    /// </para>
+    /// </remarks>
+    public async Task<int?> InForceAsync(
+        string documentIdentifier, string market, DateTimeOffset at,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(documentIdentifier);
+        ArgumentException.ThrowIfNullOrWhiteSpace(market);
+
+        var history = await _store.DocumentHistoryAsync(documentIdentifier, market, cancellationToken);
+
+        // The effect of each version in this market as at the instant asked about: the latest
+        // date it took effect from, unless something recorded before that instant ended it.
+        var effect = new Dictionary<int, DateTimeOffset>();
+        foreach (var transition in history.Where(t => t.At <= at))
+        {
+            var version = transition.Subject.Version.Version;
+
+            if (transition.EffectiveFrom is { } from)
+            {
+                effect[version] = from;
+                continue;
+            }
+
+            // Anything that moves a version out of the approved state ends its effect - a
+            // withdrawal, and any other route a market model defines out of approval. Read from
+            // the model rather than from a list of action names, so a different regulator's
+            // model does not need this code to know about it.
+            if (string.Equals(transition.From, _model.ApprovedState, StringComparison.Ordinal))
+            {
+                effect.Remove(version);
+            }
+        }
+
+        var inForce = effect
+            .Where(e => e.Value <= at)
+            .OrderByDescending(e => e.Value)
+            .ThenByDescending(e => e.Key)
+            .Select(e => (int?)e.Key)
+            .FirstOrDefault();
+
+        return inForce;
+    }
+
     /// <summary>Moves a version's state in one market, or explains why it may not move.</summary>
+    /// <param name="effectiveFrom">
+    /// When the approval takes effect, required on a transition that records one and refused on
+    /// any other. There is no default: "immediately" is stated by giving the approval's own
+    /// timestamp, because a missing date defaulted to now is a guess that reads as a fact
+    /// (ADR-029 decision 3).
+    /// </param>
     public async Task<MarketStateTransition> TransitionAsync(
         VersionRef version,
         string market,
@@ -140,6 +202,7 @@ public sealed class MarketApprovalService
         string actor,
         string? reason = null,
         string? signatureReference = null,
+        DateTimeOffset? effectiveFrom = null,
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(version);
@@ -186,9 +249,39 @@ public sealed class MarketApprovalService
             }
         }
 
+        var now = _time.GetUtcNow();
+        var approving = string.Equals(permitted.To, _model.ApprovedState, StringComparison.Ordinal);
+
+        if (approving && effectiveFrom is null)
+        {
+            throw new TransitionRefusedException(version, action,
+                $"recording this market's approval must state when it takes effect, and "
+                + "'immediately' is stated by giving this moment rather than by leaving it out "
+                + "(CAP-LCM-004).");
+        }
+
+        if (!approving && effectiveFrom is not null)
+        {
+            // Only an approval takes effect. A date on anything else would be a field nobody
+            // reads, until somebody does.
+            throw new TransitionRefusedException(version, action,
+                $"'{action}' does not bring a version into force, so it cannot carry an "
+                + "effective date.");
+        }
+
+        if (effectiveFrom is { } from && from < now)
+        {
+            // A market cannot bring a version into force before it decided to. Tolerated, it
+            // produces a history in which effect precedes cause, and every "in force at" answer
+            // computed from it is wrong in a way no later check can detect (ADR-029 decision 5).
+            throw new TransitionRefusedException(version, action,
+                $"an effective date of {from:u} precedes the approval it belongs to.");
+        }
+
         var transition = new MarketStateTransition(
-            subject, current, permitted.To, action, actor, _time.GetUtcNow(), reason,
-            permitted.RequiresSignature ? signatureReference : null);
+            subject, current, permitted.To, action, actor, now, reason,
+            permitted.RequiresSignature ? signatureReference : null,
+            effectiveFrom);
 
         await _store.AppendAsync(transition, cancellationToken);
         return transition;

@@ -179,5 +179,10 @@
     "iteration": "3",
     "status": "partial",
     "evidence": "ADR-028 plus CAP_SCM_005 tests: cross-references are anchors in the narrative targeting section identity, resolved within the version that carries them, and a dangling internal reference is refused at the write gate. Cross-document references are recorded and pinned; their integrity is checked on resolution rather than at the write gate"
+  },
+  "CAP-LCM-004": {
+    "iteration": "3",
+    "status": "partial",
+    "evidence": "ADR-029 plus CAP_LCM_004 tests: an effective date belongs to a market approval, is required when one is recorded and may not precede it, and 'which version is in force here on this date' is derived from the append-only history rather than stored. Supersession in a market follows from it; the internal superseded state is delivery row 6"
   }
 }

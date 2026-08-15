@@ -12,6 +12,7 @@ actually loaded with - and every one of those has been broken at least once.
 """
 import base64
 import json
+from datetime import datetime, timedelta, timezone
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -182,7 +183,14 @@ if status == 200:
 
     # Unsigned on purpose: recording what a regulator decided is a factual entry about an
     # event outside this organisation's control, not an act of it (CAP-LCM-012, ADR-020).
-    status, decision = call("POST", market_path, rae, {"action": "record-approval"})
+    # It must say when the approval takes effect, though: there is no default (ADR-029).
+    status, refused = call("POST", market_path, rae, {"action": "record-approval"})
+    check("an approval that does not say when it takes effect is refused",
+          status == 409, str(status))
+
+    effective = (datetime.now(timezone.utc) + timedelta(days=30)).isoformat()
+    status, decision = call("POST", market_path, rae,
+                            {"action": "record-approval", "effectiveFrom": effective})
     check("the regulator's decision is recorded without a signature",
           status == 200 and decision["to"] == "approved", f"{status} {str(decision)[:200]}")
 

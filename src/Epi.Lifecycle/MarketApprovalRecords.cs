@@ -16,6 +16,10 @@ public sealed record MarketVersion(VersionRef Version, string Market)
 /// person entering it asserts only that they transcribed it correctly. Both are audited; the
 /// signature is what distinguishes them.
 /// </remarks>
+/// <param name="EffectiveFrom">
+/// When this market's approval takes effect, on the transition that records one (ADR-029).
+/// Absent on every other transition, because only an approval takes effect.
+/// </param>
 public sealed record MarketStateTransition(
     MarketVersion Subject,
     string From,
@@ -24,7 +28,8 @@ public sealed record MarketStateTransition(
     string Actor,
     DateTimeOffset At,
     string? Reason = null,
-    string? SignatureReference = null);
+    string? SignatureReference = null,
+    DateTimeOffset? EffectiveFrom = null);
 
 /// <summary>
 /// Per-market regulatory-approval state, held separately from internal lifecycle state
@@ -46,6 +51,18 @@ public interface IMarketApprovalStore : ISpentSignatures
     /// <summary>The state of this version in every market it has moved in.</summary>
     Task<IReadOnlyDictionary<string, string>> StatesForAsync(
         VersionRef version, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Every transition recorded for a document in a market, across all its versions, oldest
+    /// first.
+    /// </summary>
+    /// <remarks>
+    /// What "which version is in force here on this date" is derived from. It spans versions
+    /// because the answer is about the document: one version takes effect and the previous one
+    /// stops being in force at the same instant, and neither record mentions the other.
+    /// </remarks>
+    Task<IReadOnlyList<MarketStateTransition>> DocumentHistoryAsync(
+        string documentIdentifier, string market, CancellationToken cancellationToken = default);
 
     Task AppendAsync(MarketStateTransition transition, CancellationToken cancellationToken = default);
 }
