@@ -13,8 +13,8 @@ For the full V model see [v-model-trace.md](v-model-trace.md).
 ## Coverage
 
 - Requirements specified: **221** across **24** capabilities
-- Requirements with delivery evidence: **35**
-- Requirements not yet scheduled: **186**
+- Requirements with delivery evidence: **36**
+- Requirements not yet scheduled: **185**
 
 ## Capabilities
 
@@ -70,7 +70,7 @@ Status values: `planned` (scheduled, not built), `partial` (some aspect delivere
 | CAP-SCM-002 | 2 | M | P0 | Content Core (FHIR) | - | - | - |
 | CAP-SCM-003 | 2 | M | P0 | Content Core (FHIR) | - | - | - |
 | CAP-SCM-004 | 2 | M | P0 | Content Core (FHIR) | 3 | partial | ADR-026 plus CAP_SCM_004 tests: a unit is content marked as such, a section records the unit and version it borrows pinned by default (ADR-007), and the referenced text is materialised at the write gate so a later unit version cannot change a label already written. Track-latest resolves to the newest version and records which; noticing that a newer version exists is change impact (capability 8) |
-| CAP-SCM-005 | 2 | M | P0 | Content Core (FHIR) | - | - | - |
+| CAP-SCM-005 | 2 | M | P0 | Content Core (FHIR) | 3 | partial | ADR-028 plus CAP_SCM_005 tests: cross-references are anchors in the narrative targeting section identity, resolved within the version that carries them, and a dangling internal reference is refused at the write gate. Cross-document references are recorded and pinned; their integrity is checked on resolution rather than at the write gate |
 | CAP-SCM-006 | 2 | M | P0 | Content Core (FHIR) | - | - | - |
 | CAP-SCM-007 | 2 | M | P0 | Content Core (FHIR) | 1-3 | partial | ADR-015 plus FN-CC-002/003/007 for documents and FN-CC-008/009 for sections; ADR-027 and CAP_SCM_007 tests add secondary identifiers, kept on the anchoring Composition and never treated as identity. Reusable-unit identity is ADR-026 |
 | CAP-SCM-008 | 2 | M | P0 | Content Core (FHIR) | - | - | - |
