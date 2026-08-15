@@ -199,5 +199,15 @@
     "iteration": "3",
     "status": "partial",
     "evidence": "CAP_LOC_005 tests: staleness is derived by comparing the linked source version to the source's latest, and asking does not alter the variant. Section-level status follows, and needs the section identity ADR-032 decision 4 preserves"
+  },
+  "CAP-LOC-002": {
+    "iteration": "3",
+    "status": "partial",
+    "evidence": "CAP_LOC_002 tests: linguistic review is routed to a reviewer, captures a signature whose meaning is review rather than approval, and may return a translation instead. Assembled from two configuration files with no code change (ADR-012). Translation memory and glossary are not built"
+  },
+  "CAP-LOC-007": {
+    "iteration": "3",
+    "status": "partial",
+    "evidence": "CAP_LOC_007 test: the translator may not approve their own translation, which falls out of the author-approver segregation already enforced on every route (CAP-IAM-006). Affiliate and market scoping applies to variants as to any content"
   }
 }

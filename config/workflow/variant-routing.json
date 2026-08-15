@@ -1,0 +1,8 @@
+{
+  "_comment": "Which states of a variant ask somebody to act (ADR-031, capability 9). A translation submitted for linguistic review waits on a linguistic reviewer rather than on whoever approves the source: reviewing whether a translation says what the source says is a different competence from approving what the source says. Configuration, like the label routing beside it - adding this process required no code.",
+
+  "name": "variant-linguistic-review",
+  "rules": [
+    {"state": "in-linguistic-review", "action": "approve", "assignee": "linguistic-reviewer", "withinHours": 72}
+  ]
+}

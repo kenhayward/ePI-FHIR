@@ -31,6 +31,12 @@ move and by whom (ADR-019). A task can be missing, stale or wrong and the gate s
 review task; approving closes it. Nothing marks a task done by hand, because "done" means the
 thing was actually done, and the only evidence of that is the transition.
 
+A task belongs to the state that raised it, so **any** transition out of that state closes it,
+not only the action the task asked for. A reviewer who returns a translation rather than
+approving it has answered the ask; leaving the task open would keep it on their list after the
+version had gone back to its author. (Recorded here because the first implementation matched on
+the action and got this wrong, which the variant review process found immediately.)
+
 **3. Routing is configuration, per label type and market.** Which state raises a task, what the
 task asks for, and who it goes to, are data (capability 21, ADR-012). An organisation whose
 review process differs is a configuration change, and a market with an extra step is a row in a
