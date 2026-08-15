@@ -81,6 +81,27 @@ somebody.
   question, and the programme's answer was regulatory. An administrator editing a file is the
   wrong control for something that determines what a patient reads.
 
+## What the print engine actually does, measured
+
+Decision 1 is a claim about bytes, so it was worth testing against the print engine rather than
+asserting. Rendering the same HTML twice through Gotenberg (Chromium) on the development stack:
+
+- **12,940 bytes of output, of which exactly 2 differ** - the seconds digits of `/CreationDate`
+  and `/ModDate` in the PDF's info dictionary. Content streams, fonts and object structure are
+  byte-identical.
+- **Gotenberg's `metadata` form field does not override them.** It writes metadata elsewhere in
+  the file (the output grew by about 3,300 bytes) and Chromium's own dates remain.
+
+So PDF determinism is achievable and needs one step: **normalising `/CreationDate` and
+`/ModDate` after the engine returns**, set from the content's own date. That is not a compromise
+bolted on to rescue the decision - decision 4 already says the date that belongs on the artefact
+is the date of the content, and this is that decision applied to the one field Chromium insists
+on writing for itself.
+
+Recorded here because it is cheap to measure once and expensive to rediscover, and because the
+alternative anybody reaches for first - comparing PDFs while ignoring their dates - is the
+approach the alternatives section rejects.
+
 ## Consequences
 
 - Rendering is a pure function over content plus a template, so it is testable without a browser,
