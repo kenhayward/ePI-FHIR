@@ -14,8 +14,16 @@ public sealed class LifecycleService(
     ILifecycleStore store,
     TimeProvider? time = null,
     ISignatureCheck? signatureCheck = null,
-    ISpentSignatures? spent = null)
+    ISpentSignatures? spent = null,
+    WorkflowModel? workflow = null,
+    IWorkflowStore? tasks = null)
 {
+    // Routing is optional: a deployment that has configured none raises no tasks, and the
+    // approval gate is unaffected either way. A task records that somebody was asked to act; it
+    // never decides whether a transition may happen (ADR-031 decision 1).
+    private readonly WorkflowModel? _workflow = tasks is null ? null : workflow;
+    private readonly IWorkflowStore? _tasks = workflow is null ? null : tasks;
+
     // Defaults to this store alone, which is right when it is the only one. Composition passes
     // a SpentSignatures over every store that records signature use, so a signature spent on a
     // regulatory submission cannot then carry an internal approval.
@@ -212,7 +220,48 @@ public sealed class LifecycleService(
         var superseded = await SupersededByAsync(transition, cancellationToken);
 
         await _store.AppendAsync(transition, pin, superseded, cancellationToken);
+        await RouteAsync(transition, cancellationToken);
         return transition;
+    }
+
+    /// <summary>
+    /// Closes the task this transition answers, and raises the one its new state asks for.
+    /// </summary>
+    /// <remarks>
+    /// Raised by transitions and closed by transitions (ADR-031 decision 2). Nothing marks a
+    /// task done by hand, because "done" means the thing was actually done and the only
+    /// evidence of that is the transition.
+    /// </remarks>
+    private async Task RouteAsync(StateTransition transition, CancellationToken cancellationToken)
+    {
+        if (_workflow is null || _tasks is null)
+        {
+            return;
+        }
+
+        foreach (var open in await _tasks.ForVersionAsync(transition.Version, cancellationToken))
+        {
+            if (open.IsOpen && string.Equals(open.Action, transition.Action, StringComparison.Ordinal))
+            {
+                await _tasks.AppendAsync(
+                    new TaskEvent(
+                        open.Identifier, transition.Version, TaskEventKind.Closed, open.Action,
+                        open.Assignee, transition.Actor, transition.At,
+                        $"{transition.Action} was made"),
+                    cancellationToken);
+            }
+        }
+
+        if (_workflow.For(transition.To) is { } rule)
+        {
+            await _tasks.AppendAsync(
+                new TaskEvent(
+                    $"{transition.Version}/{rule.Action}/{transition.At:O}",
+                    transition.Version, TaskEventKind.Raised, rule.Action, rule.Assignee,
+                    transition.Actor, transition.At,
+                    $"{transition.Version} reached {transition.To}"),
+                cancellationToken);
+        }
     }
 
     /// <summary>

@@ -78,6 +78,8 @@ iteration or a stated reason for waiting. Nothing is dropped by omission.
 | Cross-reference anchors are written by whatever produces the content, because there is no authoring surface to insert them. An author writing them by hand would be writing section identifiers by hand | ADR-028 | With the authoring surface, iteration 4 |
 | "Which version is in force here" is a scan of a version's market history on every ask. It is the obvious thing to project into the search index, and doing so is a projection change rather than a model one | ADR-029 | When in-force is queried at volume, or with publishing (capability 14) |
 | A migrated approval will have taken effect before the row recording it was written, which ADR-029 decision 5 refuses. The constraint has to hold against the original approval date rather than the date of the write | ADR-029 | With migration (capability 4) |
+| Tasks are held in memory only, so a restart loses what has been asked of whom. The record is a governance record and belongs in the migrated governance store alongside the rest | ADR-031, PR 52 | Delivery row 7b, before any demonstration of routing |
+| Nothing tells anyone a task exists. Routing records the ask; carrying it is capability 20's, and that seam is not wired | ADR-031 | With notifications |
 | Inert registrations accumulate at whatever rate a content write fails after its registration, and nothing surfaces them | ADR-025 | Delivery row 1c. They are harmless individually and invisible in aggregate, which is the wrong pair of properties to leave together |
 | Terminology versions are absent from the pinned validating context | ADR-023 | With the terminology binding points. A context that omits the terminology a version was validated against is incomplete in exactly the way ADR-023 exists to prevent |
 | Validation is serialised outright, a correctness-first stopgap | PR 6a | Rendering and translation multiply validations per label by the number of languages. Measured here, and fixed if the measurement says so |
@@ -238,10 +240,15 @@ Each becomes an ADR.
 1. **Is the template library in scope?** Reuse makes boilerplate-as-a-unit natural
    (CAP-TPL-011), which pulls the template library and its own lifecycle in behind it.
    Including it makes templates genuinely managed; excluding it keeps the iteration finishable.
-2. **How many languages does the demonstration need?** Three is enough to show the mechanism;
-   twenty-four is what the EU actually means. The difference is fixture volume, not design, but
-   it changes what the demonstration feels like.
-3. **Which terminology does ePI labelling actually need? - reopened.** Iteration 2 asked
+2. **How many languages does the demonstration need? - answered: three.** Enough to illustrate
+   the principle without bulk. The design must not assume three: nothing in the model, the
+   workflow or the rendering may be sized to the demonstration's fixture count, because the
+   difference between three and twenty-four is volume and the difference between three and
+   *three hard-coded* is a rewrite.
+3. **Which terminology does ePI labelling actually need? - reopened, and deliberately on
+   hold.** The choice is not being made now, and acceptance criterion 10 stays open until it
+   is. What matters meanwhile is that the binding points are built source-agnostic, so
+   answering it later costs a configuration change rather than a migration. Iteration 2 asked
    whether a SNOMED CT licence was being pursued. The answer, so far, is that **SNOMED may be
    the wrong source for this domain** and the choice is to be reviewed rather than assumed.
 
@@ -261,9 +268,14 @@ Each becomes an ADR.
 
    ADR-006 names Snowstorm as the primary terminology server. It should be revisited alongside
    this, together with the R4-against-R5 note carried from PR 32.
-4. **Who owns render templates?** They have a lifecycle and an approver in every regulated
-   organisation that has them. If the answer is "regulatory", they are content and follow
-   ADR-021's reasoning; if "IT", they are configuration. The answer changes decision 5.
+4. **Who owns render templates? - answered: regulatory, so they are content.** They follow
+   ADR-021's reasoning exactly: versioned, immutable per version, lifecycle-managed and
+   approvable through the same engine labels use, not files an administrator edits under
+   `config/`. A render template determines what a patient reads, so an approver signs for it.
+
+   The consequence for decision 5 is concrete: the render-template version a render is keyed to
+   is a content version with its own approval, and "which template version produced this
+   output" is answerable the same way "which unit version did this label borrow" is.
 
 ## 9. Delivery sequence
 
@@ -279,7 +291,8 @@ Provisional, and dependent on Section 8. Each row is a pull request, test-first,
 | 4 | Cross-references between sections and documents, resolved within the version that names them | M |
 | 5 | ADR and mechanism: effective dating, per market | M |
 | 6 | Supersession and withdrawal, with the predecessor retrievable | M |
-| 7 | Workflow routing, assignment and escalation (CAP-WFL-001) | L |
+| 7a | Workflow routing: the model, config-as-data, and tasks raised and closed by transitions | M |
+| 7b | The durable task store, and the API surface for what is waiting and reassigning it | M |
 | 8 | ADR: translation as a version relationship; language variants linked to a source version | L |
 | 9 | Linguistic review routed and signed; source change marks translations out of date | M |
 | 10 | ADR and mechanism: deterministic rendering to HTML and PDF, keyed to a render-template version | L |
@@ -290,6 +303,10 @@ Provisional, and dependent on Section 8. Each row is a pull request, test-first,
 Rows 1a and 13 are deliberately unglamorous and deliberately early and late respectively: the
 first is a debt that has been marked "before any demonstration" for two iterations, and the
 last is cheap only while the content model is still open.
+
+**Row 7 was split into 7a and 7b during delivery**, and 7a is the routing decision and
+mechanism while 7b is durability and the surface. Recorded here rather than absorbed, as
+Section 10 asks.
 
 **Row 1 was split into 1a and 1b during delivery**, and is recorded here rather than absorbed
 quietly. The two halves of that debt turn out to need different mechanisms: the transition and
