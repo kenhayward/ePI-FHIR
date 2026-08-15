@@ -72,7 +72,7 @@ Status values: `planned` (scheduled, not built), `partial` (some aspect delivere
 | CAP-SCM-004 | 2 | M | P0 | Content Core (FHIR) | 3 | partial | ADR-026 plus CAP_SCM_004 tests: a unit is content marked as such, a section records the unit and version it borrows pinned by default (ADR-007), and the referenced text is materialised at the write gate so a later unit version cannot change a label already written. Track-latest resolves to the newest version and records which; noticing that a newer version exists is change impact (capability 8) |
 | CAP-SCM-005 | 2 | M | P0 | Content Core (FHIR) | - | - | - |
 | CAP-SCM-006 | 2 | M | P0 | Content Core (FHIR) | - | - | - |
-| CAP-SCM-007 | 2 | M | P0 | Content Core (FHIR) | 1-2 | partial | ADR-015 plus FN-CC-002/003/007 for documents and FN-CC-008/009 for sections; reusable-unit identity is a later iteration |
+| CAP-SCM-007 | 2 | M | P0 | Content Core (FHIR) | 1-3 | partial | ADR-015 plus FN-CC-002/003/007 for documents and FN-CC-008/009 for sections; ADR-027 and CAP_SCM_007 tests add secondary identifiers, kept on the anchoring Composition and never treated as identity. Reusable-unit identity is ADR-026 |
 | CAP-SCM-008 | 2 | M | P0 | Content Core (FHIR) | - | - | - |
 | CAP-SCM-009 | 2 | M | P0 | Content Core (FHIR) | - | - | - |
 | CAP-SCM-010 | 2 | M | P0 | Content Core (FHIR) | 1 | partial | FN_CC_006 and IT_001, the latter run against both the in-memory store and a real HAPI server; validation against the pinned profile is PR 5 |
