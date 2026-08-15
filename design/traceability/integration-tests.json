@@ -154,5 +154,14 @@
     ],
     "iteration": "2",
     "status": "planned"
+  },
+  "IT-019": {
+    "name": "A label version renders to a PDF, and two renders of it are byte-identical",
+    "verifies": [
+      "CAP-RND-002",
+      "CAP-RND-007"
+    ],
+    "iteration": "3",
+    "status": "planned"
   }
 }

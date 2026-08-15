@@ -12,10 +12,10 @@ Name integration tests for the case they validate, for example
 
 ## Coverage
 
-- Integration tests declared: **18**
+- Integration tests declared: **19**
 - Implemented in code: **16**
-- Requirements validated by at least one integration test: **28**
-- Scheduled requirements still without one: **19**
+- Requirements validated by at least one integration test: **30**
+- Scheduled requirements still without one: **17**
 
 ## Integration tests
 
@@ -39,6 +39,7 @@ Name integration tests for the case they validate, for example
 | IT-016 | Search returns only what the caller may see and can return the current-approved version per market | CAP-SCH-002, CAP-SCH-004 | 2 | implemented | `IT_016_a_current_approved_version_outside_the_callers_scope_is_not_found` (src/Epi.Api.Tests/SearchEndpointTests.cs)<br>`IT_016_a_search_returns_the_content_the_caller_may_see` (src/Epi.Api.Tests/SearchEndpointTests.cs)<br>`IT_016_content_in_a_market_the_caller_does_not_hold_is_invisible` (src/Epi.Api.Tests/SearchEndpointTests.cs)<br>`IT_016_the_current_approved_version_is_the_one_the_market_approved` (src/Epi.Api.Tests/SearchEndpointTests.cs) |
 | IT-017 | A historical version is reconstructable with the metadata that made it valid | CAP-LCM-006 | 2 | implemented | `IT_017_an_approved_version_reconstructs_with_what_it_was_approved_against` (src/Epi.Api.Tests/ReconstructionEndpointTests.cs)<br>`IT_017_the_reconstruction_carries_the_whole_history_and_the_signature_used` (src/Epi.Api.Tests/ReconstructionEndpointTests.cs)<br>`IT_017_the_reconstruction_reports_whether_the_pinned_packages_still_match` (src/Epi.Api.Tests/ReconstructionEndpointTests.cs) |
 | IT-018 | A regulatory submission is refused unsigned; recording the regulator's decision needs no signature | CAP-LCM-012 | 2 | implemented | `IT_018_a_submission_without_a_signature_is_refused` (src/Epi.Lifecycle.Tests/MarketSubmissionSignatureTests.cs)<br>`IT_018_recording_the_regulators_decision_needs_no_signature` (src/Epi.Lifecycle.Tests/MarketSubmissionSignatureTests.cs) |
+| IT-019 | A label version renders to a PDF, and two renders of it are byte-identical | CAP-RND-002, CAP-RND-007 | 3 | planned | - |
 
 ## By requirement
 
@@ -61,6 +62,8 @@ Name integration tests for the case they validate, for example
 | CAP-LCM-006 | IT-017 | Reconstruct the full content and metadata of any historical version. |
 | CAP-LCM-007 | IT-010 | Enforce transitions through workflow (#16) and permissions/segregation of duties (#17). |
 | CAP-LCM-012 | IT-018 | Require an electronic signature (#19) to submit a version to a regulator. Recording a regulator's subsequent decision is a factual entry about an external event and is **not** signed. |
+| CAP-RND-002 | IT-019 | Render FHIR ePI to PDF for regulatory/electronic distribution (the rendered-PDF lineage, distinct from artwork PDF). |
+| CAP-RND-007 | IT-019 | Deterministic, reproducible renders (same input+template version -> same output). |
 | CAP-SCH-002 | IT-016 | Retrieve a specific version and the current-approved version of a label per market/language. |
 | CAP-SCH-004 | IT-016 | Scope all results by caller permissions/attributes (#17); never leak out-of-scope content. |
 | CAP-SCM-001 | IT-001 | Represent an ePI as a FHIR document `Bundle` anchored by a `Composition` with typed, coded sections. |
