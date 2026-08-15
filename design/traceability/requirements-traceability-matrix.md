@@ -13,8 +13,8 @@ For the full V model see [v-model-trace.md](v-model-trace.md).
 ## Coverage
 
 - Requirements specified: **221** across **24** capabilities
-- Requirements with delivery evidence: **36**
-- Requirements not yet scheduled: **185**
+- Requirements with delivery evidence: **37**
+- Requirements not yet scheduled: **184**
 
 ## Capabilities
 
@@ -125,7 +125,7 @@ Status values: `planned` (scheduled, not built), `partial` (some aspect delivere
 | CAP-LCM-001 | 7 | M | P1 | Lifecycle & Workflow Service | 2-3 | partial | IT_010 for the state model, plus CAP_LCM_001 on the registering decorator: a version is registered under lifecycle management before its content is written, so a failed write leaves an inert record rather than ungoverned content (ADR-025) |
 | CAP-LCM-002 | 7 | M | P1 | Lifecycle & Workflow Service | - | - | - |
 | CAP-LCM-003 | 7 | M | P1 | Lifecycle & Workflow Service | 2 | partial | FN_LCM_004 and IT_013: per-market regulatory-approval state in its own model, store and service, with a test that a market transition leaves internal state untouched. Held in a durable append-only table keyed by version and market, with UPDATE and DELETE refused by a database trigger. Effective dating (CAP-LCM-004) follows |
-| CAP-LCM-004 | 7 | M | P1 | Lifecycle & Workflow Service | - | - | - |
+| CAP-LCM-004 | 7 | M | P1 | Lifecycle & Workflow Service | 3 | partial | ADR-029 plus CAP_LCM_004 tests: an effective date belongs to a market approval, is required when one is recorded and may not precede it, and 'which version is in force here on this date' is derived from the append-only history rather than stored. Supersession in a market follows from it; the internal superseded state is delivery row 6 |
 | CAP-LCM-005 | 7 | M | P1 | Lifecycle & Workflow Service | - | - | - |
 | CAP-LCM-006 | 7 | M | P1 | Lifecycle & Workflow Service | 2 | partial | IT_017 plus FN_LCM_005: content by version, the full transition history with the signature used, and the validating context recorded at approval (ADR-023). Effective dating and supersession are not yet part of what is reconstructed |
 | CAP-LCM-007 | 7 | M | P1 | Lifecycle & Workflow Service | 2 | partial | FN_LCM_003: transitions recorded with actor, time and reason, in a durable append-only table with UPDATE and DELETE refused by a database trigger; workflow routing is a later PR |

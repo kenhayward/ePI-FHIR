@@ -16,6 +16,14 @@ public sealed class MarketSubmissionSignatureTests
     private static readonly VersionRef Version = new("doc-1", 1);
 
     /// <summary>
+    /// When an approval takes effect. Stated on every one, because the engine refuses an
+    /// approval that does not say - a missing date defaulted to now is a guess that reads as a
+    /// fact (ADR-029 decision 3).
+    /// </summary>
+    private static readonly DateTimeOffset Effective =
+        new(2030, 1, 1, 0, 0, 0, TimeSpan.Zero);
+
+    /// <summary>
     /// What an approval is pinned against. Supplied on every approving transition because the
     /// engine refuses one without it - an approval that silently records no context looks
     /// exactly like one that recorded a context (ADR-024 decision 4).
@@ -92,7 +100,8 @@ public sealed class MarketSubmissionSignatureTests
         await service.TransitionAsync(Version, "GB", "begin-assessment", "user-rae");
 
         await service.TransitionAsync(
-            Version, "GB", "record-approval", "user-rae", reason: "MHRA decision letter");
+            Version, "GB", "record-approval", "user-rae", reason: "MHRA decision letter",
+            effectiveFrom: Effective);
 
         Assert.Equal("approved", await service.CurrentStateAsync(Version, "GB"));
     }

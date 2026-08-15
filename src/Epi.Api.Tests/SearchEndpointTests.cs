@@ -264,13 +264,22 @@ public sealed class SearchEndpointTests(WebApplicationFactory<Program> factory)
                  {
                      ("submit", signature),
                      ("begin-assessment", null),
-                     ("record-approval", null),
                  })
         {
             using var response = await client.PostAsJsonAsync(
                 path, new { action, reason = "test", signatureReference = reference });
             response.EnsureSuccessStatusCode();
         }
+
+        // Recording an approval must state when it takes effect; "immediately" is stated by
+        // giving a moment, never by leaving it out (ADR-029 decision 3).
+        using var approved = await client.PostAsJsonAsync(path, new
+        {
+            action = "record-approval",
+            reason = "test",
+            effectiveFrom = DateTimeOffset.UtcNow.AddYears(1),
+        });
+        approved.EnsureSuccessStatusCode();
     }
 
     private sealed record CreatedDocument(string Identifier, string System, int Version);

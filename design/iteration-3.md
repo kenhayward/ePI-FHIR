@@ -76,6 +76,8 @@ iteration or a stated reason for waiting. Nothing is dropped by omission.
 | Snowstorm serves FHIR R4 while the platform is pinned to R5 (ADR-016) | PR 32 | Recorded as "before capability 6 work starts". Capability 6's binding points are in scope, so it is settled first, as an amendment to ADR-016 |
 | "Which labels use unit X" is answerable only by reading every label: the references are recorded but nothing indexes them, and change impact needs the reverse direction | ADR-026 | With the search projection, and before change impact (capability 8) needs it |
 | Cross-reference anchors are written by whatever produces the content, because there is no authoring surface to insert them. An author writing them by hand would be writing section identifiers by hand | ADR-028 | With the authoring surface, iteration 4 |
+| "Which version is in force here" is a scan of a version's market history on every ask. It is the obvious thing to project into the search index, and doing so is a projection change rather than a model one | ADR-029 | When in-force is queried at volume, or with publishing (capability 14) |
+| A migrated approval will have taken effect before the row recording it was written, which ADR-029 decision 5 refuses. The constraint has to hold against the original approval date rather than the date of the write | ADR-029 | With migration (capability 4) |
 | Inert registrations accumulate at whatever rate a content write fails after its registration, and nothing surfaces them | ADR-025 | Delivery row 1c. They are harmless individually and invisible in aggregate, which is the wrong pair of properties to leave together |
 | Terminology versions are absent from the pinned validating context | ADR-023 | With the terminology binding points. A context that omits the terminology a version was validated against is incomplete in exactly the way ADR-023 exists to prevent |
 | Validation is serialised outright, a correctness-first stopgap | PR 6a | Rendering and translation multiply validations per label by the number of languages. Measured here, and fixed if the measurement says so |
@@ -208,10 +210,13 @@ Each becomes an ADR.
    submitter identifier identifies the thing the content is about in another system, while
    `Bundle.identifier` identifies this document as this platform holds it. Different
    assertions, which is why one slot ever felt like a shortage of space.
-3. **Effective dating semantics.** Whether an effective date is per market (it must be), what
-   happens when one passes without anyone acting, and whether "in force" is derived or recorded.
-   The lesson from ADR-019 applies: derive it, and never store a state that a clock can
-   invalidate.
+3. **Effective dating semantics - settled by
+   [ADR-029](adrs/0029-effective-dating.md).** Per market, because a version
+   approved in two markets has two approvals and nothing says they take effect on the same day.
+   Derived at the moment of asking rather than stored, because a stored flag is correct when it
+   is written and wrong from the first midnight afterwards with nothing noticing. And nothing
+   happens when an effective date passes: a version becomes in force without a job, an event or
+   a state change, which is what makes the derivation safe.
 4. **Translation as a version relationship.** Whether a translation is a version of the label,
    a separate label linked to a source, or a variant dimension alongside version - and how
    "out of date because the source moved" is expressed without mutating the translation.

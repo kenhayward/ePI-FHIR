@@ -12,6 +12,14 @@ public sealed class MarketApprovalServiceTests
 {
     private static readonly VersionRef Version = new("doc-1", 1);
 
+    /// <summary>
+    /// When an approval takes effect. Stated on every one, because the engine refuses an
+    /// approval that does not say - a missing date defaulted to now is a guess that reads as a
+    /// fact (ADR-029 decision 3).
+    /// </summary>
+    private static readonly DateTimeOffset Effective =
+        new(2030, 1, 1, 0, 0, 0, TimeSpan.Zero);
+
     private static readonly IReadOnlySet<string> Markets =
         new HashSet<string>(["GB", "EU"], StringComparer.Ordinal);
 
@@ -49,7 +57,8 @@ public sealed class MarketApprovalServiceTests
         await service.TransitionAsync(
             Version, market, "submit", "user-rae", signatureReference: $"sig-{market}");
         await service.TransitionAsync(Version, market, "begin-assessment", "user-rae");
-        await service.TransitionAsync(Version, market, "record-approval", "user-rae");
+        await service.TransitionAsync(
+            Version, market, "record-approval", "user-rae", effectiveFrom: Effective);
     }
 
     [Fact]
@@ -145,7 +154,8 @@ public sealed class MarketApprovalServiceTests
         var (service, _) = Approvals();
 
         var refused = await Assert.ThrowsAsync<TransitionRefusedException>(
-            () => service.TransitionAsync(Version, "GB", "record-approval", "user-rae"));
+            () => service.TransitionAsync(
+                Version, "GB", "record-approval", "user-rae", effectiveFrom: Effective));
 
         Assert.Contains("permits no", refused.Reason);
         Assert.Equal("not-submitted", await service.CurrentStateAsync(Version, "GB"));
@@ -176,7 +186,8 @@ public sealed class MarketApprovalServiceTests
         await service.TransitionAsync(Version, "GB", "begin-assessment", "user-rae");
 
         var transition = await service.TransitionAsync(
-            Version, "GB", "record-approval", "user-rae", reason: "MHRA decision letter 2026-08-14");
+            Version, "GB", "record-approval", "user-rae", reason: "MHRA decision letter 2026-08-14",
+            effectiveFrom: Effective);
 
         Assert.Equal("under-assessment", transition.From);
         Assert.Equal("approved", transition.To);

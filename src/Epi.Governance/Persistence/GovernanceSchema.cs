@@ -208,6 +208,13 @@ public static class GovernanceSchema
         new("0006-lifecycle-registered-at", """
             ALTER TABLE lifecycle_version ADD COLUMN IF NOT EXISTS registered_at TIMESTAMPTZ NULL;
             """),
+        // When a market's approval takes effect (ADR-029). Nullable: only a transition that
+        // records an approval has one, and inventing a date for the others would put an
+        // effective date on a submission.
+        new("0007-market-approval-effective-from", """
+            ALTER TABLE market_approval_transition
+                ADD COLUMN IF NOT EXISTS effective_from TIMESTAMPTZ NULL;
+            """),
     ];
 
     /// <summary>

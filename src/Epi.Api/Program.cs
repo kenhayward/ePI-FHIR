@@ -667,7 +667,7 @@ app.MapPost("/labels/{id}/versions/{version:int}/markets/{market}/transitions", 
     {
         var transition = await markets.TransitionAsync(
             new VersionRef(id, version), market, body.Action, subject.Id, body.Reason,
-            body.SignatureReference, cancellationToken);
+            body.SignatureReference, body.EffectiveFrom, cancellationToken);
 
         return Results.Ok(new
         {
@@ -964,7 +964,12 @@ internal sealed record SignatureRequest(
     string DocumentIdentifier, int Version, string Meaning, string Password, string? Reason);
 
 /// <summary>What a caller asks for when moving a version between states.</summary>
-internal sealed record TransitionRequest(string Action, string? Reason, string? SignatureReference);
+/// <param name="EffectiveFrom">
+/// When a market's approval takes effect. Required on a transition that records one, refused on
+/// any other, and never defaulted (ADR-029 decision 3).
+/// </param>
+internal sealed record TransitionRequest(
+    string Action, string? Reason, string? SignatureReference, DateTimeOffset? EffectiveFrom = null);
 
 /// <summary>
 /// Stands in where no identity provider is configured. Refuses everyone, so a deployment that
