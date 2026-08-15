@@ -31,7 +31,9 @@ public sealed class IdentifierAuthorityConfigurationTests : IDisposable
               "templateSystem": "https://id.example-pharma.test/epi/template",
               "templateVersionTagSystem": "https://id.example-pharma.test/epi/template-version",
               "unitSystem": "https://id.example-pharma.test/epi/reusable-unit",
-              "unitReferenceExtension": "https://id.example-pharma.test/epi/unit-reference"
+              "unitReferenceExtension": "https://id.example-pharma.test/epi/unit-reference",
+              "variantSourceTagSystem": "https://id.example-pharma.test/epi/variant-source",
+              "variantScopeTagSystem": "https://id.example-pharma.test/epi/variant-scope"
             }
             """);
 
@@ -56,7 +58,9 @@ public sealed class IdentifierAuthorityConfigurationTests : IDisposable
               "templateSystem": "https://id.example-pharma.test/epi/template",
               "templateVersionTagSystem": "https://id.example-pharma.test/epi/template-version",
               "unitSystem": "https://id.example-pharma.test/epi/reusable-unit",
-              "unitReferenceExtension": "https://id.example-pharma.test/epi/unit-reference"
+              "unitReferenceExtension": "https://id.example-pharma.test/epi/unit-reference",
+              "variantSourceTagSystem": "https://id.example-pharma.test/epi/variant-source",
+              "variantScopeTagSystem": "https://id.example-pharma.test/epi/variant-scope"
             }
             """));
 
@@ -79,7 +83,9 @@ public sealed class IdentifierAuthorityConfigurationTests : IDisposable
               "templateSystem": "https://id.example-pharma.test/epi/template",
               "templateVersionTagSystem": "https://id.example-pharma.test/epi/template-version",
               "unitSystem": "https://id.example-pharma.test/epi/reusable-unit",
-              "unitReferenceExtension": "https://id.example-pharma.test/epi/unit-reference"
+              "unitReferenceExtension": "https://id.example-pharma.test/epi/unit-reference",
+              "variantSourceTagSystem": "https://id.example-pharma.test/epi/variant-source",
+              "variantScopeTagSystem": "https://id.example-pharma.test/epi/variant-scope"
             }
             """);
 
@@ -103,7 +109,9 @@ public sealed class IdentifierAuthorityConfigurationTests : IDisposable
               "templateSystem": "https://id.example-pharma.test/epi/template",
               "templateVersionTagSystem": "https://id.example-pharma.test/epi/template-version",
               "unitSystem": "https://id.example-pharma.test/epi/reusable-unit",
-              "unitReferenceExtension": "https://id.example-pharma.test/epi/unit-reference"
+              "unitReferenceExtension": "https://id.example-pharma.test/epi/unit-reference",
+              "variantSourceTagSystem": "https://id.example-pharma.test/epi/variant-source",
+              "variantScopeTagSystem": "https://id.example-pharma.test/epi/variant-scope"
             }
             """);
 

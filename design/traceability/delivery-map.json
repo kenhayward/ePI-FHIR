@@ -189,5 +189,15 @@
     "iteration": "3",
     "status": "partial",
     "evidence": "ADR-030 plus CAP_LCM_005 tests: approving a version supersedes the one it displaces, recorded with actor, time and reason in the same transaction as the approval. Supersession in a market follows from effective dating (ADR-029). Withdrawal remains a manual act"
+  },
+  "CAP-LOC-001": {
+    "iteration": "3",
+    "status": "partial",
+    "evidence": "ADR-032 plus CAP_LOC_001 tests: a variant is content with its own identity and lifecycle, recording the source document and version it was translated from and its language, country and regulator. Per-regulator content requirements are capability 10"
+  },
+  "CAP-LOC-005": {
+    "iteration": "3",
+    "status": "partial",
+    "evidence": "CAP_LOC_005 tests: staleness is derived by comparing the linked source version to the source's latest, and asking does not alter the variant. Section-level status follows, and needs the section identity ADR-032 decision 4 preserves"
   }
 }

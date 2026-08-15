@@ -13,8 +13,8 @@ For the full V model see [v-model-trace.md](v-model-trace.md).
 ## Coverage
 
 - Requirements specified: **221** across **24** capabilities
-- Requirements with delivery evidence: **38**
-- Requirements not yet scheduled: **183**
+- Requirements with delivery evidence: **40**
+- Requirements not yet scheduled: **181**
 
 ## Capabilities
 
@@ -144,11 +144,11 @@ Status values: `planned` (scheduled, not built), `partial` (some aspect delivere
 | CAP-CHG-008 | 8 | S | P3 | Change & Impact Service | - | - | - |
 | CAP-CHG-009 | 8 | M | P3 | Change & Impact Service | - | - | - |
 | CAP-CHG-010 | 8 | S | P3 | Change & Impact Service | - | - | - |
-| CAP-LOC-001 | 9 | M | P1 | Localisation & Translation Service | - | - | - |
+| CAP-LOC-001 | 9 | M | P1 | Localisation & Translation Service | 3 | partial | ADR-032 plus CAP_LOC_001 tests: a variant is content with its own identity and lifecycle, recording the source document and version it was translated from and its language, country and regulator. Per-regulator content requirements are capability 10 |
 | CAP-LOC-002 | 9 | M | P1 | Localisation & Translation Service | - | - | - |
 | CAP-LOC-003 | 9 | M | P1 | Localisation & Translation Service | - | - | - |
 | CAP-LOC-004 | 9 | S | P1 | Localisation & Translation Service | - | - | - |
-| CAP-LOC-005 | 9 | M | P1 | Localisation & Translation Service | - | - | - |
+| CAP-LOC-005 | 9 | M | P1 | Localisation & Translation Service | 3 | partial | CAP_LOC_005 tests: staleness is derived by comparing the linked source version to the source's latest, and asking does not alter the variant. Section-level status follows, and needs the section identity ADR-032 decision 4 preserves |
 | CAP-LOC-006 | 9 | M | P1 | Localisation & Translation Service | - | - | - |
 | CAP-LOC-007 | 9 | M | P1 | Localisation & Translation Service | - | - | - |
 | CAP-LOC-008 | 9 | C | P1 | Localisation & Translation Service | - | - | - |
