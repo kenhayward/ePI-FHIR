@@ -15,7 +15,7 @@ Name integration tests for the case they validate, for example
 - Integration tests declared: **18**
 - Implemented in code: **16**
 - Requirements validated by at least one integration test: **28**
-- Scheduled requirements still without one: **12**
+- Scheduled requirements still without one: **14**
 
 ## Integration tests
 

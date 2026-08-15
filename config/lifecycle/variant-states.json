@@ -1,0 +1,16 @@
+{
+  "_comment": "The lifecycle of a market variant (ADR-032, capability 9). A separate model from config/lifecycle/label-states.json because a translation is reviewed for different things by different people: linguistic review asks whether the translation says what the source says, which is not what an approver of the source was asked. Note that this file adds a whole review process to the platform without a line of code - which is what config-as-data is for (ADR-012, capability 21). The approve gate is segregated from the author, and for a variant the author is the translator, so CAP-LOC-007's segregation of translator from approver falls out of the mechanism that already segregates author from approver.",
+
+  "name": "variant",
+  "initial": "draft",
+  "approvedState": "approved",
+  "states": ["draft", "in-linguistic-review", "approved", "superseded", "withdrawn"],
+  "transitions": [
+    {"from": "draft", "to": "in-linguistic-review", "action": "submit"},
+    {"from": "in-linguistic-review", "to": "draft", "action": "return"},
+    {"from": "in-linguistic-review", "to": "approved", "action": "approve", "requiresSignature": true, "signatureMeaning": "review", "segregatedFromAuthor": true},
+    {"from": "approved", "to": "superseded", "action": "supersede"},
+    {"from": "approved", "to": "withdrawn", "action": "withdraw", "requiresSignature": true, "signatureMeaning": "review"},
+    {"from": "draft", "to": "withdrawn", "action": "withdraw"}
+  ]
+}

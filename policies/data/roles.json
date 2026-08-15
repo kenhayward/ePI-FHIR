@@ -1,16 +1,40 @@
 {
   "roles": {
     "author": {
-      "actions": ["read", "author"]
+      "actions": [
+        "read",
+        "author"
+      ]
     },
     "approver": {
-      "actions": ["read", "approve"]
+      "actions": [
+        "read",
+        "approve"
+      ]
     },
     "regulatory": {
-      "actions": ["read", "submit-to-regulator", "record-decision"]
+      "actions": [
+        "read",
+        "submit-to-regulator",
+        "record-decision"
+      ]
     },
     "reader": {
-      "actions": ["read"]
+      "actions": [
+        "read"
+      ]
+    },
+    "translator": {
+      "actions": [
+        "read",
+        "author"
+      ]
+    },
+    "linguistic-reviewer": {
+      "actions": [
+        "read",
+        "approve"
+      ]
     }
   }
 }

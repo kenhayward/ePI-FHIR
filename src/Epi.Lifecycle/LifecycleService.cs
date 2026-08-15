@@ -239,15 +239,19 @@ public sealed class LifecycleService(
             return;
         }
 
+        // Any transition ends the asks the state it left had raised, not only the one that
+        // matches the action asked for. A reviewer who returns a translation rather than
+        // approving it has answered the ask, and leaving it open would keep it on their list
+        // after the version had gone back to its author.
         foreach (var open in await _tasks.ForVersionAsync(transition.Version, cancellationToken))
         {
-            if (open.IsOpen && string.Equals(open.Action, transition.Action, StringComparison.Ordinal))
+            if (open.IsOpen)
             {
                 await _tasks.AppendAsync(
                     new TaskEvent(
                         open.Identifier, transition.Version, TaskEventKind.Closed, open.Action,
                         open.Assignee, transition.Actor, transition.At,
-                        $"{transition.Action} was made"),
+                        $"{transition.Version} left {transition.From} by {transition.Action}"),
                     cancellationToken);
             }
         }

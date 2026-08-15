@@ -13,8 +13,8 @@ For the full V model see [v-model-trace.md](v-model-trace.md).
 ## Coverage
 
 - Requirements specified: **221** across **24** capabilities
-- Requirements with delivery evidence: **40**
-- Requirements not yet scheduled: **181**
+- Requirements with delivery evidence: **42**
+- Requirements not yet scheduled: **179**
 
 ## Capabilities
 
@@ -145,12 +145,12 @@ Status values: `planned` (scheduled, not built), `partial` (some aspect delivere
 | CAP-CHG-009 | 8 | M | P3 | Change & Impact Service | - | - | - |
 | CAP-CHG-010 | 8 | S | P3 | Change & Impact Service | - | - | - |
 | CAP-LOC-001 | 9 | M | P1 | Localisation & Translation Service | 3 | partial | ADR-032 plus CAP_LOC_001 tests: a variant is content with its own identity and lifecycle, recording the source document and version it was translated from and its language, country and regulator. Per-regulator content requirements are capability 10 |
-| CAP-LOC-002 | 9 | M | P1 | Localisation & Translation Service | - | - | - |
+| CAP-LOC-002 | 9 | M | P1 | Localisation & Translation Service | 3 | partial | CAP_LOC_002 tests: linguistic review is routed to a reviewer, captures a signature whose meaning is review rather than approval, and may return a translation instead. Assembled from two configuration files with no code change (ADR-012). Translation memory and glossary are not built |
 | CAP-LOC-003 | 9 | M | P1 | Localisation & Translation Service | - | - | - |
 | CAP-LOC-004 | 9 | S | P1 | Localisation & Translation Service | - | - | - |
 | CAP-LOC-005 | 9 | M | P1 | Localisation & Translation Service | 3 | partial | CAP_LOC_005 tests: staleness is derived by comparing the linked source version to the source's latest, and asking does not alter the variant. Section-level status follows, and needs the section identity ADR-032 decision 4 preserves |
 | CAP-LOC-006 | 9 | M | P1 | Localisation & Translation Service | - | - | - |
-| CAP-LOC-007 | 9 | M | P1 | Localisation & Translation Service | - | - | - |
+| CAP-LOC-007 | 9 | M | P1 | Localisation & Translation Service | 3 | partial | CAP_LOC_007 test: the translator may not approve their own translation, which falls out of the author-approver segregation already enforced on every route (CAP-IAM-006). Affiliate and market scoping applies to variants as to any content |
 | CAP-LOC-008 | 9 | C | P1 | Localisation & Translation Service | - | - | - |
 | CAP-LOC-009 | 9 | S | P1 | Localisation & Translation Service | - | - | - |
 | CAP-REG-001 | 10 | M | P2 | Regulatory Profiles Service | - | - | - |
