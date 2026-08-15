@@ -53,12 +53,16 @@ public static class IdentifierAuthorityConfiguration
         var unit = Absolute(problems, file, "unitSystem", parsed?.UnitSystem);
         var unitReference = Absolute(
             problems, file, "unitReferenceExtension", parsed?.UnitReferenceExtension);
+        var variantSource = Absolute(
+            problems, file, "variantSourceTagSystem", parsed?.VariantSourceTagSystem);
+        var variantScope = Absolute(
+            problems, file, "variantScopeTagSystem", parsed?.VariantScopeTagSystem);
 
         return problems.Count > 0
             ? throw new MarketConfigurationException(problems)
             : new IdentifierAuthority(
                 document, version, affiliate, market, template, templateVersion,
-                unit, unitReference);
+                unit, unitReference, variantSource, variantScope);
     }
 
     private static string Absolute(List<string> problems, string file, string field, string? value)
@@ -88,5 +92,7 @@ public static class IdentifierAuthorityConfiguration
         string? TemplateSystem,
         string? TemplateVersionTagSystem,
         string? UnitSystem,
-        string? UnitReferenceExtension);
+        string? UnitReferenceExtension,
+        string? VariantSourceTagSystem,
+        string? VariantScopeTagSystem);
 }
