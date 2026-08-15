@@ -174,5 +174,10 @@
     "iteration": "3",
     "status": "partial",
     "evidence": "ADR-026 plus CAP_SCM_004 tests: a unit is content marked as such, a section records the unit and version it borrows pinned by default (ADR-007), and the referenced text is materialised at the write gate so a later unit version cannot change a label already written. Track-latest resolves to the newest version and records which; noticing that a newer version exists is change impact (capability 8)"
+  },
+  "CAP-SCM-005": {
+    "iteration": "3",
+    "status": "partial",
+    "evidence": "ADR-028 plus CAP_SCM_005 tests: cross-references are anchors in the narrative targeting section identity, resolved within the version that carries them, and a dangling internal reference is refused at the write gate. Cross-document references are recorded and pinned; their integrity is checked on resolution rather than at the write gate"
   }
 }

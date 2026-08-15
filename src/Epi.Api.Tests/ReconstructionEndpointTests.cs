@@ -137,6 +137,27 @@ public sealed class ReconstructionEndpointTests(WebApplicationFactory<Program> f
     }
 
     [Fact]
+    public async Task CAP_SCM_005_a_dangling_cross_reference_is_refused_over_http()
+    {
+        // The write gate is the last place a label pointing at a section it does not have is
+        // cheap to catch (ADR-028 decision 3).
+        var host = Host();
+        var bundle = EpiBundleReader.Read(DocumentJson("SYNTHETIC - points at nothing"));
+        var composition = (Hl7.Fhir.Model.Composition)bundle.Entry[0].Resource!;
+        composition.Section[0].Text = new Hl7.Fhir.Model.Narrative
+        {
+            Status = Hl7.Fhir.Model.Narrative.NarrativeStatus.Generated,
+            Div = "<div xmlns=\"http://www.w3.org/1999/xhtml\"><p>See "
+                  + "<a href=\"#no-such-section\">section 9</a>.</p></div>",
+        };
+
+        using var response = await As(host, "user-anna").PostAsync("/fhir/Bundle",
+            new StringContent(EpiBundleReader.Write(bundle), Encoding.UTF8, "application/fhir+json"));
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
     public async Task CAP_SCH_002_a_version_that_does_not_exist_is_not_found()
     {
         var host = Host();

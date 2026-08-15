@@ -291,11 +291,12 @@ app.MapPost("/fhir/Bundle", async (
         var gated = new AuditingContentStore(
             new PublishingContentStore(
                 new MaterialisingContentStore(
-                    new ValidatingContentStore(
-                        new ScopedContentStore(
-                            new RegisteringContentStore(store, lifecycle, subject.Id),
-                            policy, subject),
-                        validator),
+                    new CrossReferenceCheckingContentStore(
+                        new ValidatingContentStore(
+                            new ScopedContentStore(
+                                new RegisteringContentStore(store, lifecycle, subject.Id),
+                                policy, subject),
+                            validator)),
                     new ScopedContentStore(store, policy, subject),
                     authority),
                 events),
@@ -731,11 +732,12 @@ app.MapPost("/fhir/Bundle/{id}/versions", async (
         var gated = new AuditingContentStore(
             new PublishingContentStore(
                 new MaterialisingContentStore(
-                    new ValidatingContentStore(
-                        new ScopedContentStore(
-                            new RegisteringContentStore(store, lifecycle, subject.Id),
-                            policy, subject),
-                        validator),
+                    new CrossReferenceCheckingContentStore(
+                        new ValidatingContentStore(
+                            new ScopedContentStore(
+                                new RegisteringContentStore(store, lifecycle, subject.Id),
+                                policy, subject),
+                            validator)),
                     new ScopedContentStore(store, policy, subject),
                     authority),
                 events),
