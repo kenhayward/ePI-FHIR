@@ -18,17 +18,18 @@ public sealed class ValidatingContentStore(IContentStore inner, StructuralValida
     private readonly StructuralValidator _validator =
         validator ?? throw new ArgumentNullException(nameof(validator));
 
-    public Task<EpiDocument> CreateAsync(DocumentIdentity identity, Bundle bundle, CancellationToken cancellationToken = default)
+    public async Task<EpiDocument> CreateAsync(
+        DocumentIdentity identity, Bundle bundle, CancellationToken cancellationToken = default)
     {
-        Gate(bundle);
-        return _inner.CreateAsync(identity, bundle, cancellationToken);
+        await GateAsync(bundle, cancellationToken);
+        return await _inner.CreateAsync(identity, bundle, cancellationToken);
     }
 
-    public Task<EpiDocument> CreateVersionAsync(
+    public async Task<EpiDocument> CreateVersionAsync(
         DocumentIdentity identity, int version, Bundle bundle, CancellationToken cancellationToken = default)
     {
-        Gate(bundle);
-        return _inner.CreateVersionAsync(identity, version, bundle, cancellationToken);
+        await GateAsync(bundle, cancellationToken);
+        return await _inner.CreateVersionAsync(identity, version, bundle, cancellationToken);
     }
 
     public Task<EpiDocument?> GetAsync(
@@ -51,14 +52,17 @@ public sealed class ValidatingContentStore(IContentStore inner, StructuralValida
     /// submitter is not allowed to provide. A provisional stamp is applied to a copy: any
     /// identity satisfies the constraint, and the real one is applied by the store.
     /// </remarks>
-    private void Gate(Bundle bundle)
+    private async Task GateAsync(Bundle bundle, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(bundle);
 
         var candidate = ContentIdentity.Stamp(
             (Bundle)bundle.DeepCopy(), ContentIdentity.Mint(), version: 1);
 
-        var report = _validator.Validate(candidate);
+        // Awaited rather than waited on. Validation is serialised across the process, so a
+        // synchronous wait here holds a request thread for every write queued behind the one
+        // being validated - which is where the measured cost of this gate almost entirely was.
+        var report = await _validator.ValidateAsync(candidate, cancellationToken);
         if (!report.IsValid)
         {
             throw new ContentRejectedException(report.Issues);
