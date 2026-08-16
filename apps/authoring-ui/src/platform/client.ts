@@ -107,6 +107,39 @@ export type TransitionOutcome =
   | { readonly ok: true; readonly from: string; readonly to: string }
   | { readonly ok: false; readonly detail: string };
 
+/** Where each market stands for a version, as the platform reports it (ADR-005). */
+export interface MarketStandings {
+  readonly marketActions: Readonly<
+    Record<
+      string,
+      {
+        readonly state: string;
+        readonly actions: readonly string[];
+        readonly signedActions: readonly string[];
+        readonly actionsNeedingEffectiveDate: readonly string[];
+      }
+    >
+  >;
+}
+
+/**
+ * What the platform actually sends: where each market stands, and what may be done about each,
+ * as two fields answering two questions.
+ */
+interface StateResponse {
+  readonly markets?: Readonly<Record<string, string>>;
+  readonly marketActions?: Readonly<
+    Record<
+      string,
+      {
+        readonly actions?: readonly string[];
+        readonly signedActions?: readonly string[];
+        readonly actionsNeedingEffectiveDate?: readonly string[];
+      }
+    >
+  >;
+}
+
 /** One label version the platform is willing to show this caller. */
 export interface LabelHit {
   readonly documentIdentifier: string;
@@ -308,6 +341,96 @@ export class PlatformClient {
     if (!response.ok || body.to === undefined) {
       // The platform's own reason. Its refusals are the interesting part - the author of a
       // version may not approve it - and being told exactly that is the point.
+      return {
+        ok: false,
+        detail:
+          body.detail
+          ?? body.problems?.join('; ')
+          ?? `The platform answered ${response.status}.`,
+      };
+    }
+
+    return { ok: true, from: body.from ?? '', to: body.to };
+  }
+
+  /**
+   * Where each market stands, and what may be done about each.
+   *
+   * @remarks
+   * A separate read from the authoring projection, because per-market approval is held
+   * separately from internal lifecycle on purpose (ADR-005) and joining them here would be the
+   * first step towards joining them everywhere.
+   */
+  async marketStandingsAsync(
+    documentIdentifier: string,
+    version: number,
+  ): Promise<MarketStandings> {
+    const response = await this.#send(
+      `${this.#connection.baseUrl.replace(/\/$/, '')}` +
+        `/labels/${encodeURIComponent(documentIdentifier)}/versions/${version}/state`,
+      { method: 'GET' },
+    );
+
+    if (!response.ok) {
+      throw new Error(
+        `The platform answered ${response.status} for that version's markets, so this is not ` +
+          '"no markets" - it was not answered.',
+      );
+    }
+
+    // Joined here rather than on the wire. The platform answers "where does each market stand"
+    // and "what may be done about it" separately, because the first is a shape callers already
+    // read and answering a second question by changing the first would break every one of them.
+    // A market with a state and no actions is a market with nothing to do, not a missing one.
+    const body = (await response.json()) as StateResponse;
+
+    return {
+      marketActions: Object.fromEntries(
+        Object.entries(body.markets ?? {}).map(([market, state]) => [
+          market,
+          {
+            state,
+            actions: body.marketActions?.[market]?.actions ?? [],
+            signedActions: body.marketActions?.[market]?.signedActions ?? [],
+            actionsNeedingEffectiveDate:
+              body.marketActions?.[market]?.actionsNeedingEffectiveDate ?? [],
+          },
+        ]),
+      ),
+    };
+  }
+
+  /** Moves one market's approval state, which is never the internal lifecycle's. */
+  async marketTransitionAsync(
+    documentIdentifier: string,
+    version: number,
+    market: string,
+    request: {
+      action: string;
+      reason?: string;
+      signatureReference?: string;
+      effectiveFrom?: string;
+    },
+  ): Promise<TransitionOutcome> {
+    const response = await this.#send(
+      `${this.#connection.baseUrl.replace(/\/$/, '')}` +
+        `/labels/${encodeURIComponent(documentIdentifier)}/versions/${version}` +
+        `/markets/${encodeURIComponent(market)}/transitions`,
+      {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(request),
+      },
+    );
+
+    const body = (await this.#body(response)) as {
+      from?: string;
+      to?: string;
+      detail?: string;
+      problems?: string[];
+    };
+
+    if (!response.ok || body.to === undefined) {
       return {
         ok: false,
         detail:

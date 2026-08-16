@@ -3,9 +3,11 @@ import { LabelEditor } from './LabelEditor';
 import { LabelPicker } from './LabelPicker';
 import { ProductChoice } from './ProductChoice';
 import { LifecycleActions } from './LifecycleActions';
+import { MarketApprovals } from './MarketApprovals';
 import { WaitingWork } from './WaitingWork';
 import type { SectionDescription, VersionDescription } from './authoring/editingSession';
 import type {
+  MarketStandings,
   Product,
   SignatureOutcome,
   TransitionOutcome,
@@ -53,6 +55,18 @@ export interface Platform {
     meaning: string;
     password: string;
   }): Promise<SignatureOutcome>;
+  marketStandingsAsync(documentIdentifier: string, version: number): Promise<MarketStandings>;
+  marketTransitionAsync(
+    documentIdentifier: string,
+    version: number,
+    market: string,
+    request: {
+      action: string;
+      reason?: string;
+      signatureReference?: string;
+      effectiveFrom?: string;
+    },
+  ): Promise<TransitionOutcome>;
 }
 
 /**
@@ -78,6 +92,7 @@ export function App({
   const [version, setVersion] = useState<VersionDescription | null>(null);
   const [problem, setProblem] = useState<string | null>(null);
   const [outcome, setOutcome] = useState<SaveOutcome | null>(null);
+  const [standings, setStandings] = useState<MarketStandings | null>(null);
 
   // What the author picked, where they picked one. The address still wins when it names a
   // label, so a link opens what it says.
@@ -111,6 +126,13 @@ export function App({
       .loadVersion(wanted.label, wanted.version)
       .then(setVersion)
       .catch((failed: Error) => setProblem(failed.message));
+
+    // A separate read, because per-market approval is held separately from internal lifecycle
+    // on purpose (ADR-005) and joining them here is the first step to joining them everywhere.
+    platform
+      .marketStandingsAsync(wanted.label, wanted.version)
+      .then(setStandings)
+      .catch(() => setStandings(null));
   }, [session.hasValidToken, platform, wanted.label, wanted.version]);
 
   const save = useCallback(
@@ -193,6 +215,19 @@ export function App({
         // screen still offering "submit" after submitting is a screen that will be wrong.
         onDone={() => setVersion(null)}
       />
+      {standings !== null && (
+        <MarketApprovals
+          version={{
+            documentIdentifier: version.documentIdentifier,
+            version: version.version,
+          }}
+          markets={standings.marketActions}
+          marketTransition={(id, at, market, request) =>
+            platform.marketTransitionAsync(id, at, market, request)}
+          sign={(request) => platform.signAsync(request)}
+          onDone={() => setVersion(null)}
+        />
+      )}
       <ProductChoice
         current={product ?? version.product ?? null}
         searchProducts={(text) => platform.searchProducts(text)}

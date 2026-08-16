@@ -133,6 +133,64 @@ public sealed class LifecycleEndpointTests(WebApplicationFactory<Program> factor
         string Author,
         IReadOnlyDictionary<string, string> Markets);
 
+    [Fact]
+    public async Task FN_LCM_009_each_market_says_what_may_be_done_to_it_from_here()
+    {
+        // Per-market approval is held separately from internal lifecycle on purpose (ADR-005),
+        // and the surface must not work out either. Deriving them in a browser would be two
+        // more implementations of two state models.
+        var client = Authenticated();
+        var id = await CreateAsync(client);
+
+        var state = await client.GetFromJsonAsync<StateWithMarkets>(
+            $"/labels/{id}/versions/1/state");
+
+        Assert.Equal("not-submitted", state!.Markets["GB"]);
+        Assert.Contains("submit", state.MarketActions["GB"].Actions);
+    }
+
+    [Fact]
+    public async Task FN_LCM_009_submitting_to_a_regulator_is_signed_and_recording_its_answer_is_not()
+    {
+        // CAP-LCM-012, and the distinction the whole market model exists around: submitting is
+        // an act of this organisation by an accountable person; recording what a regulator
+        // decided is a factual entry about somebody else's decision.
+        var client = Authenticated();
+        var id = await CreateAsync(client);
+
+        var state = await client.GetFromJsonAsync<StateWithMarkets>(
+            $"/labels/{id}/versions/1/state");
+
+        Assert.Contains("submit", state!.MarketActions["GB"].SignedActions);
+        Assert.DoesNotContain("record-approval", state.MarketActions["GB"].SignedActions);
+    }
+
+    [Fact]
+    public async Task FN_LCM_009_the_action_that_records_an_approval_says_it_needs_an_effective_date()
+    {
+        // ADR-029 decision 3: required on the transition that records an approval, refused on
+        // any other, never defaulted. A surface that asked for one everywhere would be
+        // collecting a date the platform refuses.
+        var client = Authenticated();
+        var id = await CreateAsync(client);
+
+        var state = await client.GetFromJsonAsync<StateWithMarkets>(
+            $"/labels/{id}/versions/1/state");
+
+        Assert.All(state!.MarketActions.Values, market =>
+            Assert.DoesNotContain("submit", market.ActionsNeedingEffectiveDate));
+    }
+
+    private sealed record StateWithMarkets(
+        string Identifier, int Version, string State,
+        IReadOnlyDictionary<string, string> Markets,
+        IReadOnlyDictionary<string, MarketView> MarketActions);
+
+    private sealed record MarketView(
+        IReadOnlyList<string> Actions,
+        IReadOnlyList<string> SignedActions,
+        IReadOnlyList<string> ActionsNeedingEffectiveDate);
+
     private sealed class StubPolicy(bool allow) : IPolicyDecisionPoint
     {
         public Task<AuthorizationDecision> DecideAsync(
