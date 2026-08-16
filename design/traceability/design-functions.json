@@ -395,6 +395,16 @@
     "iteration": "4",
     "status": "planned"
   },
+  "FN-AUT-014": {
+    "name": "Mark part of a sentence as emphasis or as a reference, without disturbing the rest",
+    "component": "Authoring & Template Service",
+    "satisfies": [
+      "CAP-TPL-005",
+      "CAP-SCM-005"
+    ],
+    "iteration": "4",
+    "status": "planned"
+  },
   "FN-EVT-001": {
     "name": "Build a content event from a persisted document",
     "component": "Notification & Event Backbone",
