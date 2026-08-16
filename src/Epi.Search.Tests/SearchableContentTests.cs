@@ -86,4 +86,31 @@ public sealed class SearchableContentTests
         Assert.Null(searchable.Product);
         Assert.Equal("SYNTHETIC TEST LABEL - Examplinum 10 mg tablets", searchable.Title);
     }
+
+    [Fact]
+    public void FN_SCH_003_a_label_naming_a_product_by_identifier_is_indexed_by_it()
+    {
+        // ADR-040 decision 3, and the reason the whole reference exists: "which labels are about
+        // this product" becomes a query rather than a scan of every label's free text.
+        var bundle = SearchFixtures.Document("doc-1", 1, SearchFixtures.Uk).Bundle;
+
+        var indexed = SearchableContent.Of(
+            ProductReference.Stamp(
+                bundle, new ProductReference("PROD-0001", "SYNTHETIC - Examplinum 10 mg")));
+
+        Assert.Equal("PROD-0001", indexed.ProductIdentifier);
+        Assert.Equal("SYNTHETIC - Examplinum 10 mg", indexed.Product);
+    }
+
+    [Fact]
+    public void FN_SCH_003_a_label_with_only_a_typed_product_name_has_no_identifier_to_index()
+    {
+        // Content written before ADR-040. It is findable by text and not by product, and that
+        // limit is honest: a facet that quietly omitted it would answer "no labels" for a
+        // product that has plenty.
+        var indexed = SearchableContent.Of(
+            SearchFixtures.Document("doc-1", 1, SearchFixtures.Uk).Bundle);
+
+        Assert.Null(indexed.ProductIdentifier);
+    }
 }
