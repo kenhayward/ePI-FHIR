@@ -19,12 +19,14 @@ describe('FN-AUT-011 where each market stands', () => {
       actions: ['submit'],
       signedActions: ['submit'],
       actionsNeedingEffectiveDate: [],
+      signatureMeanings: { submit: 'responsibility' },
     },
     DE: {
       state: 'under-assessment',
       actions: ['record-approval', 'record-rejection'],
       signedActions: [],
       actionsNeedingEffectiveDate: ['record-approval'],
+      signatureMeanings: {},
     },
   };
 
@@ -119,12 +121,36 @@ describe('FN-AUT-011 where each market stands', () => {
     render(
       <MarketApprovals
         version={subject}
-        markets={{ EU: { state: 'withdrawn', actions: [], signedActions: [], actionsNeedingEffectiveDate: [] } }}
+        markets={{
+          EU: {
+            state: 'withdrawn',
+            actions: [],
+            signedActions: [],
+            actionsNeedingEffectiveDate: [],
+            signatureMeanings: {},
+          },
+        }}
         {...platform()}
         onDone={vi.fn()}
       />,
     );
 
     expect(screen.getByText(/nothing to do/i)).toBeDefined();
+  });
+
+  it('signs with the meaning the platform configured, not one of its own', async () => {
+    // A signature that says the wrong thing is worse than none: the gate refuses it, and the
+    // record would have asserted something nobody intended (ADR-020). This was a literal that
+    // happened to match, and would have stopped matching the moment a deployment configured a
+    // different meaning.
+    const acting = platform();
+    render(<MarketApprovals version={subject} markets={markets} {...acting} onDone={vi.fn()} />);
+
+    await userEvent.click(screen.getByRole('button', { name: /^submit$/i }));
+    await userEvent.type(await screen.findByLabelText(/password/i), 'a-password');
+    await userEvent.click(screen.getByRole('button', { name: /^confirm submit$/i }));
+
+    expect(acting.sign).toHaveBeenCalledWith(
+      expect.objectContaining({ meaning: 'responsibility' }));
   });
 });
