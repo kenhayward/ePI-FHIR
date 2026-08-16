@@ -134,3 +134,36 @@ The same images run on Kubernetes:
 4. Optional future: lift onto Azure AKS + managed services (D3 Section 12, Azure column).
 
 See D3 Section 10 (Deployment) and Section 12 (Technology stack) for the full picture.
+
+## The seeded Keycloak realm
+
+`init/keycloak-epi-realm.json` is imported by Keycloak on start-up, and it is **the one
+configuration file in this repository that carries no `_comment` keys**. Keycloak's
+`ClientRepresentation` rejects unknown fields rather than ignoring them, so an explanatory key
+makes the whole realm import fail - which stops Keycloak, and with it the API and HAPI FHIR that
+wait on it. `tools/verify-foreign-config.py` refuses one in CI. The reasoning that would have
+gone inline lives here instead:
+
+- **`epi-api`** is the audience. Confidential, and no flows enabled: it is what tokens are issued
+  *for*, never what anybody signs in *through*.
+- **`epi-signing`** backs the electronic-signature check, which verifies a signer's credentials
+  at an approval gate (ADR-020). Direct access grants are enabled here and nowhere else, because
+  re-authenticating at the moment of signing is the point of it.
+- **`epi-authoring-ui`** is the authoring surface (ADR-039). Public, because a secret shipped to
+  a browser is not a secret, and PKCE stands in for one. Standard flow only, S256 required, and
+  direct access grants deliberately disabled: the surface must never handle a password.
+
+## If PostgreSQL rejects the `epi` user
+
+`POSTGRES_PASSWORD` is applied only when the data directory is first initialised. Running
+`cp .env.example .env` over an `.env` whose password differed leaves a volume the new password
+cannot open, and the failure cascades - Keycloak, the API and HAPI FHIR all exit on
+`password authentication failed for user "epi"`, none of them mentioning the volume.
+
+Realign the role rather than wiping two days of data:
+
+```bash
+docker compose exec postgres psql -U epi -d postgres -c "ALTER ROLE epi WITH PASSWORD 'devpassword';"
+```
+
+`docker compose down -v` also fixes it, by deleting everything.
