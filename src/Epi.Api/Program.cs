@@ -1227,12 +1227,15 @@ app.MapGet("/labels/{id}/versions/{version:int}/sections", async (
         new AuthorizationQuery(subject, "author", new ResourceScope(scope.Affiliate, scope.Market)),
         cancellationToken);
 
+    var currentState =
+        await lifecycle.CurrentStateAsync(new VersionRef(id, version), cancellationToken)
+        ?? "unknown";
+
     return Results.Ok(new
     {
         documentIdentifier = id,
         version,
-        state = await lifecycle.CurrentStateAsync(new VersionRef(id, version), cancellationToken)
-                ?? "unknown",
+        state = currentState,
         editable = mayAuthor.Allowed,
 
         // Which product the label is about, where it names one resolvably (ADR-040). Null where
@@ -1240,6 +1243,18 @@ app.MapGet("/labels/{id}/versions/{version:int}/sections", async (
         product = ProductReference.Of(document.Bundle, authority) is { } named
             ? new { identifier = named.Identifier, display = named.Display }
             : null,
+
+        // What the state model permits from here, and which of those are signed gates. Said by
+        // the platform because deriving it in a browser would be a second implementation of the
+        // state model, and the weaker of the two (ADR-037 decision 1). It is what the surface
+        // offers; it is not what decides - every one is checked again on the way in.
+        actions = labelModel.Value.Transitions
+            .Where(t => string.Equals(t.From, currentState, StringComparison.Ordinal))
+            .Select(t => t.Action),
+        signedActions = labelModel.Value.Transitions
+            .Where(t => string.Equals(t.From, currentState, StringComparison.Ordinal)
+                        && t.RequiresSignature)
+            .Select(t => t.Action),
         sections = SectionProjection.Of(document.Bundle).Select(section => new
         {
             identity = section.Identity,

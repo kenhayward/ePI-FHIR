@@ -28,6 +28,8 @@ describe('FN-AUT-006 the authoring application', () => {
   const platform = (outcome: SaveOutcome = { ok: true, version: 3 }) => ({
     loadVersion: vi.fn(async () => version),
     saveSections: vi.fn(async () => outcome),
+    transitionAsync: vi.fn(async () => ({ ok: true as const, from: 'draft', to: 'in-review' })),
+    signAsync: vi.fn(async () => ({ refused: false as const, reference: 'sig-1' })),
     openTasks: vi.fn(async () => [
       {
         identifier: 'task-1',
@@ -304,7 +306,9 @@ describe('FN-AUT-006 the authoring application', () => {
         throw new Error('Version 2 of that label was not found.');
       }),
       saveSections: vi.fn(async (): Promise<SaveOutcome> => ({ ok: true, version: 3 })),
-      openTasks: vi.fn(async () => [
+      transitionAsync: vi.fn(async () => ({ ok: true as const, from: 'draft', to: 'in-review' })),
+    signAsync: vi.fn(async () => ({ refused: false as const, reference: 'sig-1' })),
+    openTasks: vi.fn(async () => [
       {
         identifier: 'task-1',
         documentIdentifier: '01a00000-0000-7000-8000-00000000000a',

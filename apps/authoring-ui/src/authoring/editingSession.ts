@@ -18,6 +18,17 @@ export interface VersionDescription {
 
   /** Which product the label is about, or null where it names none resolvably (ADR-040). */
   readonly product?: { readonly identifier: string; readonly display: string | null } | null;
+
+  /**
+   * What the state model permits from here, and which of those are signed gates.
+   *
+   * @remarks
+   * The platform's answer. Deriving it here would be a second implementation of the state model
+   * and the weaker of the two (ADR-037 decision 1) - and it is what the surface *offers*, never
+   * what decides: every action is checked again on the way in.
+   */
+  readonly actions?: readonly string[];
+  readonly signedActions?: readonly string[];
   readonly sections: readonly SectionDescription[];
 }
 

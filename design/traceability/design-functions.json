@@ -353,6 +353,16 @@
     "iteration": "4",
     "status": "planned"
   },
+  "FN-AUT-010": {
+    "name": "Move a version through its lifecycle, signing where the gate requires it",
+    "component": "Authoring & Template Service",
+    "satisfies": [
+      "CAP-WFL-003",
+      "CAP-LCM-001"
+    ],
+    "iteration": "4",
+    "status": "planned"
+  },
   "FN-EVT-001": {
     "name": "Build a content event from a persisted document",
     "component": "Notification & Event Backbone",
@@ -415,6 +425,16 @@
     "satisfies": [
       "CAP-SCM-011",
       "CAP-TPL-005"
+    ],
+    "iteration": "4",
+    "status": "planned"
+  },
+  "FN-CC-013": {
+    "name": "Report what the state model permits from a version, and which gates are signed",
+    "component": "Content Core (FHIR)",
+    "satisfies": [
+      "CAP-LCM-001",
+      "CAP-WFL-003"
     ],
     "iteration": "4",
     "status": "planned"

@@ -220,4 +220,71 @@ describe('FN-AUT-004 the platform client', () => {
 
     await expect(client.openTasks()).rejects.toThrow(/503/);
   });
+
+  it('asks the platform for a signature, and never the identity provider', async () => {
+    // ADR-041 decision 3. A browser posting credentials straight to Keycloak would be a second
+    // authentication path with none of the platform's segregation-of-duties checks around it.
+    const fetcher = respondWith(200, { reference: 'sig-1', printedName: 'Ben Okafor' });
+
+    const signature = await clientOver(fetcher as unknown as typeof fetch).signAsync({
+      documentIdentifier: 'doc-1',
+      version: 2,
+      meaning: 'Approval',
+      password: 'a-password',
+    });
+
+    expect(signature.refused).toBe(false);
+    expect(signature.refused === false && signature.reference).toBe('sig-1');
+    expect(String(fetcher.mock.calls[0]![0])).toContain('/signatures');
+    expect(String(fetcher.mock.calls[0]![0])).not.toContain('keycloak');
+  });
+
+  it('never puts the password in the address', async () => {
+    // A password in a URL is a password in every access log and referrer header - the same rule
+    // the access token follows, and more so.
+    const fetcher = respondWith(200, { reference: 'sig-1' });
+
+    await clientOver(fetcher as unknown as typeof fetch).signAsync({
+      documentIdentifier: 'doc-1',
+      version: 2,
+      meaning: 'Approval',
+      password: 'a-password',
+    });
+
+    expect(String(fetcher.mock.calls[0]![0])).not.toContain('a-password');
+  });
+
+  it('says a signature was refused, rather than reporting it as some other failure', async () => {
+    // A wrong password and an unreachable platform have entirely different remedies, and the
+    // first is the one somebody can do something about immediately.
+    const refused = await clientOver(
+      respondWith(401, { detail: 'those credentials were not accepted' }) as unknown as typeof fetch,
+    ).signAsync({ documentIdentifier: 'doc-1', version: 2, meaning: 'Approval', password: 'wrong' });
+
+    expect(refused).toMatchObject({ refused: true });
+  });
+
+  it('moves a version between states, citing the signature that opened the gate', async () => {
+    const fetcher = respondWith(200, { from: 'in-review', to: 'approved' });
+
+    const moved = await clientOver(fetcher as unknown as typeof fetch).transitionAsync(
+      'doc-1', 2, { action: 'approve', reason: 'reviewed', signatureReference: 'sig-1' });
+
+    expect(moved).toMatchObject({ ok: true });
+    const sent = JSON.parse(String(fetcher.mock.calls[0]![1]?.body));
+    expect(sent.signatureReference).toBe('sig-1');
+  });
+
+  it('hands back the platform reason when a transition is refused', async () => {
+    // The gate is the control and its refusals are the interesting part: the author of a
+    // version may not approve it, and being told exactly that is the whole point.
+    const refused = await clientOver(
+      respondWith(409, { detail: 'the author of a version may not approve it.' }) as unknown as typeof fetch,
+    ).transitionAsync('doc-1', 2, { action: 'approve' });
+
+    expect(refused).toMatchObject({
+      ok: false,
+      detail: 'the author of a version may not approve it.',
+    });
+  });
 });
