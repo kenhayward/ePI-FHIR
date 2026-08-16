@@ -20,7 +20,12 @@ public sealed record IdentifierAuthority(
     string UnitSystem = "",
     string UnitReferenceExtension = "",
     string VariantSourceTagSystem = "",
-    string VariantScopeTagSystem = "")
+    string VariantScopeTagSystem = "",
+
+    // Where a product's identity lives, in whatever is the system of record (ADR-040
+    // decision 1, CAP-MDM-002). Empty means a deployment has configured none, and stamping a
+    // product reference is refused rather than written into a namespace nobody owns.
+    string ProductSystem = "")
 {
     /// <summary>
     /// The authority used when none is configured.
@@ -41,7 +46,8 @@ public sealed record IdentifierAuthority(
         "https://epi.example.org/tag/reusable-unit",
         "https://epi.example.org/extension/unit-reference",
         "https://epi.example.org/tag/variant-source",
-        "https://epi.example.org/tag/variant-scope");
+        "https://epi.example.org/tag/variant-scope",
+        "https://epi.example.org/identifier/product");
 
     /// <summary>True when this is the demonstration placeholder rather than a real authority.</summary>
     public bool IsDemonstration => this == Demonstration;

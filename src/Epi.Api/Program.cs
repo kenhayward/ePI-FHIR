@@ -658,6 +658,7 @@ app.MapPost("/labels/{id}/versions/{version:int}/transitions", async (
 app.MapGet("/labels/search", async (
     string? text,
     string? product,
+    string? productIdentifier,
     string? market,
     string? language,
     string? state,
@@ -682,7 +683,7 @@ app.MapGet("/labels/search", async (
     var results = await search.SearchAsync(
         new ScopedSearchQuery(
             new SearchCriteria(
-                text, product, market, language, state, identifier,
+                text, product, productIdentifier, market, language, state, identifier,
                 page ?? 1, pageSize ?? SearchCriteria.DefaultPageSize),
             scopes),
         cancellationToken);
@@ -1330,6 +1331,42 @@ app.MapPost("/labels/{id}/versions/{version:int}/sections", async (
     }
 }).RequireAuthorization();
 
+// The product directory, which ADR-036 built a port for and nothing could ask (FN-MDM-002).
+//
+// What the authoring surface needs to honour ADR-037 decision 3: an author picks a product and
+// the platform writes its identity, rather than anybody typing an identifier.
+app.MapGet("/master-data/products", async (
+    string? text,
+    ClaimsPrincipal principal,
+    IProductDirectory products,
+    CancellationToken cancellationToken) =>
+{
+    if (SubjectFactory.From(principal) is null)
+    {
+        return Results.Unauthorized();
+    }
+
+    if (string.IsNullOrWhiteSpace(text))
+    {
+        // A directory that answered everything to an empty query would be a way of enumerating
+        // the product catalogue. A picker needs to narrow, not to list.
+        return Results.BadRequest(new
+        {
+            problems = new[] { "Say what to search for. This does not list every product." },
+        });
+    }
+
+    var found = await products.SearchAsync(text, cancellationToken);
+
+    return Results.Ok(found.Select(product => new
+    {
+        identifier = product.Identifier,
+        name = product.Name,
+        marketingAuthorisationHolder = product.MarketingAuthorisationHolder,
+        markets = product.Markets,
+    }));
+}).RequireAuthorization();
+
 app.Run();
 
 /// <summary>One search result on the wire.</summary>
@@ -1343,6 +1380,7 @@ static object Describe(SearchHit hit) => new
     state = hit.State,
     language = hit.Language,
     product = hit.Product,
+    productIdentifier = hit.ProductIdentifier,
     documentType = hit.DocumentType,
 };
 

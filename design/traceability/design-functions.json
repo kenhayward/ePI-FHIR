@@ -238,6 +238,15 @@
     "iteration": "3",
     "status": "planned"
   },
+  "FN-MDM-002": {
+    "name": "Expose the product directory so a product can be chosen rather than typed",
+    "component": "Master Data & Identifier Service",
+    "satisfies": [
+      "CAP-MDM-008"
+    ],
+    "iteration": "4",
+    "status": "planned"
+  },
   "FN-TRM-001": {
     "name": "Record the terminology versions a version was approved against",
     "component": "Terminology Service",
@@ -366,6 +375,16 @@
     "satisfies": [
       "CAP-TPL-005",
       "CAP-SCM-009"
+    ],
+    "iteration": "4",
+    "status": "planned"
+  },
+  "FN-CC-011": {
+    "name": "Record which product a label is about, resolvably",
+    "component": "Content Core (FHIR)",
+    "satisfies": [
+      "CAP-SCM-011",
+      "CAP-MDM-003"
     ],
     "iteration": "4",
     "status": "planned"
@@ -507,6 +526,16 @@
       "CAP-SCH-002"
     ],
     "iteration": "2",
+    "status": "planned"
+  },
+  "FN-SCH-003": {
+    "name": "Index a label by the product it is about, so the question is a query",
+    "component": "Search & Retrieval Service",
+    "satisfies": [
+      "CAP-SCH-001",
+      "CAP-MDM-003"
+    ],
+    "iteration": "4",
     "status": "planned"
   },
   "FN-TPL-001": {
