@@ -5,12 +5,28 @@
   </PropertyGroup>
 
   <!--
-    Rendering reads content and nothing else. No lifecycle, no store, no clock: a render is a
-    pure function of a label version and a render-template version (ADR-033 decision 1), and a
-    project that could not reach a clock cannot accidentally embed one.
+    Rendering reads content and nothing else: no lifecycle, and no ambient clock. A render is a
+    pure function of a label version and a render-template version (ADR-033 decision 1).
+
+    This comment used to say "no store, no clock" and mean the whole project. That stopped being
+    true when the asset store landed here, and object-lock retention needs a deadline. The rule
+    that carries the weight is narrower and still holds: nothing in this project reads the clock
+    for itself. The store is handed a TimeProvider, and neither renderer can reach it, so a
+    render still cannot embed the moment it was made.
+
+    The asset store's presence here is a boundary worth revisiting - ingesting artwork is not
+    rendering, and it is only here because rendering was what needed it first (recorded as a
+    debt in design/iteration-3.md).
   -->
   <ItemGroup>
     <ProjectReference Include="..\Epi.ContentCore\Epi.ContentCore.csproj" />
+  </ItemGroup>
+
+  <!-- The AWS SDK is Apache-2.0. It is here for the S3 API rather than for AWS: the object
+       store is MinIO (ADR-013), and anything else speaking S3 would serve as well, which is
+       what makes ADR-034 decision 4 more than a claim. -->
+  <ItemGroup>
+    <PackageReference Include="AWSSDK.S3" Version="3.7.415.9" />
   </ItemGroup>
 
 </Project>

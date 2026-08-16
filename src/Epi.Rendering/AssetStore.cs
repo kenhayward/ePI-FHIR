@@ -59,9 +59,16 @@ public sealed record AssetKey(string Lineage, string Path)
 /// The asset store: rendered output and ingested artwork, kept apart (CAP-RND-002).
 /// </summary>
 /// <remarks>
-/// Write-once. An artefact that could be replaced is an artefact nobody can cite, and the
-/// durable implementation gets that from object-lock rather than from a check in application
-/// code (D3 Section 3.2). A render that needs to change is a new render of a new version.
+/// Write-once. An artefact that could be replaced is an artefact nobody can cite, and a render
+/// that needs to change is a new render of a new version.
+///
+/// This used to say the durable implementation would get write-once "from object-lock rather
+/// than from a check in application code". Half right, and the wrong half was load-bearing:
+/// object-lock protects a version, not a key, and an unconditional overwrite of a retained
+/// object is accepted and becomes what a read returns. Write-once at a key comes from the
+/// conditional write; object-lock is what stops the accepted version being destroyed
+/// afterwards. Both, and neither substitutes for the other - see ADR-034, which records the
+/// measurement.
 /// </remarks>
 public interface IAssetStore
 {
@@ -89,7 +96,8 @@ public sealed class AssetAlreadyStoredException(AssetKey key)
 
 /// <summary>
 /// An in-memory asset store: the reference implementation the conformance suite holds every
-/// implementation to. Real storage is MinIO with object-lock.
+/// implementation to. Real storage is <see cref="ObjectStoreAssetStore"/>, which answers the
+/// same suite against MinIO and gets its refusals from the object store rather than from here.
 /// </summary>
 public sealed class InMemoryAssetStore : IAssetStore
 {

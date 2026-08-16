@@ -145,7 +145,15 @@ services:
       retries: 10
     networks: [epi]
 
-  # One-shot: create buckets WITH object-lock (WORM) enabled
+  # One-shot: create buckets WITH object-lock (WORM) enabled, and set the retention that makes
+  # the lock do anything. A bucket created --with-lock and left without a default retention is
+  # the defect ADR-034 found here: it reads as protected and protects nothing, because retention
+  # is what an object-lock bucket applies to the versions written into it.
+  #
+  # Object-lock is only half of write-once, and the half it is not is not configurable here:
+  # retention stops a written version being destroyed, and a conditional write (If-None-Match)
+  # is what stops a second write of the same key becoming what a read returns. The store issues
+  # that itself - see ADR-034 and src/Epi.Rendering/ObjectStoreAssetStore.cs.
   minio-init:
     image: minio/mc:RELEASE.2025-08-13T08-35-41Z
     depends_on:
@@ -161,7 +169,10 @@ services:
       mc mb --with-lock --ignore-existing local/epi-archive;
       mc retention set --default COMPLIANCE 3650d local/epi-audit;
       mc retention set --default COMPLIANCE 3650d local/epi-archive;
-      echo 'MinIO buckets created with object-lock (WORM).';
+      mc retention set --default COMPLIANCE 3650d local/epi-rendered;
+      mc retention set --default COMPLIANCE 3650d local/epi-artwork;
+      mc retention set --default COMPLIANCE 3650d local/epi-content;
+      echo 'MinIO buckets created with object-lock (WORM) and default retention.';
       "
     networks: [epi]
 
