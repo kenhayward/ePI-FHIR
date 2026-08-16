@@ -4,7 +4,8 @@ import {
   type VersionDescription,
   openSession,
 } from './authoring/editingSession';
-import { type Block, paragraph, text } from './authoring/narrative';
+import { SectionEditor } from './SectionEditor';
+import type { Block } from './authoring/narrative';
 
 /**
  * The sections of one label version, as an author edits them (ADR-037 decision 2).
@@ -66,14 +67,12 @@ export function LabelEditor({
           <h2>{section.title}</h2>
 
           {section.editable ? (
-            <label>
-              <span className="visually-hidden">{section.title}</span>
-              <textarea
-                aria-label={section.title}
-                value={plainTextOf(section.blocks)}
-                onChange={(event) => edit(section.identity, asBlocks(event.target.value))}
-              />
-            </label>
+            <SectionEditor
+              title={section.title}
+              blocks={section.blocks}
+              targets={session.crossReferenceTargetsFor(section.identity)}
+              onChange={(blocks) => edit(section.identity, blocks)}
+            />
           ) : (
             <p role="note">{section.readOnlyBecause}</p>
           )}
@@ -95,32 +94,3 @@ export function LabelEditor({
     </main>
   );
 }
-
-/**
- * The editing control is a plain text area for now, and that is a placeholder rather than a
- * decision.
- *
- * @remarks
- * ADR-037 decision 4 says the formatting an author can produce is bounded to what validates, and
- * a text area is the most bounded thing there is: it can only produce paragraphs. What it cannot
- * yet produce is the emphasis, lists and cross-references the narrative model already carries -
- * so this is honest about being incomplete rather than reaching for a rich-text component that
- * would emit markup the write gate rejects.
- *
- * The next slice replaces this with controls over the same model. Nothing above it changes when
- * it does, which is the point of the model existing first.
- */
-const plainTextOf = (blocks: readonly Block[]): string =>
-  blocks
-    .map((block) =>
-      block.kind === 'paragraph'
-        ? block.runs.map((run) => run.value).join('')
-        : block.items.join('\n'),
-    )
-    .join('\n\n');
-
-const asBlocks = (written: string): readonly Block[] =>
-  written
-    .split(/\n{2,}/)
-    .filter((part) => part.trim() !== '')
-    .map((part) => paragraph(text(part)));

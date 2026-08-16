@@ -47,8 +47,8 @@ describe('FN-AUT-003 the label editor', () => {
     const save = vi.fn();
     render(<LabelEditor version={version} onSave={save} />);
 
-    await userEvent.clear(screen.getByLabelText('1. What Examplinum is'));
-    await userEvent.type(screen.getByLabelText('1. What Examplinum is'), 'A medicine for adults.');
+    await userEvent.clear(screen.getByRole('textbox', { name: /What Examplinum is paragraph 1/ }));
+    await userEvent.type(screen.getByRole('textbox', { name: /What Examplinum is paragraph 1/ }), 'A medicine for adults.');
     await userEvent.click(screen.getByRole('button', { name: /^save as version/i }));
 
     expect(save).toHaveBeenCalledWith([
@@ -83,7 +83,7 @@ describe('FN-AUT-003 the label editor', () => {
   it('offers no editor where the platform says this caller may not write, and says why', async () => {
     render(<LabelEditor version={{ ...version, editable: false }} onSave={vi.fn()} />);
 
-    expect(screen.queryByLabelText('1. What Examplinum is')).toBeNull();
+    expect(screen.queryByRole('textbox', { name: /What Examplinum is paragraph 1/ })).toBeNull();
     expect(screen.getAllByText(/not allowed to write/i).length).toBeGreaterThan(0);
   });
 

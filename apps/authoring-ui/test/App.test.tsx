@@ -212,7 +212,7 @@ describe('FN-AUT-006 the authoring application', () => {
     const client = platform({ ok: true, version: 3 });
     render(<App session={session(true)} platform={client} location={at(label)} go={vi.fn()} />);
 
-    const box = await screen.findByLabelText('1. What Examplinum is');
+    const box = await screen.findByRole('textbox', { name: /What Examplinum is paragraph 1/ });
     await userEvent.clear(box);
     await userEvent.type(box, 'A medicine for adults.');
     await userEvent.click(screen.getByRole('button', { name: /^save as version/i }));
@@ -247,7 +247,7 @@ describe('FN-AUT-006 the authoring application', () => {
     const client = platform();
     render(<App session={session(true)} platform={client} location={at(label)} go={vi.fn()} />);
 
-    const box = await screen.findByLabelText('1. What Examplinum is');
+    const box = await screen.findByRole('textbox', { name: /What Examplinum is paragraph 1/ });
     await userEvent.clear(box);
     await userEvent.type(box, 'Something.');
     await userEvent.click(screen.getByRole('button', { name: /^save as version/i }));
@@ -289,7 +289,7 @@ describe('FN-AUT-006 the authoring application', () => {
     });
     render(<App session={session(true)} platform={client} location={at(label)} go={vi.fn()} />);
 
-    const box = await screen.findByLabelText('1. What Examplinum is');
+    const box = await screen.findByRole('textbox', { name: /What Examplinum is paragraph 1/ });
     await userEvent.clear(box);
     await userEvent.type(box, 'Something.');
     await userEvent.click(screen.getByRole('button', { name: /^save as version/i }));
@@ -303,7 +303,7 @@ describe('FN-AUT-006 the authoring application', () => {
     const client = platform({ ok: false, kind: 'unreachable', detail: 'Failed to fetch' });
     render(<App session={session(true)} platform={client} location={at(label)} go={vi.fn()} />);
 
-    const box = await screen.findByLabelText('1. What Examplinum is');
+    const box = await screen.findByRole('textbox', { name: /What Examplinum is paragraph 1/ });
     await userEvent.clear(box);
     await userEvent.type(box, 'Something.');
     await userEvent.click(screen.getByRole('button', { name: /^save as version/i }));
@@ -315,7 +315,7 @@ describe('FN-AUT-006 the authoring application', () => {
     const client = platform({ ok: false, kind: 'unauthenticated' });
     render(<App session={session(true)} platform={client} location={at(label)} go={vi.fn()} />);
 
-    const box = await screen.findByLabelText('1. What Examplinum is');
+    const box = await screen.findByRole('textbox', { name: /What Examplinum is paragraph 1/ });
     await userEvent.clear(box);
     await userEvent.type(box, 'Something.');
     await userEvent.click(screen.getByRole('button', { name: /^save as version/i }));
@@ -327,7 +327,7 @@ describe('FN-AUT-006 the authoring application', () => {
     const client = platform({ ok: false, kind: 'forbidden', detail: 'Access denied for author' });
     render(<App session={session(true)} platform={client} location={at(label)} go={vi.fn()} />);
 
-    const box = await screen.findByLabelText('1. What Examplinum is');
+    const box = await screen.findByRole('textbox', { name: /What Examplinum is paragraph 1/ });
     await userEvent.clear(box);
     await userEvent.type(box, 'Something.');
     await userEvent.click(screen.getByRole('button', { name: /^save as version/i }));
@@ -340,7 +340,7 @@ describe('FN-AUT-006 the authoring application', () => {
     const client = platform({ ok: false, kind: 'conflict', detail: 'version 3 already exists' });
     render(<App session={session(true)} platform={client} location={at(label)} go={vi.fn()} />);
 
-    const box = await screen.findByLabelText('1. What Examplinum is');
+    const box = await screen.findByRole('textbox', { name: /What Examplinum is paragraph 1/ });
     await userEvent.clear(box);
     await userEvent.type(box, 'Something.');
     await userEvent.click(screen.getByRole('button', { name: /^save as version/i }));

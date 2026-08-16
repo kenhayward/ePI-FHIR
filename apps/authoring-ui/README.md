@@ -64,6 +64,9 @@ that sit behind the gateway.
   identifier is never shown: it is what the platform stores and resolves, and it means nothing
   to the person choosing.
 - `src/LabelEditor.tsx` - the surface over the working copy.
+- `src/SectionEditor.tsx` - writing one section. Bounded by construction rather than corrected
+  afterwards: paragraphs, lists, and references to other sections chosen by title, which is the
+  whole set the narrative model can express.
 - `src/platform/client.ts` - the only way this application reaches the platform. It speaks
   sections, never FHIR, and carries the platform's refusals in the platform's own words.
 - `src/platform/signIn.ts` - authorization code with PKCE against the identity provider. The
@@ -73,6 +76,18 @@ that sit behind the gateway.
 The model is deliberately separate from React and has no framework in it. It is where the rules
 that matter live, it is tested without a DOM, and replacing the editing controls does not touch
 it.
+
+## Who this is for
+
+**An author.** Where a screen could serve an author or an inspector, it serves the author.
+
+That is a decision rather than an accident, and it decides real things. The version history shows
+what happened and what was signed, and it does not distinguish a pin taken before terminology was
+recorded from an approval that was asked and had none - a distinction ADR-036 decision 3 keeps in
+the record deliberately, and one an inspector would want and an author would read as noise.
+
+The consequence is that **inspection wants its own surface**, reading the same records with
+different questions in mind. It is not built and it is not this.
 
 ## What is not built yet
 
@@ -94,7 +109,6 @@ here so replacing the placeholder does not quietly shrink it:
 - **Reusable units and product selection** (2, 5). The platform has a product directory and no
   endpoint exposes it - the same kind of gap ADR-037 decision 7 expected building this to find,
   and the same kind that ADR-038 closed for sections.
-- **Rich editing controls.** The narrative model carries emphasis, lists and cross-references;
-  the editing control is a text area and can only produce paragraphs. It is deliberately the
-  most bounded control there is rather than a rich-text component that would emit markup the
-  write gate rejects.
+- **Emphasis.** The narrative model carries it and no control inserts it: emphasising part of a
+  paragraph needs a selection, which a plain field cannot express. It wants a small custom
+  control over the run model rather than a rich-text field, and that is a slice of its own.

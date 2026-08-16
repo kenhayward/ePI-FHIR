@@ -385,6 +385,16 @@
     "iteration": "4",
     "status": "planned"
   },
+  "FN-AUT-013": {
+    "name": "Write a section within the formatting the write gate accepts, references included",
+    "component": "Authoring & Template Service",
+    "satisfies": [
+      "CAP-TPL-005",
+      "CAP-SCM-005"
+    ],
+    "iteration": "4",
+    "status": "planned"
+  },
   "FN-EVT-001": {
     "name": "Build a content event from a persisted document",
     "component": "Notification & Event Backbone",
