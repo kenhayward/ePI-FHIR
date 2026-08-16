@@ -678,5 +678,15 @@
     ],
     "iteration": "4",
     "status": "planned"
+  },
+  "FN-TPL-004": {
+    "name": "Seed standard templates as drafts, never as approvals, never over what exists",
+    "component": "Authoring & Template Service",
+    "satisfies": [
+      "CAP-TPL-001",
+      "CAP-TPL-012"
+    ],
+    "iteration": "4",
+    "status": "planned"
   }
 }

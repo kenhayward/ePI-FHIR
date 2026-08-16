@@ -1,0 +1,9 @@
+{
+  "_comment": "A starting point for packaging labelling, seeded as a DRAFT (ADR-042 decision 7). Not approved, and nothing may be officially rendered with it until somebody signs for it.",
+
+  "_shape": "Short, large and high contrast. Labelling text is read off a carton at arm's length, often by somebody who is not looking for it - so it is set larger than either of the others and given room, rather than fitted to a page.",
+
+  "identifier": "qrd-labelling",
+  "name": "Packaging labelling (starting point, not approved)",
+  "stylesheet": "body { font-family: 'Segoe UI', system-ui, sans-serif; font-size: 14pt; line-height: 1.5; max-width: 30rem; margin: 2rem auto; padding: 0 1rem; color: #000; } h1 { font-size: 1.6rem; } h2 { font-size: 1.2rem; margin-top: 1.8rem; } p, li { font-weight: 500; }"
+}

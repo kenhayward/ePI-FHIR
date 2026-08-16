@@ -187,6 +187,10 @@ builder.Services.AddSingleton<ISpentSignatures>(services => new SpentSignatures(
 builder.Services.AddSingleton<ISignatureCheck>(services =>
     new SignatureCheck(services.GetRequiredService<ISignatureStore>()));
 
+// Where render templates live (ADR-042). In memory for now, like every other store before its
+// durable counterpart lands.
+builder.Services.AddSingleton<ITemplateStore>(_ => new InMemoryTemplateStore());
+
 // The system clock, resolvable rather than reached for. Reconciliation compares a registration
 // against now, and a test that cannot move "now" cannot test a settle period at all.
 builder.Services.AddSingleton(TimeProvider.System);
@@ -315,6 +319,22 @@ else
         + "simply does not happen.",
         routingPath);
 }
+
+// Standard templates a deployment starts from, created as drafts and never as approvals
+// (ADR-042 decision 7). Nothing already in the store is touched: it belongs to whoever put it
+// there, and a seed correcting it would change what a patient reads without anybody deciding to.
+var seededTemplates = await TemplateSeeding.ApplyAsync(
+    app.Services.GetRequiredService<ITemplateStore>(),
+    builder.Configuration["Epi:TemplateSeedPath"]
+    ?? Path.Combine(builder.Environment.ContentRootPath, "config", "templates", "seed"));
+
+app.Logger.LogInformation(
+    seededTemplates.Count == 0
+        ? "No templates were seeded; the store already holds what it needs."
+        : "Seeded {Count} template(s) as drafts: {Templates}. None is approved, and nothing may "
+          + "be officially rendered with one until somebody signs for it.",
+    seededTemplates.Count,
+    string.Join(", ", seededTemplates));
 
 if (string.IsNullOrWhiteSpace(signingAuthority) || string.IsNullOrWhiteSpace(signingRealm))
 {

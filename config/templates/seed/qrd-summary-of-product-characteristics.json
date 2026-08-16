@@ -1,0 +1,9 @@
+{
+  "_comment": "A starting point for a summary of product characteristics, seeded as a DRAFT (ADR-042 decision 7). Not approved, and nothing may be officially rendered with it until somebody signs for it.",
+
+  "_shape": "Denser than a leaflet on purpose. An SmPC is read by a prescriber looking something up, not by a patient reading through, so it favours scanning: tighter leading, clearer section starts, and a wider measure because the sentences are longer.",
+
+  "identifier": "qrd-summary-of-product-characteristics",
+  "name": "Summary of product characteristics (starting point, not approved)",
+  "stylesheet": "body { font-family: 'Segoe UI', system-ui, sans-serif; font-size: 11pt; line-height: 1.45; max-width: 48rem; margin: 2rem auto; padding: 0 1rem; color: #111; } h1 { font-size: 1.4rem; } h2 { font-size: 1.05rem; margin-top: 1.6rem; border-top: 1px solid #ddd; padding-top: 0.6rem; } ul { padding-left: 1.3rem; }"
+}

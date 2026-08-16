@@ -64,6 +64,23 @@ decision 3 is that they cannot.
 the in-memory reference implementation and against whatever durable store follows, so the two
 cannot drift.
 
+**7. A deployment may be seeded with standard templates, and they arrive as drafts.** Amended
+after the fact: the consequences below originally said that seeding one at install would be
+seeding an approval nobody gave. That is true of seeding an *approved* template and not of
+seeding a draft, and the distinction is the whole of it.
+
+A draft template is one nobody may render officially with, so what a seed supplies is a starting
+point rather than a decision. An adopting organisation gets QRD-shaped templates to work from,
+reviews them, changes what does not suit, and takes them through the same gate as anything else -
+which is exactly what they would do with one they wrote themselves, minus a blank page.
+
+The seeds live under `config/templates/seed/`, and that is not a contradiction of decision 5.
+What decision 5 forbids is an administrator changing what a patient reads; what these change is
+what a *draft* starts as, and a draft reaches a patient only by being approved by somebody
+accountable. Editing a seed cannot put unapproved words in front of anybody, because the gate is
+untouched. Templates already approved are unaffected by a seed changing: seeding never rewrites
+what exists.
+
 ## Alternatives considered
 
 **Store templates as FHIR resources in the content core.** Attractive for the reuse - versioning,
@@ -88,10 +105,10 @@ The lifecycle state model is now applied to something other than a label, which 
 generalisation rather than a change - the engine never knew what a `VersionRef` referred to, and
 that this went unnoticed until now is a point in its favour.
 
-An adopting organisation gets no templates at all until somebody authors and approves one. That
-is correct and it is inconvenient: a fresh deployment cannot render anything officially until a
-regulatory owner has signed for a template. Seeding one at install would be seeding an approval
-nobody gave.
+An adopting organisation gets standard templates as drafts and no approved template at all until
+somebody signs for one. A fresh deployment therefore cannot render anything officially on the
+day it is installed, which is correct: the first official render should follow a person deciding
+that a template is fit to shape what patients read.
 
 The preview scaffolding stays until the surface can author templates, and its removal is what
 tells us this is finished rather than merely built.

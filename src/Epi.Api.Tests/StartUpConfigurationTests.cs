@@ -37,6 +37,8 @@ public sealed class StartUpConfigurationTests(WebApplicationFactory<Program> fac
                 TestFixtures.RepositoryPath("config", "lifecycle", "market-approval-states.json"));
             host.UseSetting("Epi:MasterDataPath",
                 TestFixtures.RepositoryPath("config", "master-data", "products.json"));
+            host.UseSetting("Epi:TemplateSeedPath",
+                TestFixtures.RepositoryPath("config", "templates", "seed"));
             host.UseSetting(setting, value);
         });
 
