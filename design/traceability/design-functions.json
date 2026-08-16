@@ -210,6 +210,35 @@
     "iteration": "3",
     "status": "planned"
   },
+  "FN-MDM-001": {
+    "name": "Resolve a product reference through a replaceable master-data directory",
+    "component": "Master Data & Identifier Service",
+    "satisfies": [
+      "CAP-MDM-004",
+      "CAP-MDM-008"
+    ],
+    "iteration": "3",
+    "status": "planned"
+  },
+  "FN-TRM-001": {
+    "name": "Record the terminology versions a version was approved against",
+    "component": "Terminology Service",
+    "satisfies": [
+      "CAP-TRM-007",
+      "CAP-LCM-011"
+    ],
+    "iteration": "3",
+    "status": "planned"
+  },
+  "FN-TRM-002": {
+    "name": "Report the terminology bindings a deployment answers from",
+    "component": "Terminology Service",
+    "satisfies": [
+      "CAP-TRM-007"
+    ],
+    "iteration": "3",
+    "status": "planned"
+  },
   "FN-EVT-001": {
     "name": "Build a content event from a persisted document",
     "component": "Notification & Event Backbone",

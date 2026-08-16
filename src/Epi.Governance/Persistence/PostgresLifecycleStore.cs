@@ -216,8 +216,9 @@ public sealed class PostgresLifecycleStore(string connectionString)
             await using var pinning = new NpgsqlCommand("""
                 INSERT INTO pinned_context
                     (document_identifier, document_version, content_hash, state_model, state,
-                     packages, identifier_authority, pinned_at, template, template_version)
-                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+                     packages, identifier_authority, pinned_at, template, template_version,
+                     terminology_bindings)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
                 """, connection, transacted);
 
             pinning.Parameters.AddWithValue(pin.Version.DocumentIdentifier);
@@ -234,6 +235,14 @@ public sealed class PostgresLifecycleStore(string connectionString)
             pinning.Parameters.AddWithValue(pin.PinnedAt);
             pinning.Parameters.AddWithValue((object?)pin.Template ?? DBNull.Value);
             pinning.Parameters.AddWithValue((object?)pin.TemplateVersion ?? DBNull.Value);
+            pinning.Parameters.Add(new NpgsqlParameter
+            {
+                // Always written, even when empty. NULL is reserved for a pin taken before
+                // bindings were recorded at all, and an empty array says the approval was asked
+                // and had none (ADR-036 decision 3).
+                Value = JsonSerializer.Serialize(pin.TerminologyBindings, Json),
+                NpgsqlDbType = NpgsqlTypes.NpgsqlDbType.Jsonb,
+            });
 
             try
             {
@@ -260,7 +269,7 @@ public sealed class PostgresLifecycleStore(string connectionString)
 
         await using var command = _source.Value.CreateCommand("""
             SELECT content_hash, state_model, state, packages, identifier_authority, pinned_at,
-                   template, template_version
+                   template, template_version, terminology_bindings
             FROM pinned_context
             WHERE document_identifier = $1 AND document_version = $2
             """);
@@ -283,7 +292,10 @@ public sealed class PostgresLifecycleStore(string connectionString)
             reader.GetString(4),
             reader.GetFieldValue<DateTimeOffset>(5),
             reader.IsDBNull(6) ? null : reader.GetString(6),
-            reader.IsDBNull(7) ? null : reader.GetInt32(7));
+            reader.IsDBNull(7) ? null : reader.GetInt32(7),
+            reader.IsDBNull(8)
+                ? null
+                : JsonSerializer.Deserialize<List<TerminologyBinding>>(reader.GetString(8), Json));
     }
 
     private static async Task InsertAsync(

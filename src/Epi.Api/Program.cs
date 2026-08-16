@@ -151,6 +151,18 @@ var packagesDirectory = ProfileSource.PackagesDirectory(
 var conformance = new Lazy<ConformanceManifest>(
     () => ConformanceManifest.LoadFrom(packagesDirectory));
 
+// Terminology is reached through a port the platform owns, never a vendor's client (ADR-036
+// decision 1). Which server, and which source for which concept domain, is an open programme
+// question; this is the seam that keeps the answer a component and a configuration entry.
+builder.Services.AddSingleton<ITerminologyDirectory>(
+    _ => new PinnedPackageTerminologyDirectory(conformance.Value));
+
+// Master data likewise. The configured directory is the reference implementation, in the same
+// way the in-memory stores stand behind their durable counterparts.
+builder.Services.AddSingleton<IProductDirectory>(_ => ConfiguredProductDirectory.LoadFrom(
+    builder.Configuration["Epi:MasterDataPath"]
+    ?? Path.Combine(builder.Environment.ContentRootPath, "config", "master-data", "products.json")));
+
 // The lifecycle store is wrapped so that a transition recorded by any engine reaches the
 // projection, rather than every caller of a transition remembering to update the index.
 builder.Services.AddSingleton<ILifecycleStore>(services => new ProjectingLifecycleStore(
@@ -516,6 +528,7 @@ app.MapPost("/labels/{id}/versions/{version:int}/transitions", async (
     LifecycleService lifecycle,
     IPinnedContextStore pins,
     IdentifierAuthority authority,
+    ITerminologyDirectory terminology,
     CancellationToken cancellationToken) =>
 {
     var subject = SubjectFactory.From(principal);
@@ -543,7 +556,9 @@ app.MapPost("/labels/{id}/versions/{version:int}/transitions", async (
         var transition = await lifecycle.TransitionAsync(
             new VersionRef(id, version), body.Action, subject.Id, body.Reason,
             body.SignatureReference,
-            Pinning.ContextFor(document, conformance, authority),
+            Pinning.ContextFor(
+                document, conformance, authority,
+                await terminology.BindingsAsync(cancellationToken)),
             cancellationToken);
 
         return Results.Ok(new
@@ -1040,12 +1055,18 @@ static class Pinning
     public static ApprovalContext ContextFor(
         EpiDocument document,
         Lazy<ConformanceManifest> conformance,
-        IdentifierAuthority authority) =>
+        IdentifierAuthority authority,
+        IReadOnlyList<TerminologyBindingRef> terminology) =>
         new(ContentHash.Of(document.Bundle),
             [.. conformance.Value.Packages.Select(p => new PinnedPackage(p.Name, p.Version, p.Sha256))],
             authority.DocumentSystem,
             TemplateInstantiation.TemplateOf(document.Bundle, authority),
-            TemplateInstantiation.TemplateVersionOf(document.Bundle, authority));
+            TemplateInstantiation.TemplateVersionOf(document.Bundle, authority),
+
+            // Which terminology answered, recorded separately from what validated the structure
+            // even though both come from the pinned packages today. They are different claims,
+            // and a pin written now still means what it says once they diverge (ADR-036).
+            [.. terminology.Select(b => new TerminologyBinding(b.System, b.Version))]);
 }
 
 /// <summary>What a caller asks for when moving a task to somebody else.</summary>
