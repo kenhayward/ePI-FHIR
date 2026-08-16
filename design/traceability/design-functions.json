@@ -295,6 +295,15 @@
     "iteration": "4",
     "status": "planned"
   },
+  "FN-AUT-005": {
+    "name": "Obtain an access token by authorization code with PKCE, and keep it in memory",
+    "component": "Authoring & Template Service",
+    "satisfies": [
+      "CAP-IAM-001"
+    ],
+    "iteration": "4",
+    "status": "planned"
+  },
   "FN-EVT-001": {
     "name": "Build a content event from a persisted document",
     "component": "Notification & Event Backbone",
