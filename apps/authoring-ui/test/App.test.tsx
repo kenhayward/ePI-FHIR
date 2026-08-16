@@ -29,6 +29,17 @@ describe('FN-AUT-006 the authoring application', () => {
     loadVersion: vi.fn(async () => version),
     saveSections: vi.fn(async () => outcome),
     transitionAsync: vi.fn(async () => ({ ok: true as const, from: 'draft', to: 'in-review' })),
+    marketStandingsAsync: vi.fn(async () => ({
+      marketActions: {
+        GB: {
+          state: 'not-submitted',
+          actions: ['submit'],
+          signedActions: ['submit'],
+          actionsNeedingEffectiveDate: [],
+        },
+      },
+    })),
+    marketTransitionAsync: vi.fn(async () => ({ ok: true as const, from: 'x', to: 'y' })),
     signAsync: vi.fn(async () => ({ refused: false as const, reference: 'sig-1' })),
     openTasks: vi.fn(async () => [
       {
@@ -231,6 +242,15 @@ describe('FN-AUT-006 the authoring application', () => {
     );
   });
 
+  it('shows where each market stands beside the version', async () => {
+    // Internal lifecycle and per-market approval are different things (ADR-005), and a screen
+    // showing only the first would let "approved" read as approved everywhere.
+    render(<App session={session(true)} platform={platform()} location={at(label)} go={vi.fn()} />);
+
+    expect(await screen.findByRole('heading', { name: /markets/i })).toBeDefined();
+    expect(screen.getByText(/not-submitted/)).toBeDefined();
+  });
+
   it('shows the platform its own words when it refuses a save', async () => {
     // The whole point of the client carrying problems rather than summarising them. An author
     // reading a paraphrase of a validation failure cannot find the thing it refers to.
@@ -307,6 +327,17 @@ describe('FN-AUT-006 the authoring application', () => {
       }),
       saveSections: vi.fn(async (): Promise<SaveOutcome> => ({ ok: true, version: 3 })),
       transitionAsync: vi.fn(async () => ({ ok: true as const, from: 'draft', to: 'in-review' })),
+    marketStandingsAsync: vi.fn(async () => ({
+      marketActions: {
+        GB: {
+          state: 'not-submitted',
+          actions: ['submit'],
+          signedActions: ['submit'],
+          actionsNeedingEffectiveDate: [],
+        },
+      },
+    })),
+    marketTransitionAsync: vi.fn(async () => ({ ok: true as const, from: 'x', to: 'y' })),
     signAsync: vi.fn(async () => ({ refused: false as const, reference: 'sig-1' })),
     openTasks: vi.fn(async () => [
       {

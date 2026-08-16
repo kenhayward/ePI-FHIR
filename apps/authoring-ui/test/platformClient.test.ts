@@ -287,4 +287,47 @@ describe('FN-AUT-004 the platform client', () => {
       detail: 'the author of a version may not approve it.',
     });
   });
+
+  it('joins where each market stands with what may be done about it', async () => {
+    // The platform answers those as two fields, because the first is a shape callers already
+    // read. Joining them here rather than on the wire is what keeps that true - and getting it
+    // wrong would render a market with no state at all.
+    const fetcher = respondWith(200, {
+      markets: { GB: 'not-submitted', DE: 'under-assessment' },
+      marketActions: {
+        GB: { actions: ['submit'], signedActions: ['submit'], actionsNeedingEffectiveDate: [] },
+        DE: {
+          actions: ['record-approval'],
+          signedActions: [],
+          actionsNeedingEffectiveDate: ['record-approval'],
+        },
+      },
+    });
+
+    const standing = await clientOver(fetcher as unknown as typeof fetch)
+      .marketStandingsAsync('doc-1', 2);
+
+    expect(standing.marketActions['GB']).toEqual({
+      state: 'not-submitted',
+      actions: ['submit'],
+      signedActions: ['submit'],
+      actionsNeedingEffectiveDate: [],
+    });
+    expect(standing.marketActions['DE']!.state).toBe('under-assessment');
+  });
+
+  it('reports a market with a state and no actions as one with nothing to do', async () => {
+    // Rather than dropping it. A market missing from a screen is one somebody assumes is fine.
+    const fetcher = respondWith(200, { markets: { EU: 'withdrawn' }, marketActions: {} });
+
+    const standing = await clientOver(fetcher as unknown as typeof fetch)
+      .marketStandingsAsync('doc-1', 2);
+
+    expect(standing.marketActions['EU']).toEqual({
+      state: 'withdrawn',
+      actions: [],
+      signedActions: [],
+      actionsNeedingEffectiveDate: [],
+    });
+  });
 });
