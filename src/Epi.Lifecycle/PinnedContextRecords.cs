@@ -10,6 +10,30 @@ namespace Epi.Lifecycle;
 public sealed record PinnedPackage(string Name, string Version, string Sha256);
 
 /// <summary>
+/// Which version of which code system answered, at the moment it was asked (ADR-036 decision 2).
+/// </summary>
+/// <param name="Version">
+/// The version the source said answered, or null where it could not say. Null is recorded as
+/// null and never filled in with the version the platform would use today: that is a true
+/// answer to a different question, which is the trap ADR-023 exists to avoid.
+/// </param>
+public sealed record TerminologyBinding(string System, string? Version)
+{
+    public string System { get; } = string.IsNullOrWhiteSpace(System)
+        ? throw new ArgumentException(
+            "A terminology binding must name the system it binds. A version without the system "
+            + "it versions says nothing at all.",
+            nameof(System))
+        : System;
+
+    /// <summary>Whether the source could say which version answered.</summary>
+    public bool IsVersioned => !string.IsNullOrWhiteSpace(Version);
+
+    public override string ToString() =>
+        IsVersioned ? $"{System}|{Version}" : $"{System} (unversioned)";
+}
+
+/// <summary>
 /// What a version was approved against, recorded at approval (CAP-LCM-011, ADR-023).
 /// </summary>
 /// <remarks>
@@ -17,6 +41,11 @@ public sealed record PinnedPackage(string Name, string Version, string Sha256);
 /// later, the platform could say what it would validate against today, which is a true answer
 /// to a different question. This is the answer to the question an inspection asks.
 /// </remarks>
+/// <param name="TerminologyBindings">
+/// The terminology in force at approval (ADR-036 decision 3). Empty means the approval was
+/// asked and had none, which is deliberately distinguishable from a pin taken before bindings
+/// were recorded at all.
+/// </param>
 public sealed record PinnedContext(
     VersionRef Version,
     string ContentHash,
@@ -26,7 +55,12 @@ public sealed record PinnedContext(
     string IdentifierAuthority,
     DateTimeOffset PinnedAt,
     string? Template = null,
-    int? TemplateVersion = null);
+    int? TemplateVersion = null,
+    IReadOnlyList<TerminologyBinding>? TerminologyBindings = null)
+{
+    public IReadOnlyList<TerminologyBinding> TerminologyBindings { get; } =
+        TerminologyBindings ?? [];
+}
 
 /// <summary>
 /// What a caller must supply for an approval to be pinnable (ADR-024 decision 3).
@@ -42,7 +76,32 @@ public sealed record ApprovalContext(
     IReadOnlyList<PinnedPackage> Packages,
     string IdentifierAuthority,
     string? Template = null,
-    int? TemplateVersion = null);
+    int? TemplateVersion = null,
+    IReadOnlyList<TerminologyBinding>? TerminologyBindings = null)
+{
+    public IReadOnlyList<TerminologyBinding> TerminologyBindings { get; } = Checked(
+        TerminologyBindings ?? []);
+
+    /// <summary>
+    /// Refuses two bindings for one system, because which version answered would otherwise
+    /// depend on which was read first - and the point of recording a version is that it is not
+    /// a matter of chance.
+    /// </summary>
+    private static IReadOnlyList<TerminologyBinding> Checked(
+        IReadOnlyList<TerminologyBinding> bindings)
+    {
+        var duplicated = bindings
+            .GroupBy(binding => binding.System, StringComparer.Ordinal)
+            .FirstOrDefault(group => group.Count() > 1);
+
+        return duplicated is null
+            ? bindings
+            : throw new ArgumentException(
+                $"'{duplicated.Key}' is bound twice, to {string.Join(" and ", duplicated.Select(b => b.Version ?? "no version"))}. "
+                + "Which one answered would depend on the order they were read in.",
+                nameof(bindings));
+    }
+}
 
 /// <summary>
 /// The pinned validating contexts, read-only (ADR-024 decision 2).

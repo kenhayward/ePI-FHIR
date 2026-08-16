@@ -1,0 +1,26 @@
+{
+  "_comment": "The demonstration product set (capability 5, ADR-036 decision 5). Synthetic throughout - no real product, no real marketing authorisation holder, no real authorisation number - because test data in this domain must be synthetic and a demonstration needs a small, legible product set far more than a real one. Three products across three markets is enough to show a label resolving to a product and a product having more than one label.",
+
+  "_notTheRealSource": "This is the reference implementation behind IProductDirectory, in the same way the in-memory stores stand behind their durable counterparts. A deployment with an MDM system points at that instead, and nothing that uses the directory changes.",
+
+  "products": [
+    {
+      "identifier": "PROD-0001",
+      "name": "SYNTHETIC - Examplinum 10 mg tablets",
+      "marketingAuthorisationHolder": "SYNTHETIC - Example Pharmaceuticals Ltd",
+      "markets": ["GB", "DE"]
+    },
+    {
+      "identifier": "PROD-0002",
+      "name": "SYNTHETIC - Examplinum 20 mg tablets",
+      "marketingAuthorisationHolder": "SYNTHETIC - Example Pharmaceuticals Ltd",
+      "markets": ["GB"]
+    },
+    {
+      "identifier": "PROD-0003",
+      "name": "SYNTHETIC - Demonstratil 5 mg/ml solution for injection",
+      "marketingAuthorisationHolder": "SYNTHETIC - Example Pharmaceuticals Ltd",
+      "markets": ["DE"]
+    }
+  ]
+}

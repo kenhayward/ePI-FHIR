@@ -251,6 +251,16 @@ public static class GovernanceSchema
                 BEFORE UPDATE OR DELETE ON workflow_task_event
                 FOR EACH ROW EXECUTE FUNCTION workflow_task_event_is_append_only();
             """),
+
+        // Which version of which code system a version was approved against (ADR-036 decision 3).
+        // Added rather than backfilled: a pin taken before this existed has no bindings and
+        // never had any, and inventing them would be exactly the retrospective answer ADR-023
+        // exists to prevent. NULL therefore means "not asked" and '[]' means "asked, none" -
+        // a distinction worth keeping in the column rather than only in the type.
+        new("0009-pinned-context-terminology", """
+            ALTER TABLE pinned_context
+                ADD COLUMN IF NOT EXISTS terminology_bindings JSONB NULL;
+            """),
     ];
 
     /// <summary>
