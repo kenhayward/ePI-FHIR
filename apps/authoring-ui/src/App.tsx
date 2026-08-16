@@ -4,11 +4,13 @@ import { LabelPicker } from './LabelPicker';
 import { ProductChoice } from './ProductChoice';
 import { LifecycleActions } from './LifecycleActions';
 import { MarketApprovals } from './MarketApprovals';
+import { VersionHistory } from './VersionHistory';
 import { WaitingWork } from './WaitingWork';
 import type { SectionDescription, VersionDescription } from './authoring/editingSession';
 import type {
   MarketStandings,
   Product,
+  VersionRecord,
   SignatureOutcome,
   TransitionOutcome,
   TransitionRequest,
@@ -56,6 +58,7 @@ export interface Platform {
     password: string;
   }): Promise<SignatureOutcome>;
   marketStandingsAsync(documentIdentifier: string, version: number): Promise<MarketStandings>;
+  versionRecordAsync(documentIdentifier: string, version: number): Promise<VersionRecord>;
   marketTransitionAsync(
     documentIdentifier: string,
     version: number,
@@ -229,6 +232,9 @@ export function App({
           onDone={() => setVersion(null)}
         />
       )}
+      <VersionHistory
+        load={() => platform.versionRecordAsync(version.documentIdentifier, version.version)}
+      />
       <ProductChoice
         current={product ?? version.product ?? null}
         searchProducts={(text) => platform.searchProducts(text)}

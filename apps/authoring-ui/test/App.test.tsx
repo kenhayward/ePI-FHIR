@@ -41,6 +41,23 @@ describe('FN-AUT-006 the authoring application', () => {
       },
     })),
     marketTransitionAsync: vi.fn(async () => ({ ok: true as const, from: 'x', to: 'y' })),
+    versionRecordAsync: vi.fn(async () => ({
+      state: 'draft',
+      author: 'user-anna',
+      contentHash: 'sha-256:abc',
+      packagesStillMatch: true,
+      pinnedContext: null,
+      history: [
+        {
+          from: 'draft',
+          to: 'in-review',
+          action: 'submit',
+          actor: 'user-anna',
+          at: '2026-08-16T09:00:00Z',
+          signature: null,
+        },
+      ],
+    })),
     signAsync: vi.fn(async () => ({ refused: false as const, reference: 'sig-1' })),
     openTasks: vi.fn(async () => [
       {
@@ -252,6 +269,16 @@ describe('FN-AUT-006 the authoring application', () => {
     expect(screen.getByText(/not-submitted/)).toBeDefined();
   });
 
+  it('shows what has happened to the version beside it', async () => {
+    // Recorded since iteration 2 and never shown. An audit trail nobody can read is one that
+    // exists for an inspection rather than for the people doing the work.
+    render(<App session={session(true)} platform={platform()} location={at(label)} go={vi.fn()} />);
+
+    expect(await screen.findByRole('heading', { name: /history/i })).toBeDefined();
+    // Specific: the lifecycle actions also offer a "submit" button.
+    expect(await screen.findByText(/Not a signed gate/i)).toBeDefined();
+  });
+
   it('shows the platform its own words when it refuses a save', async () => {
     // The whole point of the client carrying problems rather than summarising them. An author
     // reading a paraphrase of a validation failure cannot find the thing it refers to.
@@ -355,6 +382,14 @@ describe('FN-AUT-006 the authoring application', () => {
       { identifier: 'PROD-0001', name: 'SYNTHETIC - Examplinum 10 mg tablets', markets: ['GB'] },
     ]),
     searchLabels: vi.fn(async () => ({ total: 0, page: 1, pageSize: 20, hits: [] })),
+      versionRecordAsync: vi.fn(async () => ({
+        state: 'draft',
+        author: null,
+        contentHash: 'sha-256:abc',
+        packagesStillMatch: true,
+        pinnedContext: null,
+        history: [],
+      })),
     };
     render(<App session={session(true)} platform={client} location={at(label)} go={vi.fn()} />);
 

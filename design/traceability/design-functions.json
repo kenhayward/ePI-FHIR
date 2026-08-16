@@ -374,6 +374,17 @@
     "iteration": "4",
     "status": "planned"
   },
+  "FN-AUT-012": {
+    "name": "Show what happened to a version, what was signed, and what it was approved against",
+    "component": "Authoring & Template Service",
+    "satisfies": [
+      "CAP-LCM-006",
+      "CAP-AUD-004",
+      "CAP-LCM-011"
+    ],
+    "iteration": "4",
+    "status": "planned"
+  },
   "FN-EVT-001": {
     "name": "Build a content event from a persisted document",
     "component": "Notification & Event Backbone",

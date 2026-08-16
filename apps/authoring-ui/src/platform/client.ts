@@ -142,6 +142,35 @@ interface StateResponse {
   >;
 }
 
+/** What happened to a version, and what it was approved against (ADR-023). */
+export interface VersionRecord {
+  readonly state: string;
+  readonly author: string | null;
+  readonly contentHash: string;
+  readonly packagesStillMatch: boolean;
+  readonly pinnedContext: {
+    readonly packages: readonly { readonly name: string; readonly version: string }[];
+    readonly terminologyBindings: readonly {
+      readonly system: string;
+      readonly version: string | null;
+      readonly isVersioned: boolean;
+    }[];
+  } | null;
+  readonly history: readonly {
+    readonly from: string;
+    readonly to: string;
+    readonly action: string;
+    readonly actor: string;
+    readonly at: string;
+    readonly signature: {
+      readonly printedName: string;
+      readonly meaning: string;
+      readonly contentHash: string;
+      readonly signedAt: string;
+    } | null;
+  }[];
+}
+
 /** One label version the platform is willing to show this caller. */
 export interface LabelHit {
   readonly documentIdentifier: string;
@@ -444,6 +473,50 @@ export class PlatformClient {
     }
 
     return { ok: true, from: body.from ?? '', to: body.to };
+  }
+
+  /**
+   * What happened to a version, and what it was approved against.
+   *
+   * @remarks
+   * Derived by the platform from its append-only history, never assembled here - the whole
+   * value of it is that it is the record rather than a reading of it (ADR-023).
+   */
+  async versionRecordAsync(
+    documentIdentifier: string,
+    version: number,
+  ): Promise<VersionRecord> {
+    const response = await this.#send(
+      `${this.#connection.baseUrl.replace(/\/$/, '')}` +
+        `/labels/${encodeURIComponent(documentIdentifier)}/versions/${version}/reconstruction`,
+      { method: 'GET' },
+    );
+
+    if (!response.ok) {
+      throw new Error(
+        `The platform answered ${response.status} for that version's history, so this is not ` +
+          '"nothing happened" - it was not read.',
+      );
+    }
+
+    const body = (await response.json()) as VersionRecord & {
+      pinnedContext: (VersionRecord['pinnedContext'] & object) | null;
+    };
+
+    return {
+      ...body,
+      pinnedContext:
+        body.pinnedContext === null
+          ? null
+          : {
+              packages: body.pinnedContext.packages ?? [],
+
+              // Absent for a pin taken before terminology was recorded, which is not the same
+              // as an approval that was asked and had none (ADR-036 decision 3). Both read as
+              // empty here; the distinction lives in the record rather than on the screen.
+              terminologyBindings: body.pinnedContext.terminologyBindings ?? [],
+            },
+    };
   }
 
   /** Products matching what an author is looking for, so one can be chosen rather than typed. */

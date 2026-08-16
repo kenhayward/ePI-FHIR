@@ -54,6 +54,9 @@ that sit behind the gateway.
   application. It is there because signing a record is not signing in (ADR-041): re-entering
   credentials is what makes a signature attributable to a person rather than to a session
   somebody left open.
+- `src/VersionHistory.tsx` - what happened, who did it, what they signed and what it was approved
+  against. The one thing on it that must never be subtle is a pinned package whose bytes no
+  longer match: that is tamper-evidence firing (ADR-023).
 - `src/MarketApprovals.tsx` - where each market stands. Two rules meet here and must not blur:
   submitting to a regulator is signed and recording its decision is not (CAP-LCM-012), and only
   the action that records an approval may say when it takes effect (ADR-029).
@@ -76,8 +79,6 @@ it.
 The placeholder this replaced named the whole of the surface's eventual job. Keeping that list
 here so replacing the placeholder does not quietly shrink it:
 
-- **A version's history.** What happened, who did it and what they signed is all recorded and
-  none of it is shown.
 - **Paging through search results.** The platform pages and this shows the first page with an
   honest count of what it is not showing. Somebody looking for the thirtieth label cannot reach
   it yet.
