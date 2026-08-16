@@ -48,7 +48,8 @@ public abstract class PinnedContextStoreConformance : IAsyncDisposable
     }
 
     private static PinnedContext Context(
-        VersionRef? version = null, string hash = "sha-256:abc123", string? template = "smpc-gb") =>
+        VersionRef? version = null, string hash = "sha-256:abc123", string? template = "smpc-gb",
+        IReadOnlyList<TerminologyBinding>? terminology = null) =>
         new(version ?? Version,
             hash,
             "label",
@@ -60,7 +61,8 @@ public abstract class PinnedContextStoreConformance : IAsyncDisposable
             "https://epi.example.org/identifier/document",
             new DateTimeOffset(2026, 8, 14, 10, 0, 0, TimeSpan.Zero),
             template,
-            template is null ? null : 3);
+            template is null ? null : 3,
+            terminology);
 
     private static StateTransition Approval(VersionRef? version = null) => new(
         version ?? Version, "in-review", "approved", "approve", "user-ben",
@@ -192,5 +194,56 @@ public abstract class PinnedContextStoreConformance : IAsyncDisposable
 
         Assert.Equal("sha-256:first", (await pins.ForAsync(Version))!.ContentHash);
         Assert.Equal("sha-256:second", (await pins.ForAsync(second))!.ContentHash);
+    }
+
+    [Fact]
+    public async Task FN_TRM_001_the_terminology_a_version_was_approved_against_comes_back()
+    {
+        // The gap ADR-023 left: a code valid at approval because the code system said so, in
+        // the version in force that month, was a code the platform could say nothing about
+        // afterwards (ADR-036 decision 3).
+        var (store, pins) = await NewStoreAsync();
+        await store.RegisterAsync(Version, "user-anna", "draft", Registered);
+
+        await store.AppendAsync(Approval(), Context(terminology:
+        [
+            new TerminologyBinding("http://snomed.info/sct", "20260301"),
+            new TerminologyBinding("http://terminology.example.org/meddra", "26.1"),
+        ]));
+
+        var pinned = await pins.ForAsync(Version);
+
+        Assert.Equal(
+            ["http://snomed.info/sct|20260301", "http://terminology.example.org/meddra|26.1"],
+            pinned!.TerminologyBindings.Select(b => b.ToString()).Order(StringComparer.Ordinal));
+    }
+
+    [Fact]
+    public async Task FN_TRM_001_a_source_that_could_not_say_which_version_is_recorded_as_such()
+    {
+        // Rather than filled in with the version the platform would use today, which is a true
+        // answer to a different question.
+        var (store, pins) = await NewStoreAsync();
+        await store.RegisterAsync(Version, "user-anna", "draft", Registered);
+
+        await store.AppendAsync(Approval(), Context(terminology:
+            [new TerminologyBinding("http://snomed.info/sct", Version: null)]));
+
+        var binding = Assert.Single((await pins.ForAsync(Version))!.TerminologyBindings);
+
+        Assert.False(binding.IsVersioned);
+    }
+
+    [Fact]
+    public async Task FN_TRM_001_an_approval_with_no_terminology_pins_an_empty_set()
+    {
+        // Empty, not absent. A pin that silently omitted an empty set would be indistinguishable
+        // from one taken before terminology was recorded at all.
+        var (store, pins) = await NewStoreAsync();
+        await store.RegisterAsync(Version, "user-anna", "draft", Registered);
+
+        await store.AppendAsync(Approval(), Context());
+
+        Assert.Empty((await pins.ForAsync(Version))!.TerminologyBindings);
     }
 }
