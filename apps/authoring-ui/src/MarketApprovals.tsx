@@ -7,6 +7,9 @@ export interface MarketStanding {
   readonly actions: readonly string[];
   readonly signedActions: readonly string[];
   readonly actionsNeedingEffectiveDate: readonly string[];
+
+  /** What a signature at each signed act must assert, as the platform configured it (ADR-020). */
+  readonly signatureMeanings?: Readonly<Record<string, string>>;
 }
 
 /**
@@ -70,7 +73,7 @@ export function MarketApprovals({
       const signature = await sign({
         documentIdentifier: version.documentIdentifier,
         version: version.version,
-        meaning: 'Responsibility',
+        meaning: standing.signatureMeanings?.[action] ?? 'responsibility',
         password,
       });
 
