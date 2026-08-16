@@ -65,8 +65,11 @@ that sit behind the gateway.
   to the person choosing.
 - `src/LabelEditor.tsx` - the surface over the working copy.
 - `src/SectionEditor.tsx` - writing one section. Bounded by construction rather than corrected
-  afterwards: paragraphs, lists, and references to other sections chosen by title, which is the
-  whole set the narrative model can express.
+  afterwards: paragraphs, lists, emphasis and references, which is the whole set the narrative
+  model can express. A paragraph is edited as its parts rather than as one string, so an edit to
+  the words around a reference cannot take the reference with it.
+- `src/authoring/runEditing.ts` - marking part of a sentence. Pure functions over the model,
+  because an off-by-one here loses a character out of a regulated sentence.
 - `src/platform/client.ts` - the only way this application reaches the platform. It speaks
   sections, never FHIR, and carries the platform's refusals in the platform's own words.
 - `src/platform/signIn.ts` - authorization code with PKCE against the identity provider. The
@@ -109,6 +112,3 @@ here so replacing the placeholder does not quietly shrink it:
 - **Reusable units and product selection** (2, 5). The platform has a product directory and no
   endpoint exposes it - the same kind of gap ADR-037 decision 7 expected building this to find,
   and the same kind that ADR-038 closed for sections.
-- **Emphasis.** The narrative model carries it and no control inserts it: emphasising part of a
-  paragraph needs a selection, which a plain field cannot express. It wants a small custom
-  control over the run model rather than a rich-text field, and that is a slice of its own.
