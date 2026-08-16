@@ -15,13 +15,13 @@ public sealed class LifecycleService(
     TimeProvider? time = null,
     ISignatureCheck? signatureCheck = null,
     ISpentSignatures? spent = null,
-    WorkflowModel? workflow = null,
+    WorkflowCatalogue? workflow = null,
     IWorkflowStore? tasks = null)
 {
     // Routing is optional: a deployment that has configured none raises no tasks, and the
     // approval gate is unaffected either way. A task records that somebody was asked to act; it
     // never decides whether a transition may happen (ADR-031 decision 1).
-    private readonly WorkflowModel? _workflow = tasks is null ? null : workflow;
+    private readonly WorkflowCatalogue? _workflow = tasks is null ? null : workflow;
     private readonly IWorkflowStore? _tasks = workflow is null ? null : tasks;
 
     // Defaults to this store alone, which is right when it is the only one. Composition passes
@@ -143,6 +143,7 @@ public sealed class LifecycleService(
         string? reason = null,
         string? signatureReference = null,
         ApprovalContext? approvalContext = null,
+        RoutingSubject? routingSubject = null,
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(version);
@@ -220,7 +221,7 @@ public sealed class LifecycleService(
         var superseded = await SupersededByAsync(transition, cancellationToken);
 
         await _store.AppendAsync(transition, pin, superseded, cancellationToken);
-        await RouteAsync(transition, cancellationToken);
+        await RouteAsync(transition, routingSubject, cancellationToken);
         return transition;
     }
 
@@ -232,7 +233,8 @@ public sealed class LifecycleService(
     /// task done by hand, because "done" means the thing was actually done and the only
     /// evidence of that is the transition.
     /// </remarks>
-    private async Task RouteAsync(StateTransition transition, CancellationToken cancellationToken)
+    private async Task RouteAsync(
+        StateTransition transition, RoutingSubject? subject, CancellationToken cancellationToken)
     {
         if (_workflow is null || _tasks is null)
         {
@@ -256,7 +258,15 @@ public sealed class LifecycleService(
             }
         }
 
-        if (_workflow.For(transition.To) is { } rule)
+        // Which process applies is decided per label type and market (ADR-035 decision 2).
+        // The subject is read from the content by whoever calls this, never taken from a
+        // request: a caller that could state its own label type could choose its own reviewers.
+        var model = _workflow.For(subject?.LabelType, subject?.Market);
+
+        // Every rule for the state, because several are several people asked at once rather
+        // than a sequence (ADR-035 decision 1). A sequence is states: a step completing is a
+        // transition (CAP-WFL-005), and the transition is the evidence that it completed.
+        foreach (var rule in model.ForState(transition.To))
         {
             await _tasks.AppendAsync(
                 new TaskEvent(
@@ -267,7 +277,7 @@ public sealed class LifecycleService(
                     Guid.CreateVersion7().ToString(),
                     transition.Version, TaskEventKind.Raised, rule.Action, rule.Assignee,
                     transition.Actor, transition.At,
-                    $"{transition.Version} reached {transition.To}"),
+                    $"{transition.Version} reached {transition.To} ({model.Name})"),
                 cancellationToken);
         }
     }

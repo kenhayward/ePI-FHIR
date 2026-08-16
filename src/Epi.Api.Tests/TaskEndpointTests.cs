@@ -21,9 +21,11 @@ namespace Epi.Api.Tests;
 public sealed class TaskEndpointTests(WebApplicationFactory<Program> factory)
     : IClassFixture<WebApplicationFactory<Program>>
 {
-    private static string DocumentJson() => EpiBundleReader.Write(ContentScope.Stamp(
-        EpiBundleReader.Read(File.ReadAllText(TestFixtures.Path("epi", "minimal-epi-document.json"))),
-        new DocumentScope("uk-affiliate", "GB")));
+    private static string DocumentJson(string affiliate = "uk-affiliate", string market = "GB") =>
+        EpiBundleReader.Write(ContentScope.Stamp(
+            EpiBundleReader.Read(File.ReadAllText(
+                TestFixtures.Path("epi", "minimal-epi-document.json"))),
+            new DocumentScope(affiliate, market)));
 
     private WebApplicationFactory<Program> Host() => factory.WithWebHostBuilder(host =>
     {
@@ -35,7 +37,7 @@ public sealed class TaskEndpointTests(WebApplicationFactory<Program> factory)
         host.UseSetting("Epi:Lifecycle:MarketStatesPath",
             TestFixtures.RepositoryPath("config", "lifecycle", "market-approval-states.json"));
         host.UseSetting("Epi:Workflow:RoutingPath",
-            TestFixtures.RepositoryPath("config", "workflow", "label-routing.json"));
+            TestFixtures.RepositoryPath("config", "workflow", "label"));
         host.ConfigureTestServices(services =>
         {
             services.AddAuthentication(WhoeverAsked.Name)
@@ -54,11 +56,15 @@ public sealed class TaskEndpointTests(WebApplicationFactory<Program> factory)
     }
 
     /// <summary>Creates a version and submits it, which is what raises a review task.</summary>
-    private static async Task<string> SubmittedAsync(WebApplicationFactory<Program> host)
+    private static async Task<string> SubmittedAsync(
+        WebApplicationFactory<Program> host,
+        string affiliate = "uk-affiliate",
+        string market = "GB")
     {
         var anna = As(host, "user-anna", "author");
         using var created = await anna.PostAsync("/fhir/Bundle",
-            new StringContent(DocumentJson(), Encoding.UTF8, "application/fhir+json"));
+            new StringContent(
+                DocumentJson(affiliate, market), Encoding.UTF8, "application/fhir+json"));
         created.EnsureSuccessStatusCode();
         var identifier = (await created.Content.ReadFromJsonAsync<CreatedDocument>())!.Identifier;
 
@@ -83,6 +89,40 @@ public sealed class TaskEndpointTests(WebApplicationFactory<Program> factory)
         Assert.Equal(identifier, task.DocumentIdentifier);
         Assert.Equal("approve", task.Action);
         Assert.Equal("approver", task.Assignee);
+    }
+
+    [Fact]
+    public async Task CAP_WFL_006_a_market_with_two_reviewers_asks_them_both_over_http()
+    {
+        // The seam nothing else covers: the label type and market that select a process are
+        // read from the content here (ADR-035 decision 4), not taken from the request, and the
+        // fixture's own Composition type is what has to match. If that extraction broke, the
+        // platform would fall back to the default and ask one person - which looks exactly
+        // like a platform that is working.
+        var host = Host();
+        await SubmittedAsync(host, "de-affiliate", "DE");
+
+        var approver = await As(host, "user-ben", "approver")
+            .GetFromJsonAsync<IReadOnlyList<TaskView>>("/tasks");
+        var linguist = await As(host, "user-cara", "linguistic-reviewer")
+            .GetFromJsonAsync<IReadOnlyList<TaskView>>("/tasks");
+
+        Assert.Single(approver!);
+        Assert.Single(linguist!);
+    }
+
+    [Fact]
+    public async Task CAP_WFL_001_a_market_with_no_process_of_its_own_asks_one_person()
+    {
+        // The other half of the case above. Without it, a selection that matched everything
+        // would pass the first one and this would be the only thing that noticed.
+        var host = Host();
+        await SubmittedAsync(host);
+
+        var linguist = await As(host, "user-cara", "linguistic-reviewer")
+            .GetFromJsonAsync<IReadOnlyList<TaskView>>("/tasks");
+
+        Assert.Empty(linguist!);
     }
 
     [Fact]

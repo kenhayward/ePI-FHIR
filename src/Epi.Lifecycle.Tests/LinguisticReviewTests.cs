@@ -59,8 +59,8 @@ public sealed class LinguisticReviewTests
             new InMemoryLifecycleStore(),
             new FakeTimeProvider(Noon),
             gate,
-            workflow: WorkflowConfiguration.LoadFrom(
-                Path.Combine(RepositoryRoot(), "config", "workflow", "variant-routing.json")),
+            workflow: WorkflowCatalogue.LoadFrom(
+                Path.Combine(RepositoryRoot(), "config", "workflow", "variant")),
             tasks: tasks), tasks, gate);
     }
 
@@ -186,13 +186,12 @@ public sealed class LinguisticReviewTests
     [Fact]
     public void CAP_LOC_002_the_shipped_variant_routing_asks_a_linguistic_reviewer()
     {
-        var model = WorkflowConfiguration.LoadFrom(
-            Path.Combine(RepositoryRoot(), "config", "workflow", "variant-routing.json"));
+        var model = WorkflowCatalogue.LoadFrom(
+            Path.Combine(RepositoryRoot(), "config", "workflow", "variant"));
 
-        var rule = model.For("in-linguistic-review");
+        var rule = Assert.Single(model.For(null, null).ForState("in-linguistic-review"));
 
-        Assert.NotNull(rule);
-        Assert.Equal("linguistic-reviewer", rule!.Assignee);
+        Assert.Equal("linguistic-reviewer", rule.Assignee);
         Assert.Equal(TimeSpan.FromHours(72), rule.Within);
     }
 }

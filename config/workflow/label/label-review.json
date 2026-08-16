@@ -1,0 +1,11 @@
+{
+  "_comment": "Which states ask somebody to act, and of whom (ADR-031, ADR-035, capability 16). Configuration, not code: an organisation whose review process differs changes this file, and a market with an extra step is a file beside this one rather than a branch in a service. Assignment is to a role rather than to a person - a task assigned to somebody on leave is a task nobody sees, and the failure looks like nothing happening. A task records that somebody was asked; it never decides whether a transition may happen, which remains the state model's alone (config/lifecycle/label-states.json).",
+
+  "_appliesTo": "This is the default: it names neither a label type nor a market, so it answers wherever nothing more specific does. A catalogue must contain exactly one of these - a label type nobody wrote a model for would be routed to nobody, and a review nobody was asked for looks exactly like a review everybody passed.",
+
+  "name": "label-review",
+  "appliesTo": {},
+  "rules": [
+    {"state": "in-review", "action": "approve", "assignee": "approver", "withinHours": 120}
+  ]
+}
