@@ -13,8 +13,8 @@ Name unit tests for the function they verify, for example
 
 ## Coverage
 
-- Design functions declared: **62**
-- Verified by at least one unit test: **58**
+- Design functions declared: **63**
+- Verified by at least one unit test: **59**
 - Not yet verified: **4**
 
 ## Matrix
@@ -34,6 +34,7 @@ Name unit tests for the function they verify, for example
 | FN-AUT-006 | Tell the author what the platform did, including what it refused | Authoring & Template Service | CAP-TPL-005, CAP-IAM-001 | 4 | verified | `FN-AUT-006` (apps/authoring-ui/test/App.test.tsx) |
 | FN-AUT-007 | Find a label to open, without resolving what a scoped search leaves ambiguous | Authoring & Template Service | CAP-SCH-004, CAP-TPL-005 | 4 | verified | `FN-AUT-007` (apps/authoring-ui/test/LabelPicker.test.tsx) |
 | FN-AUT-008 | Choose a product rather than type one, and never show its identifier | Authoring & Template Service | CAP-MDM-008, CAP-TPL-005 | 4 | verified | `FN-AUT-008` (apps/authoring-ui/test/ProductChoice.test.tsx) |
+| FN-AUT-009 | Show a person what routing has asked of them, and never as an empty list | Authoring & Template Service | CAP-WFL-001, CAP-WFL-002 | 4 | verified | `FN-AUT-009` (apps/authoring-ui/test/WaitingWork.test.tsx) |
 | FN-CC-001 | Parse an ePI document Bundle anchored by a Composition | Content Core (FHIR) | CAP-SCM-001 | 1 | verified | `FN_CC_001_reads_a_document_bundle_anchored_by_a_composition` (src/Epi.ContentCore.Tests/EpiBundleReaderTests.cs)<br>`FN_CC_001_rejects_a_bundle_that_is_not_of_type_document` (src/Epi.ContentCore.Tests/EpiBundleReaderTests.cs)<br>`FN_CC_001_rejects_a_bundle_with_no_entries` (src/Epi.ContentCore.Tests/EpiBundleReaderTests.cs)<br>`FN_CC_001_rejects_a_document_bundle_whose_first_entry_is_not_a_composition` (src/Epi.ContentCore.Tests/EpiBundleReaderTests.cs)<br>`FN_CC_001_rejects_content_carrying_elements_that_are_not_in_the_model` (src/Epi.ContentCore.Tests/EpiBundleReaderTests.cs)<br>`FN_CC_001_rejects_content_that_is_not_a_bundle` (src/Epi.ContentCore.Tests/EpiBundleReaderTests.cs)<br>`FN_CC_001_rejects_malformed_json_without_leaking_a_parser_stack_trace` (src/Epi.ContentCore.Tests/EpiBundleReaderTests.cs) |
 | FN-CC-002 | Assign a canonical identifier to a document | Content Core (FHIR) | CAP-SCM-007 | 1 | verified | `FN_CC_002_assigns_a_canonical_identifier_the_caller_did_not_supply` (src/Epi.ContentCore.Tests/ContentStoreConformance.cs)<br>`FN_CC_002_encodes_no_business_meaning_in_the_identifier` (src/Epi.ContentCore.Tests/ContentStoreConformance.cs)<br>`FN_CC_002_mints_a_distinct_identifier_for_every_document` (src/Epi.ContentCore.Tests/ContentStoreConformance.cs) |
 | FN-CC-003 | Create an immutable version snapshot and record its lineage | Content Core (FHIR) | CAP-SCM-007 | 1 | verified | `FN_CC_003_records_the_identifier_on_the_stored_bundle` (src/Epi.ContentCore.Tests/ContentStoreConformance.cs)<br>`FN_CC_003_rejects_a_new_version_of_a_document_that_does_not_exist` (src/Epi.ContentCore.Tests/ContentStoreConformance.cs)<br>`FN_CC_003_starts_at_version_one_and_increments_monotonically` (src/Epi.ContentCore.Tests/ContentStoreConformance.cs) |
@@ -127,7 +128,8 @@ Name unit tests for the function they verify, for example
 | CAP-VAL-001 | FN-VAL-004 | Validate FHIR resource conformance against the applicable active profile(s) from #10. |
 | CAP-VAL-003 | FN-VAL-001, FN-VAL-002 | Validate structural well-formedness and reference integrity (#2), including no dangling references in approval candidates. |
 | CAP-VAL-005 | FN-VAL-003 | Produce structured, actionable issues with severity and precise location (section/element). |
-| CAP-WFL-001 | FN-WFL-001, FN-WFL-004 | Configurable multi-step review/approval workflows per market and label type (config-as-data, #21). |
+| CAP-WFL-001 | FN-AUT-009, FN-WFL-001, FN-WFL-004 | Configurable multi-step review/approval workflows per market and label type (config-as-data, #21). |
+| CAP-WFL-002 | FN-AUT-009 | Task assignment, reassignment, escalation, and due dates. |
 | CAP-WFL-003 | FN-WFL-003 | Invoke electronic signature at approval gates (#19). |
 | CAP-WFL-005 | FN-WFL-002 | Drive lifecycle transitions in #7 on step completion. |
 | CAP-WFL-006 | FN-WFL-004 | Support sequential and parallel review paths and conditional routing. |
