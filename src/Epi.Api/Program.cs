@@ -1052,6 +1052,17 @@ app.MapGet("/labels/{id}/versions/{version:int}/reconstruction", async (
             identifierAuthority = pinned.IdentifierAuthority,
             template = pinned.Template,
             templateVersion = pinned.TemplateVersion,
+
+            // The terminology in force at approval (ADR-036 decision 3). Reported here because
+            // this endpoint answers "what was this approved against", and omitting terminology
+            // made that an incomplete answer to the question ADR-023 exists for. Empty means
+            // the approval was asked and had none, which is not the same as never asked.
+            terminologyBindings = pinned.TerminologyBindings.Select(binding => new
+            {
+                system = binding.System,
+                version = binding.Version,
+                isVersioned = binding.IsVersioned,
+            }),
             pinnedAt = pinned.PinnedAt,
             packages = pinned.Packages.Select(p => new
             {

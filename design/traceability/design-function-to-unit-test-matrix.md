@@ -13,8 +13,8 @@ Name unit tests for the function they verify, for example
 
 ## Coverage
 
-- Design functions declared: **67**
-- Verified by at least one unit test: **63**
+- Design functions declared: **68**
+- Verified by at least one unit test: **64**
 - Not yet verified: **4**
 
 ## Matrix
@@ -37,6 +37,7 @@ Name unit tests for the function they verify, for example
 | FN-AUT-009 | Show a person what routing has asked of them, and never as an empty list | Authoring & Template Service | CAP-WFL-001, CAP-WFL-002 | 4 | verified | `FN-AUT-009` (apps/authoring-ui/test/WaitingWork.test.tsx) |
 | FN-AUT-010 | Move a version through its lifecycle, signing where the gate requires it | Authoring & Template Service | CAP-WFL-003, CAP-LCM-001 | 4 | verified | `FN-AUT-010` (apps/authoring-ui/test/LifecycleActions.test.tsx) |
 | FN-AUT-011 | Show where each market stands, keeping the signed and unsigned acts apart | Authoring & Template Service | CAP-LCM-003, CAP-LCM-012, CAP-LCM-004 | 4 | verified | `FN-AUT-011` (apps/authoring-ui/test/MarketApprovals.test.tsx) |
+| FN-AUT-012 | Show what happened to a version, what was signed, and what it was approved against | Authoring & Template Service | CAP-LCM-006, CAP-AUD-004, CAP-LCM-011 | 4 | verified | `FN-AUT-012` (apps/authoring-ui/test/VersionHistory.test.tsx) |
 | FN-CC-001 | Parse an ePI document Bundle anchored by a Composition | Content Core (FHIR) | CAP-SCM-001 | 1 | verified | `FN_CC_001_reads_a_document_bundle_anchored_by_a_composition` (src/Epi.ContentCore.Tests/EpiBundleReaderTests.cs)<br>`FN_CC_001_rejects_a_bundle_that_is_not_of_type_document` (src/Epi.ContentCore.Tests/EpiBundleReaderTests.cs)<br>`FN_CC_001_rejects_a_bundle_with_no_entries` (src/Epi.ContentCore.Tests/EpiBundleReaderTests.cs)<br>`FN_CC_001_rejects_a_document_bundle_whose_first_entry_is_not_a_composition` (src/Epi.ContentCore.Tests/EpiBundleReaderTests.cs)<br>`FN_CC_001_rejects_content_carrying_elements_that_are_not_in_the_model` (src/Epi.ContentCore.Tests/EpiBundleReaderTests.cs)<br>`FN_CC_001_rejects_content_that_is_not_a_bundle` (src/Epi.ContentCore.Tests/EpiBundleReaderTests.cs)<br>`FN_CC_001_rejects_malformed_json_without_leaking_a_parser_stack_trace` (src/Epi.ContentCore.Tests/EpiBundleReaderTests.cs) |
 | FN-CC-002 | Assign a canonical identifier to a document | Content Core (FHIR) | CAP-SCM-007 | 1 | verified | `FN_CC_002_assigns_a_canonical_identifier_the_caller_did_not_supply` (src/Epi.ContentCore.Tests/ContentStoreConformance.cs)<br>`FN_CC_002_encodes_no_business_meaning_in_the_identifier` (src/Epi.ContentCore.Tests/ContentStoreConformance.cs)<br>`FN_CC_002_mints_a_distinct_identifier_for_every_document` (src/Epi.ContentCore.Tests/ContentStoreConformance.cs) |
 | FN-CC-003 | Create an immutable version snapshot and record its lineage | Content Core (FHIR) | CAP-SCM-007 | 1 | verified | `FN_CC_003_records_the_identifier_on_the_stored_bundle` (src/Epi.ContentCore.Tests/ContentStoreConformance.cs)<br>`FN_CC_003_rejects_a_new_version_of_a_document_that_does_not_exist` (src/Epi.ContentCore.Tests/ContentStoreConformance.cs)<br>`FN_CC_003_starts_at_version_one_and_increments_monotonically` (src/Epi.ContentCore.Tests/ContentStoreConformance.cs) |
@@ -96,6 +97,7 @@ Name unit tests for the function they verify, for example
 | CAP-AUD-001 | FN-AUD-001 | Capture a comprehensive audit trail of all GxP-relevant actions (who, what, when, why, before/after values). |
 | CAP-AUD-002 | FN-AUD-002, FN-AUD-003, FN-CFG-004 | Store audit records tamper-evidently/immutably (append-only). |
 | CAP-AUD-003 | FN-AUD-005, FN-WFL-003 | Provide electronic signatures per 21 CFR Part 11 & EU Annex 11: signing events, signature meaning/manifest, and binding to the signed record and signer identity. |
+| CAP-AUD-004 | FN-AUT-012 | Reconstruct the full history of any record. |
 | CAP-CFG-001 | FN-CFG-001, FN-CFG-002 | Externalise configuration for markets/regulators, lifecycle state models, workflows, validation/compliance rules, terminology bindings, publishing routing, and event schemas. |
 | CAP-CFG-004 | FN-CFG-001 | Onboard a new market/regulator via configuration without a code release. |
 | CAP-CFG-006 | FN-CFG-003, FN-CFG-005 | Validate configuration consistency before activation. |
@@ -110,9 +112,9 @@ Name unit tests for the function they verify, for example
 | CAP-LCM-002 | FN-AUT-002, FN-LCM-008 | Version every label as immutable snapshots with a version lineage. |
 | CAP-LCM-003 | FN-AUT-011, FN-LCM-004, FN-LCM-009 | Maintain **internal lifecycle state** separately from **per-market regulatory-approval state**. |
 | CAP-LCM-004 | FN-AUT-011, FN-LCM-009 | Support effective dating: when an approved version becomes effective. |
-| CAP-LCM-006 | FN-LCM-006 | Reconstruct the full content and metadata of any historical version. |
+| CAP-LCM-006 | FN-AUT-012, FN-LCM-006 | Reconstruct the full content and metadata of any historical version. |
 | CAP-LCM-007 | FN-LCM-003 | Enforce transitions through workflow (#16) and permissions/segregation of duties (#17). |
-| CAP-LCM-011 | FN-LCM-005, FN-TRM-001 | Pin the content snapshot (including reusable-unit versions per policy) at approval. |
+| CAP-LCM-011 | FN-AUT-012, FN-LCM-005, FN-TRM-001 | Pin the content snapshot (including reusable-unit versions per policy) at approval. |
 | CAP-LCM-012 | FN-AUT-011, FN-LCM-007, FN-LCM-009 | Require an electronic signature (#19) to submit a version to a regulator. Recording a regulator's subsequent decision is a factual entry about an external event and is **not** signed. |
 | CAP-MDM-003 | FN-CC-011, FN-SCH-003 | Maintain the product <-> packaging <-> label association model linking each label document to the regulated product/packaging it describes. |
 | CAP-MDM-004 | FN-MDM-001 | Resolve and validate identifiers used in content, flagging unresolved or ambiguous references. |
