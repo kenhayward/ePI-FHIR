@@ -28,6 +28,20 @@ describe('FN-AUT-006 the authoring application', () => {
   const platform = (outcome: SaveOutcome = { ok: true, version: 3 }) => ({
     loadVersion: vi.fn(async () => version),
     saveSections: vi.fn(async () => outcome),
+    searchLabels: vi.fn(async () => ({
+      total: 1,
+      page: 1,
+      pageSize: 20,
+      hits: [
+        {
+          documentIdentifier: '01a00000-0000-7000-8000-00000000000a',
+          version: 2,
+          title: 'SYNTHETIC - Examplinum 10 mg tablets',
+          market: 'GB',
+          state: 'draft',
+        },
+      ],
+    })),
   });
 
   const session = (signedIn: boolean) => ({
@@ -84,11 +98,34 @@ describe('FN-AUT-006 the authoring application', () => {
     expect(await screen.findByRole('heading', { name: '1. What Examplinum is' })).toBeDefined();
   });
 
-  it('says what to do when the address names no label at all', async () => {
-    // Rather than an empty screen, which reads as a broken application.
+  it('offers a way to find a label when the address names none', async () => {
+    // It used to say the address did not name one and stop there, which is a dead end: an
+    // author with no link had nowhere to go.
     render(<App session={session(true)} platform={platform()} location={at('')} go={vi.fn()} />);
 
-    expect(await screen.findByText(/which label/i)).toBeDefined();
+    expect(await screen.findByRole('heading', { name: /find a label/i })).toBeDefined();
+  });
+
+  it('opens a label the author picked out of a search', async () => {
+    const client = platform();
+    render(<App session={session(true)} platform={client} location={at('')} go={vi.fn()} />);
+
+    await userEvent.click(screen.getByRole('button', { name: /^search$/i }));
+    await userEvent.click(await screen.findByRole('button', { name: /Examplinum/ }));
+
+    await waitFor(() =>
+      expect(client.loadVersion).toHaveBeenCalledWith('01a00000-0000-7000-8000-00000000000a', 2),
+    );
+  });
+
+  it('does not search on behalf of somebody who has not signed in', async () => {
+    // The search is permission-scoped, so an unauthenticated one is not a smaller search - it
+    // is a request that will be refused, and offering it invites the author to make it.
+    const client = platform();
+    render(<App session={session(false)} platform={client} location={at('')} go={vi.fn()} />);
+
+    expect(screen.queryByRole('heading', { name: /find a label/i })).toBeNull();
+    expect(client.searchLabels).not.toHaveBeenCalled();
   });
 
   it('tells the author which version a save created', async () => {
@@ -180,6 +217,7 @@ describe('FN-AUT-006 the authoring application', () => {
         throw new Error('Version 2 of that label was not found.');
       }),
       saveSections: vi.fn(async (): Promise<SaveOutcome> => ({ ok: true, version: 3 })),
+      searchLabels: vi.fn(async () => ({ total: 0, page: 1, pageSize: 20, hits: [] })),
     };
     render(<App session={session(true)} platform={client} location={at(label)} go={vi.fn()} />);
 

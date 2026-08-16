@@ -314,6 +314,16 @@
     "iteration": "4",
     "status": "planned"
   },
+  "FN-AUT-007": {
+    "name": "Find a label to open, without resolving what a scoped search leaves ambiguous",
+    "component": "Authoring & Template Service",
+    "satisfies": [
+      "CAP-SCH-004",
+      "CAP-TPL-005"
+    ],
+    "iteration": "4",
+    "status": "planned"
+  },
   "FN-EVT-001": {
     "name": "Build a content event from a persisted document",
     "component": "Notification & Event Backbone",

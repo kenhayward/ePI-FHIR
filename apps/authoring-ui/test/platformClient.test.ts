@@ -140,4 +140,42 @@ describe('FN-AUT-004 the platform client', () => {
       kind: 'unreachable',
     });
   });
+
+  it('searches for labels, and reports how many there are in total', async () => {
+    // The total matters as much as the hits. Somebody shown twenty results who assumes that is
+    // all of them will conclude a label does not exist.
+    const fetcher = respondWith(200, {
+      total: 34,
+      page: 1,
+      pageSize: 20,
+      hits: [{ documentIdentifier: 'doc-1', version: 2, title: 'A leaflet', market: 'GB', state: 'approved' }],
+    });
+
+    const found = await clientOver(fetcher as unknown as typeof fetch).searchLabels({
+      text: 'examplinum',
+    });
+
+    expect(found.total).toBe(34);
+    expect(found.pageSize).toBe(20);
+    expect(found.hits[0]!.title).toBe('A leaflet');
+  });
+
+  it('sends only the criteria that were given', async () => {
+    // An empty filter sent as an empty string is a filter, and it matches nothing.
+    const fetcher = respondWith(200, { total: 0, page: 1, pageSize: 20, hits: [] });
+
+    await clientOver(fetcher as unknown as typeof fetch).searchLabels({ text: 'x', market: 'GB' });
+
+    const query = new URL(String(fetcher.mock.calls[0]![0])).searchParams;
+    expect(query.get('text')).toBe('x');
+    expect(query.get('market')).toBe('GB');
+    expect(query.has('state')).toBe(false);
+  });
+
+  it('reports a search nobody is allowed to make, rather than answering it emptily', async () => {
+    // An error shown as "no results" is a lie, and the remedy differs entirely.
+    const client = clientOver(respondWith(403, {}) as unknown as typeof fetch);
+
+    await expect(client.searchLabels({ text: 'x' })).rejects.toThrow(/403|not allowed/i);
+  });
 });
