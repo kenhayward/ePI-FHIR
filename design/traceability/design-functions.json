@@ -363,6 +363,17 @@
     "iteration": "4",
     "status": "planned"
   },
+  "FN-AUT-011": {
+    "name": "Show where each market stands, keeping the signed and unsigned acts apart",
+    "component": "Authoring & Template Service",
+    "satisfies": [
+      "CAP-LCM-003",
+      "CAP-LCM-012",
+      "CAP-LCM-004"
+    ],
+    "iteration": "4",
+    "status": "planned"
+  },
   "FN-EVT-001": {
     "name": "Build a content event from a persisted document",
     "component": "Notification & Event Backbone",
@@ -528,6 +539,17 @@
       "CAP-LCM-002"
     ],
     "iteration": "3",
+    "status": "planned"
+  },
+  "FN-LCM-009": {
+    "name": "Report per-market actions, which are signed, and which need an effective date",
+    "component": "Lifecycle & Workflow Service",
+    "satisfies": [
+      "CAP-LCM-003",
+      "CAP-LCM-012",
+      "CAP-LCM-004"
+    ],
+    "iteration": "4",
     "status": "planned"
   },
   "FN-WFL-003": {

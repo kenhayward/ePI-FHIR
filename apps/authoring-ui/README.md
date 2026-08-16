@@ -54,6 +54,9 @@ that sit behind the gateway.
   application. It is there because signing a record is not signing in (ADR-041): re-entering
   credentials is what makes a signature attributable to a person rather than to a session
   somebody left open.
+- `src/MarketApprovals.tsx` - where each market stands. Two rules meet here and must not blur:
+  submitting to a regulator is signed and recording its decision is not (CAP-LCM-012), and only
+  the action that records an approval may say when it takes effect (ADR-029).
 - `src/ProductChoice.tsx` - which product the label is about, chosen rather than typed. The
   identifier is never shown: it is what the platform stores and resolves, and it means nothing
   to the person choosing.
@@ -73,8 +76,6 @@ it.
 The placeholder this replaced named the whole of the surface's eventual job. Keeping that list
 here so replacing the placeholder does not quietly shrink it:
 
-- **Per-market approval.** Internal lifecycle is on a screen; submitting to a regulator and
-  recording its decision are not, and they are held separately on purpose (ADR-005).
 - **A version's history.** What happened, who did it and what they signed is all recorded and
   none of it is shown.
 - **Paging through search results.** The platform pages and this shows the first page with an

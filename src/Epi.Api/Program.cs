@@ -517,6 +517,39 @@ app.MapGet("/labels/{id}/versions/{version:int}/state", async (
             // Named separately and always, so "approved" can never be read as approved
             // everywhere (ADR-005).
             markets = await markets.StatesAsync(reference, cancellationToken),
+
+            // What may be done to each from here, beside rather than inside the states above:
+            // that shape is what callers already read, and answering a second question by
+            // changing the answer to the first breaks every one of them. A surface working any
+            // of this out would be a second implementation of a state model it cannot see
+            // (ADR-037 decision 1).
+            marketActions = (await markets.StatesAsync(reference, cancellationToken))
+                .ToDictionary(
+                    market => market.Key,
+                    market => new
+                    {
+                        actions = marketModel.Value.Transitions
+                            .Where(t => string.Equals(t.From, market.Value, StringComparison.Ordinal))
+                            .Select(t => t.Action),
+
+                        // Submitting to a regulator is an act of this organisation by an
+                        // accountable person; recording what the regulator decided is a factual
+                        // entry about somebody else's decision (CAP-LCM-012).
+                        signedActions = marketModel.Value.Transitions
+                            .Where(t => string.Equals(t.From, market.Value, StringComparison.Ordinal)
+                                        && t.RequiresSignature)
+                            .Select(t => t.Action),
+
+                        // The same rule the engine applies: the transition that lands on the
+                        // approved state must say when it takes effect, and no other may
+                        // (ADR-029 decision 3).
+                        actionsNeedingEffectiveDate = marketModel.Value.Transitions
+                            .Where(t => string.Equals(t.From, market.Value, StringComparison.Ordinal)
+                                        && string.Equals(
+                                            t.To, marketModel.Value.ApprovedState,
+                                            StringComparison.Ordinal))
+                            .Select(t => t.Action),
+                    }),
         });
 }).RequireAuthorization();
 
