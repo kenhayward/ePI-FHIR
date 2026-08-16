@@ -90,6 +90,15 @@
     "iteration": "1",
     "status": "planned"
   },
+  "FN-VAL-004": {
+    "name": "Validate correctly when several writes arrive at once",
+    "component": "Validation Service",
+    "satisfies": [
+      "CAP-VAL-001"
+    ],
+    "iteration": "3",
+    "status": "planned"
+  },
   "FN-IAM-001": {
     "name": "Validate an OIDC access token and extract subject claims",
     "component": "IAM",

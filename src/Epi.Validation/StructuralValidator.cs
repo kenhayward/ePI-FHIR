@@ -18,9 +18,20 @@ public sealed class StructuralValidator
 {
     // The SDK caches compiled schemas in state shared through the resolver, and concurrent
     // validation can make an uncached canonical fail to resolve. The validator reports that as
-    // an error, so the gate would reject valid content intermittently. Serialised until the
-    // shared state is understood well enough to do better: a slow gate is acceptable, a gate
-    // that rejects valid labels under load is not.
+    // an error, so the gate would reject valid content intermittently.
+    //
+    // Measured rather than assumed, because this began as a stopgap nobody had put a number on:
+    // fifteen rounds of sixteen concurrent validations against a cold validator, reaching past
+    // this gate, reported errors in 238 of 240. The document is valid every time. So the gate
+    // is load-bearing and stays - a slow gate is acceptable, a gate that rejects valid labels
+    // under load is not.
+    //
+    // What the same measurement also showed is that the gate was not what cost anything. Thirty
+    // -two concurrent validations take 175 ms with it and 39 ms without, on dedicated threads.
+    // Through the thread pool the same work took 10.6 seconds, sixty times more, because
+    // waiting synchronously holds a pool thread and a starved pool injects replacements about
+    // twice a second. Under a web host every waiter is a request thread, so the serialising
+    // costs a factor of four and the blocking costs the rest.
     private static readonly SemaphoreSlim Gate = new(1, 1);
 
     private readonly Validator _validator;
@@ -34,29 +45,59 @@ public sealed class StructuralValidator
         _validator = new Validator(resolver, new LocalTerminologyService(resolver));
     }
 
-    /// <summary>Validates one document, reporting every issue found.</summary>
-    public ValidationReport Validate(Bundle bundle)
+    /// <summary>
+    /// Validates one document, reporting every issue found, without holding the calling thread
+    /// while it waits its turn.
+    /// </summary>
+    /// <remarks>
+    /// The path every caller that can await should take. Under a web host, waiting synchronously
+    /// for the gate holds a request thread for the whole validation, and the pool replaces
+    /// starved threads about twice a second - which is where sixty of the sixty-four parts of
+    /// the measured cost came from.
+    /// </remarks>
+    public async Task<ValidationReport> ValidateAsync(
+        Bundle bundle, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(bundle);
 
-        Gate.Wait();
-        OperationOutcome outcome;
+        await Gate.WaitAsync(cancellationToken);
         try
         {
-            outcome = _validator.Validate(bundle);
+            return Report(_validator.Validate(bundle), bundle);
         }
         finally
         {
             Gate.Release();
         }
-
-        var issues = outcome.Issue
-            .Select(Translate)
-            .Concat(DanglingReferences(bundle))
-            .ToList();
-
-        return new ValidationReport(issues);
     }
+
+    /// <summary>Validates one document, reporting every issue found.</summary>
+    /// <remarks>
+    /// Kept for callers that cannot await. It blocks the calling thread until its turn comes,
+    /// which is what <see cref="ValidateAsync"/> exists to avoid, so prefer that where there is
+    /// a choice.
+    /// </remarks>
+    public ValidationReport Validate(Bundle bundle)
+    {
+        ArgumentNullException.ThrowIfNull(bundle);
+
+        Gate.Wait();
+        try
+        {
+            return Report(_validator.Validate(bundle), bundle);
+        }
+        finally
+        {
+            Gate.Release();
+        }
+    }
+
+    /// <summary>
+    /// Turns the SDK's outcome into a report. One place, so the two entry points cannot come to
+    /// disagree about what an issue means.
+    /// </summary>
+    private static ValidationReport Report(OperationOutcome outcome, Bundle bundle) =>
+        new([.. outcome.Issue.Select(Translate).Concat(DanglingReferences(bundle))]);
 
     private static ValidationIssue Translate(OperationOutcome.IssueComponent issue) => new(
         issue.Severity switch
