@@ -13,8 +13,8 @@ Name unit tests for the function they verify, for example
 
 ## Coverage
 
-- Design functions declared: **68**
-- Verified by at least one unit test: **64**
+- Design functions declared: **69**
+- Verified by at least one unit test: **65**
 - Not yet verified: **4**
 
 ## Matrix
@@ -38,6 +38,7 @@ Name unit tests for the function they verify, for example
 | FN-AUT-010 | Move a version through its lifecycle, signing where the gate requires it | Authoring & Template Service | CAP-WFL-003, CAP-LCM-001 | 4 | verified | `FN-AUT-010` (apps/authoring-ui/test/LifecycleActions.test.tsx) |
 | FN-AUT-011 | Show where each market stands, keeping the signed and unsigned acts apart | Authoring & Template Service | CAP-LCM-003, CAP-LCM-012, CAP-LCM-004 | 4 | verified | `FN-AUT-011` (apps/authoring-ui/test/MarketApprovals.test.tsx) |
 | FN-AUT-012 | Show what happened to a version, what was signed, and what it was approved against | Authoring & Template Service | CAP-LCM-006, CAP-AUD-004, CAP-LCM-011 | 4 | verified | `FN-AUT-012` (apps/authoring-ui/test/VersionHistory.test.tsx) |
+| FN-AUT-013 | Write a section within the formatting the write gate accepts, references included | Authoring & Template Service | CAP-TPL-005, CAP-SCM-005 | 4 | verified | `FN-AUT-013` (apps/authoring-ui/test/SectionEditor.test.tsx) |
 | FN-CC-001 | Parse an ePI document Bundle anchored by a Composition | Content Core (FHIR) | CAP-SCM-001 | 1 | verified | `FN_CC_001_reads_a_document_bundle_anchored_by_a_composition` (src/Epi.ContentCore.Tests/EpiBundleReaderTests.cs)<br>`FN_CC_001_rejects_a_bundle_that_is_not_of_type_document` (src/Epi.ContentCore.Tests/EpiBundleReaderTests.cs)<br>`FN_CC_001_rejects_a_bundle_with_no_entries` (src/Epi.ContentCore.Tests/EpiBundleReaderTests.cs)<br>`FN_CC_001_rejects_a_document_bundle_whose_first_entry_is_not_a_composition` (src/Epi.ContentCore.Tests/EpiBundleReaderTests.cs)<br>`FN_CC_001_rejects_content_carrying_elements_that_are_not_in_the_model` (src/Epi.ContentCore.Tests/EpiBundleReaderTests.cs)<br>`FN_CC_001_rejects_content_that_is_not_a_bundle` (src/Epi.ContentCore.Tests/EpiBundleReaderTests.cs)<br>`FN_CC_001_rejects_malformed_json_without_leaking_a_parser_stack_trace` (src/Epi.ContentCore.Tests/EpiBundleReaderTests.cs) |
 | FN-CC-002 | Assign a canonical identifier to a document | Content Core (FHIR) | CAP-SCM-007 | 1 | verified | `FN_CC_002_assigns_a_canonical_identifier_the_caller_did_not_supply` (src/Epi.ContentCore.Tests/ContentStoreConformance.cs)<br>`FN_CC_002_encodes_no_business_meaning_in_the_identifier` (src/Epi.ContentCore.Tests/ContentStoreConformance.cs)<br>`FN_CC_002_mints_a_distinct_identifier_for_every_document` (src/Epi.ContentCore.Tests/ContentStoreConformance.cs) |
 | FN-CC-003 | Create an immutable version snapshot and record its lineage | Content Core (FHIR) | CAP-SCM-007 | 1 | verified | `FN_CC_003_records_the_identifier_on_the_stored_bundle` (src/Epi.ContentCore.Tests/ContentStoreConformance.cs)<br>`FN_CC_003_rejects_a_new_version_of_a_document_that_does_not_exist` (src/Epi.ContentCore.Tests/ContentStoreConformance.cs)<br>`FN_CC_003_starts_at_version_one_and_increments_monotonically` (src/Epi.ContentCore.Tests/ContentStoreConformance.cs) |
@@ -124,12 +125,13 @@ Name unit tests for the function they verify, for example
 | CAP-SCH-004 | FN-AUT-007, FN-IAM-005, FN-SCH-001 | Scope all results by caller permissions/attributes (#17); never leak out-of-scope content. |
 | CAP-SCM-001 | FN-CC-001, FN-CC-004, FN-CC-005 | Represent an ePI as a FHIR document `Bundle` anchored by a `Composition` with typed, coded sections. |
 | CAP-SCM-003 | FN-AUT-001 | Support both structured (coded, referenceable) and narrative section content. |
+| CAP-SCM-005 | FN-AUT-013 | Support **cross-references** within a document and across documents, with referential integrity and resolution. |
 | CAP-SCM-007 | FN-CC-002, FN-CC-003, FN-CC-007, FN-CC-008, FN-CC-009 | Define **canonical identifier and versioning semantics** for documents, sections, and reusable units (stable IDs across languages/markets/versions). |
 | CAP-SCM-009 | FN-CC-010 | Expose the content model/schema (profiles, section taxonomy, extensions) as a service to authoring (#3), validation (#11), and rendering (#13). |
 | CAP-SCM-010 | FN-CC-006 | Preserve full fidelity round-trip: a conformant ePI can be represented and re-serialised without content loss. |
 | CAP-SCM-011 | FN-CC-011, FN-CC-012 | Support association of a label document to its product/packaging identity (the product <-> packaging <-> label association model, with #5). |
 | CAP-TPL-004 | FN-TPL-001 | Instantiate a new label from a template, producing a conformant, pre-scaffolded draft handed to #7. |
-| CAP-TPL-005 | FN-AUT-001, FN-AUT-002, FN-AUT-003, FN-AUT-004, FN-AUT-006, FN-AUT-007, FN-AUT-008, FN-CC-010, FN-CC-012 | Provide template-driven **guided authoring**: field-level guidance, allowed value sets (#6), and section prompts that shield authors from raw FHIR. |
+| CAP-TPL-005 | FN-AUT-001, FN-AUT-002, FN-AUT-003, FN-AUT-004, FN-AUT-006, FN-AUT-007, FN-AUT-008, FN-AUT-013, FN-CC-010, FN-CC-012 | Provide template-driven **guided authoring**: field-level guidance, allowed value sets (#6), and section prompts that shield authors from raw FHIR. |
 | CAP-TPL-007 | FN-TPL-002 | Version templates with effective dates; record which template (and version) each label was instantiated from. |
 | CAP-TRM-007 | FN-TRM-001, FN-TRM-002 | Import terminology releases on a schedule and track source versions (via #24). |
 | CAP-VAL-001 | FN-VAL-004 | Validate FHIR resource conformance against the applicable active profile(s) from #10. |
