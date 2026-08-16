@@ -29,6 +29,10 @@ Run from the repository root, which is the npm workspace:
 npm install && npm test
 ```
 
+`npm run dev` serves it. It reads `VITE_EPI_AUTHORITY`, `VITE_EPI_CLIENT_ID` and `VITE_EPI_API`
+at build time and refuses to start without them - see `.env.example`, which matches the
+development stack.
+
 `npm run lint` type-checks; `npm run dev` serves it; `npm run build` produces the static files
 that sit behind the gateway.
 
@@ -37,7 +41,10 @@ that sit behind the gateway.
 - `src/authoring/narrative.ts` - the formatting an author can produce, and the only thing that
   turns it into markup. Bounded to what the write gate accepts (ADR-037 decision 4).
 - `src/authoring/editingSession.ts` - the working copy, held until the author saves.
-- `src/LabelEditor.tsx` - the surface over it.
+- `src/App.tsx` - the application: sign in, open the label the address names, edit, save. Most
+  of it is about outcomes, because a refusal that reaches no screen is a refusal that did not
+  happen as far as the author is concerned.
+- `src/LabelEditor.tsx` - the surface over the working copy.
 - `src/platform/client.ts` - the only way this application reaches the platform. It speaks
   sections, never FHIR, and carries the platform's refusals in the platform's own words.
 - `src/platform/signIn.ts` - authorization code with PKCE against the identity provider. The
@@ -53,9 +60,13 @@ it.
 The placeholder this replaced named the whole of the surface's eventual job. Keeping that list
 here so replacing the placeholder does not quietly shrink it:
 
-- **Wiring.** `LabelEditor` still takes a version as a prop and calls `onSave`; nothing yet
-  joins the sign-in, the client and the editor into an application with a page to land on. That
-  is the next thing, and it is the last of it - every part exists and is tested.
+- **Choosing a label.** The address names one, which is fine for a link and no use for finding
+  one. The platform has permission-scoped search (ADR-022) and nothing here calls it, so an
+  author cannot yet pick a label - which is also the shape ADR-037 decision 3 wants for products
+  and reusable units.
+- **Nothing has run against a real Keycloak or a real API.** Every part is tested against a
+  fake, which is the right way to test them and no substitute for the redirect actually
+  happening.
 - **In-context translation** (capability 9), side by side with the source.
 - **Validation and compliance feedback** (11, 12) shown against the section that caused it.
 - **Review and e-signature flows** (16, 19), which is where the segregation-of-duties rules
