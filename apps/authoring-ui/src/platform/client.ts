@@ -32,6 +32,40 @@ export type SaveOutcome =
   | { readonly ok: false; readonly kind: 'conflict'; readonly detail: string }
   | { readonly ok: false; readonly kind: 'unreachable'; readonly detail: string };
 
+/** What an author is looking for. Every part optional, and only what is given is sent. */
+export interface SearchCriteria {
+  readonly text?: string;
+  readonly market?: string;
+  readonly state?: string;
+  readonly product?: string;
+}
+
+/** One label version the platform is willing to show this caller. */
+export interface LabelHit {
+  readonly documentIdentifier: string;
+  readonly version: number;
+  readonly title: string;
+  readonly market: string;
+  readonly state: string;
+}
+
+/**
+ * What a search found.
+ *
+ * @remarks
+ * The total is carried because it is not the same as the number of hits, and the difference
+ * matters: somebody shown twenty results who assumes that is all of them will conclude a label
+ * does not exist. It is also already a scoped total - the platform bounds the query rather than
+ * filtering its results (ADR-022 decision 1), so this is a true count of what this caller may
+ * see and not of what exists.
+ */
+export interface SearchResults {
+  readonly total: number;
+  readonly page: number;
+  readonly pageSize: number;
+  readonly hits: readonly LabelHit[];
+}
+
 /**
  * The surface's only way to reach the platform (ADR-038's endpoints, FN-AUT-004).
  *
@@ -81,6 +115,39 @@ export class PlatformClient {
     );
 
     return described;
+  }
+
+  /**
+   * Labels this caller may see that match what they are looking for.
+   *
+   * @remarks
+   * Only the criteria that were given are sent. An empty filter sent as an empty string is a
+   * filter, and it matches nothing - which would present as "there are no labels" rather than
+   * as a mistake.
+   */
+  async searchLabels(criteria: SearchCriteria): Promise<SearchResults> {
+    const query = new URLSearchParams();
+    for (const [name, value] of Object.entries(criteria)) {
+      if (typeof value === 'string' && value.trim() !== '') {
+        query.set(name, value);
+      }
+    }
+
+    const response = await this.#send(
+      `${this.#connection.baseUrl.replace(/\/$/, '')}/labels/search?${query}`,
+      { method: 'GET' },
+    );
+
+    if (!response.ok) {
+      // Reported rather than answered emptily. A failure shown as "no results" is a lie, and
+      // the remedy differs entirely.
+      throw new Error(
+        `The platform answered ${response.status} to that search, so these are not "no results" ` +
+          '- the search did not happen.',
+      );
+    }
+
+    return (await response.json()) as SearchResults;
   }
 
   async saveSections(

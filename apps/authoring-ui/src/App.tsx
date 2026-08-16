@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
 import { LabelEditor } from './LabelEditor';
+import { LabelPicker } from './LabelPicker';
 import type { SectionDescription, VersionDescription } from './authoring/editingSession';
-import type { SaveOutcome } from './platform/client';
+import type { SaveOutcome, SearchCriteria, SearchResults } from './platform/client';
 
 /**
  * What the application needs of a sign-in, and of the platform.
@@ -24,6 +25,7 @@ export interface Platform {
     version: number,
     sections: readonly SectionDescription[],
   ): Promise<SaveOutcome>;
+  searchLabels(criteria: SearchCriteria): Promise<SearchResults>;
 }
 
 /**
@@ -50,10 +52,15 @@ export function App({
   const [problem, setProblem] = useState<string | null>(null);
   const [outcome, setOutcome] = useState<SaveOutcome | null>(null);
 
-  const wanted = {
-    label: location.searchParams.get('label'),
-    version: Number(location.searchParams.get('version') ?? '0'),
-  };
+  // What the author picked, where they picked one. The address still wins when it names a
+  // label, so a link opens what it says.
+  const [picked, setPicked] = useState<{ label: string; version: number } | null>(null);
+
+  const fromAddress = location.searchParams.get('label');
+  const wanted =
+    fromAddress !== null
+      ? { label: fromAddress, version: Number(location.searchParams.get('version') ?? '0') }
+      : { label: picked?.label ?? null, version: picked?.version ?? 0 };
 
   const returning = location.searchParams.has('code');
 
@@ -105,10 +112,10 @@ export function App({
     return (
       <main>
         <h1>ePI authoring</h1>
-        <p>
-          This address does not say which label to open. Follow a link to a label version, or add
-          a label and version to the address.
-        </p>
+        <LabelPicker
+          search={(criteria) => platform.searchLabels(criteria)}
+          onOpen={(label, version) => setPicked({ label, version })}
+        />
       </main>
     );
   }

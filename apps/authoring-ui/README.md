@@ -44,6 +44,9 @@ that sit behind the gateway.
 - `src/App.tsx` - the application: sign in, open the label the address names, edit, save. Most
   of it is about outcomes, because a refusal that reaches no screen is a refusal that did not
   happen as far as the author is concerned.
+- `src/LabelPicker.tsx` - finding a label. Its wording is load-bearing: a scoped search leaves
+  "no such label" and "not one you may see" genuinely indistinguishable, and the platform refuses
+  to resolve that, so neither does this.
 - `src/LabelEditor.tsx` - the surface over the working copy.
 - `src/platform/client.ts` - the only way this application reaches the platform. It speaks
   sections, never FHIR, and carries the platform's refusals in the platform's own words.
@@ -60,10 +63,12 @@ it.
 The placeholder this replaced named the whole of the surface's eventual job. Keeping that list
 here so replacing the placeholder does not quietly shrink it:
 
-- **Choosing a label.** The address names one, which is fine for a link and no use for finding
-  one. The platform has permission-scoped search (ADR-022) and nothing here calls it, so an
-  author cannot yet pick a label - which is also the shape ADR-037 decision 3 wants for products
-  and reusable units.
+- **Paging through search results.** The platform pages and this shows the first page with an
+  honest count of what it is not showing. Somebody looking for the thirtieth label cannot reach
+  it yet.
+- **Choosing a product or a reusable unit.** The same shape as picking a label, and the reason
+  ADR-037 decision 3 exists - but the platform exposes no endpoint for either, which is the gap
+  ADR-038 closed for sections and has not for these.
 - **Nothing has run against a real Keycloak or a real API.** Every part is tested against a
   fake, which is the right way to test them and no substitute for the redirect actually
   happening.
