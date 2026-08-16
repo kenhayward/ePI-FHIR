@@ -33,7 +33,8 @@ public sealed class IdentifierAuthorityConfigurationTests : IDisposable
               "unitSystem": "https://id.example-pharma.test/epi/reusable-unit",
               "unitReferenceExtension": "https://id.example-pharma.test/epi/unit-reference",
               "variantSourceTagSystem": "https://id.example-pharma.test/epi/variant-source",
-              "variantScopeTagSystem": "https://id.example-pharma.test/epi/variant-scope"
+              "variantScopeTagSystem": "https://id.example-pharma.test/epi/variant-scope",
+              "productSystem": "https://id.example-pharma.test/epi/product"
             }
             """);
 
@@ -60,7 +61,8 @@ public sealed class IdentifierAuthorityConfigurationTests : IDisposable
               "unitSystem": "https://id.example-pharma.test/epi/reusable-unit",
               "unitReferenceExtension": "https://id.example-pharma.test/epi/unit-reference",
               "variantSourceTagSystem": "https://id.example-pharma.test/epi/variant-source",
-              "variantScopeTagSystem": "https://id.example-pharma.test/epi/variant-scope"
+              "variantScopeTagSystem": "https://id.example-pharma.test/epi/variant-scope",
+              "productSystem": "https://id.example-pharma.test/epi/product"
             }
             """));
 
@@ -85,7 +87,8 @@ public sealed class IdentifierAuthorityConfigurationTests : IDisposable
               "unitSystem": "https://id.example-pharma.test/epi/reusable-unit",
               "unitReferenceExtension": "https://id.example-pharma.test/epi/unit-reference",
               "variantSourceTagSystem": "https://id.example-pharma.test/epi/variant-source",
-              "variantScopeTagSystem": "https://id.example-pharma.test/epi/variant-scope"
+              "variantScopeTagSystem": "https://id.example-pharma.test/epi/variant-scope",
+              "productSystem": "https://id.example-pharma.test/epi/product"
             }
             """);
 
@@ -111,7 +114,8 @@ public sealed class IdentifierAuthorityConfigurationTests : IDisposable
               "unitSystem": "https://id.example-pharma.test/epi/reusable-unit",
               "unitReferenceExtension": "https://id.example-pharma.test/epi/unit-reference",
               "variantSourceTagSystem": "https://id.example-pharma.test/epi/variant-source",
-              "variantScopeTagSystem": "https://id.example-pharma.test/epi/variant-scope"
+              "variantScopeTagSystem": "https://id.example-pharma.test/epi/variant-scope",
+              "productSystem": "https://id.example-pharma.test/epi/product"
             }
             """);
 

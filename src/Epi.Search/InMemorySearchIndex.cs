@@ -91,6 +91,7 @@ public sealed class InMemorySearchIndex(IdentifierAuthority? authority = null)
                 e.Value.State,
                 e.Value.Content.Language,
                 e.Value.Content.Product,
+                e.Value.Content.ProductIdentifier,
                 e.Value.Content.DocumentType))
             .ToList();
 
@@ -104,6 +105,10 @@ public sealed class InMemorySearchIndex(IdentifierAuthority? authority = null)
         && Exact(criteria.Language, entry.Content.Language)
         && Exact(criteria.State, entry.State)
         && Contains(criteria.Product, entry.Content.Product)
+
+        // Exact, unlike the name beside it. An identifier that matched loosely would answer
+        // PROD-1 for a query about PROD-10.
+        && Exact(criteria.ProductIdentifier, entry.Content.ProductIdentifier)
         && Contains(criteria.Text, entry.Content.Text);
 
     /// <summary>An absent criterion narrows nothing; a present one must match exactly.</summary>

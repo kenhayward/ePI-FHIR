@@ -17,6 +17,13 @@ public sealed record SearchableContent(
     DocumentScope Scope,
     string? Language,
     string? Product,
+
+    /// <summary>
+    /// The product's identity in the system of record, where the label names one resolvably
+    /// (ADR-040 decision 3). Null for content written before product references existed, which
+    /// is findable by text and not by product - a limit stated rather than papered over.
+    /// </summary>
+    string? ProductIdentifier,
     string? DocumentType,
     string Text)
 {
@@ -51,10 +58,13 @@ public sealed record SearchableContent(
             scope,
             Blank(composition?.Language),
 
-            // Product binds properly to master data (capability 5), which does not exist yet.
-            // What the content names as its subject is the honest stand-in, and content that
-            // names none is indexed without one rather than refused.
+            // The display, for showing. It is a copy of what the directory said when the
+            // reference was written and it is not what anything resolves (ADR-040 decision 2).
             Blank(composition?.Subject.FirstOrDefault()?.Display),
+
+            // The identity, for asking. This is what makes "which labels are about this
+            // product" a query rather than a scan of every label's free text.
+            ProductReference.Of(bundle, authority)?.Identifier,
             Blank(composition?.Type?.Coding.FirstOrDefault()?.Code),
             text.ToString());
     }

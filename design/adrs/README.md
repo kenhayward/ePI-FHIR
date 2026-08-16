@@ -37,6 +37,7 @@ of them next needs revising, not as a bulk exercise.
 | [ADR-037](0037-authoring-surface.md) | The authoring surface | accepted |
 | [ADR-038](0038-authoring-projection.md) | The authoring projection | accepted |
 | [ADR-039](0039-authoring-sign-in.md) | Signing in to the authoring surface | accepted |
+| [ADR-040](0040-product-reference-in-content.md) | How a label says which product it is about | accepted |
 
 A record stays `proposed` until the pull request carrying it is merged, at which point it
 becomes `accepted`. Superseding a decision means a new record that says so, never editing the

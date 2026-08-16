@@ -19,6 +19,7 @@ public sealed record SearchHit(
     string State,
     string? Language = null,
     string? Product = null,
+    string? ProductIdentifier = null,
     string? DocumentType = null);
 
 /// <summary>

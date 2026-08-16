@@ -20,6 +20,13 @@ namespace Epi.Search;
 public sealed record SearchCriteria(
     string? Text = null,
     string? Product = null,
+
+    /// <summary>
+    /// A product's identity, matched exactly. Separate from <paramref name="Product"/>, which is
+    /// a loose match on the name a reader sees: one asks which labels are about a product and
+    /// the other asks which labels mention some words (ADR-040 decision 3).
+    /// </summary>
+    string? ProductIdentifier = null,
     string? Market = null,
     string? Language = null,
     string? State = null,

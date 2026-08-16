@@ -57,12 +57,13 @@ public static class IdentifierAuthorityConfiguration
             problems, file, "variantSourceTagSystem", parsed?.VariantSourceTagSystem);
         var variantScope = Absolute(
             problems, file, "variantScopeTagSystem", parsed?.VariantScopeTagSystem);
+        var product = Absolute(problems, file, "productSystem", parsed?.ProductSystem);
 
         return problems.Count > 0
             ? throw new MarketConfigurationException(problems)
             : new IdentifierAuthority(
                 document, version, affiliate, market, template, templateVersion,
-                unit, unitReference, variantSource, variantScope);
+                unit, unitReference, variantSource, variantScope, product);
     }
 
     private static string Absolute(List<string> problems, string file, string field, string? value)
@@ -94,5 +95,6 @@ public static class IdentifierAuthorityConfiguration
         string? UnitSystem,
         string? UnitReferenceExtension,
         string? VariantSourceTagSystem,
-        string? VariantScopeTagSystem);
+        string? VariantScopeTagSystem,
+        string? ProductSystem);
 }
