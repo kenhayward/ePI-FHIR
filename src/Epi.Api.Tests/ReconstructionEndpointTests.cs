@@ -1,5 +1,6 @@
 using System.Net;
 using System.Net.Http.Json;
+using System.Text.Json;
 using System.Security.Claims;
 using System.Text;
 using System.Text.Encodings.Web;
@@ -316,6 +317,26 @@ public sealed class ReconstructionEndpointTests(WebApplicationFactory<Program> f
 
     private sealed record SignatureView(
         string Reference, string Signer, string PrintedName, string Meaning, string ContentHash);
+
+    [Fact]
+    public async Task CAP_LCM_011_the_reconstruction_names_the_terminology_it_was_approved_against()
+    {
+        // ADR-036 put terminology bindings in the pinned context precisely so this question
+        // could be answered, and the reconstruction did not report them - which made "what was
+        // this approved against" an incomplete answer to the question ADR-023 exists for.
+        var host = Host();
+        var identifier = await CreateAsync(As(host, "user-anna"), "SYNTHETIC - approved label");
+        await ApproveAsync(host, identifier);
+
+        var record = await As(host, "user-anna")
+            .GetFromJsonAsync<JsonElement>($"/labels/{identifier}/versions/1/reconstruction");
+
+        var pinned = record.GetProperty("pinnedContext");
+        Assert.True(
+            pinned.TryGetProperty("terminologyBindings", out var bindings),
+            "the pinned context records terminology and the reconstruction must report it");
+        Assert.Equal(JsonValueKind.Array, bindings.ValueKind);
+    }
 
     private sealed class KnownUsers : ICredentialVerifier
     {
