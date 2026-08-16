@@ -13,8 +13,8 @@ Name unit tests for the function they verify, for example
 
 ## Coverage
 
-- Design functions declared: **70**
-- Verified by at least one unit test: **66**
+- Design functions declared: **71**
+- Verified by at least one unit test: **67**
 - Not yet verified: **4**
 
 ## Matrix
@@ -40,6 +40,7 @@ Name unit tests for the function they verify, for example
 | FN-AUT-012 | Show what happened to a version, what was signed, and what it was approved against | Authoring & Template Service | CAP-LCM-006, CAP-AUD-004, CAP-LCM-011 | 4 | verified | `FN-AUT-012` (apps/authoring-ui/test/VersionHistory.test.tsx) |
 | FN-AUT-013 | Write a section within the formatting the write gate accepts, references included | Authoring & Template Service | CAP-TPL-005, CAP-SCM-005 | 4 | verified | `FN-AUT-013` (apps/authoring-ui/test/SectionEditor.test.tsx) |
 | FN-AUT-014 | Mark part of a sentence as emphasis or as a reference, without disturbing the rest | Authoring & Template Service | CAP-TPL-005, CAP-SCM-005 | 4 | verified | `FN-AUT-014` (apps/authoring-ui/test/runEditing.test.ts) |
+| FN-AUT-015 | Show the rendered leaflet in a sandboxed frame, never as the filed artefact | Authoring & Template Service | CAP-RND-001, CAP-RND-004 | 4 | verified | `FN-AUT-015` (apps/authoring-ui/test/LeafletPreview.test.tsx) |
 | FN-CC-001 | Parse an ePI document Bundle anchored by a Composition | Content Core (FHIR) | CAP-SCM-001 | 1 | verified | `FN_CC_001_reads_a_document_bundle_anchored_by_a_composition` (src/Epi.ContentCore.Tests/EpiBundleReaderTests.cs)<br>`FN_CC_001_rejects_a_bundle_that_is_not_of_type_document` (src/Epi.ContentCore.Tests/EpiBundleReaderTests.cs)<br>`FN_CC_001_rejects_a_bundle_with_no_entries` (src/Epi.ContentCore.Tests/EpiBundleReaderTests.cs)<br>`FN_CC_001_rejects_a_document_bundle_whose_first_entry_is_not_a_composition` (src/Epi.ContentCore.Tests/EpiBundleReaderTests.cs)<br>`FN_CC_001_rejects_content_carrying_elements_that_are_not_in_the_model` (src/Epi.ContentCore.Tests/EpiBundleReaderTests.cs)<br>`FN_CC_001_rejects_content_that_is_not_a_bundle` (src/Epi.ContentCore.Tests/EpiBundleReaderTests.cs)<br>`FN_CC_001_rejects_malformed_json_without_leaking_a_parser_stack_trace` (src/Epi.ContentCore.Tests/EpiBundleReaderTests.cs) |
 | FN-CC-002 | Assign a canonical identifier to a document | Content Core (FHIR) | CAP-SCM-007 | 1 | verified | `FN_CC_002_assigns_a_canonical_identifier_the_caller_did_not_supply` (src/Epi.ContentCore.Tests/ContentStoreConformance.cs)<br>`FN_CC_002_encodes_no_business_meaning_in_the_identifier` (src/Epi.ContentCore.Tests/ContentStoreConformance.cs)<br>`FN_CC_002_mints_a_distinct_identifier_for_every_document` (src/Epi.ContentCore.Tests/ContentStoreConformance.cs) |
 | FN-CC-003 | Create an immutable version snapshot and record its lineage | Content Core (FHIR) | CAP-SCM-007 | 1 | verified | `FN_CC_003_records_the_identifier_on_the_stored_bundle` (src/Epi.ContentCore.Tests/ContentStoreConformance.cs)<br>`FN_CC_003_rejects_a_new_version_of_a_document_that_does_not_exist` (src/Epi.ContentCore.Tests/ContentStoreConformance.cs)<br>`FN_CC_003_starts_at_version_one_and_increments_monotonically` (src/Epi.ContentCore.Tests/ContentStoreConformance.cs) |
@@ -121,6 +122,8 @@ Name unit tests for the function they verify, for example
 | CAP-MDM-003 | FN-CC-011, FN-SCH-003 | Maintain the product <-> packaging <-> label association model linking each label document to the regulated product/packaging it describes. |
 | CAP-MDM-004 | FN-MDM-001 | Resolve and validate identifiers used in content, flagging unresolved or ambiguous references. |
 | CAP-MDM-008 | FN-AUT-008, FN-MDM-001, FN-MDM-002 | Expose an identifier resolution and association API to #1, #2, #3. |
+| CAP-RND-001 | FN-AUT-015 | Render FHIR ePI to accessible, structured HTML. |
+| CAP-RND-004 | FN-AUT-015 | Produce interactive author previews (draft, watermarked) and official renders (approved). |
 | CAP-SCH-001 | FN-SCH-001, FN-SCH-003 | Provide a FHIR RESTful API with search parameters (product, market, language, status, identifier, effective date). |
 | CAP-SCH-002 | FN-SCH-002 | Retrieve a specific version and the current-approved version of a label per market/language. |
 | CAP-SCH-004 | FN-AUT-007, FN-IAM-005, FN-SCH-001 | Scope all results by caller permissions/attributes (#17); never leak out-of-scope content. |

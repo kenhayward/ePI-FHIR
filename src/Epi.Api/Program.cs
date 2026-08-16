@@ -1,3 +1,4 @@
+using System.Text;
 using System.Security.Claims;
 using Epi.ContentCore;
 using Epi.Contracts;
@@ -7,6 +8,7 @@ using Epi.Governance.Events;
 using Epi.Governance.Persistence;
 using Epi.Iam;
 using Epi.Lifecycle;
+using Epi.Rendering;
 using Epi.Search;
 using Epi.Signature;
 using Epi.Templates;
@@ -1457,6 +1459,53 @@ app.MapGet("/master-data/products", async (
     }));
 }).RequireAuthorization();
 
+// The leaflet a version produces, for an author to look at (FN-RND-003).
+//
+// A preview, and deliberately not an official render. A render template is content that
+// somebody approves (ADR-033 decision 2), there is no template store yet, and a render made
+// with a template nobody approved cannot be the artefact filed with a regulator - so this is
+// marked as a preview, is not written to the asset store, and says so in the output.
+app.MapGet("/labels/{id}/versions/{version:int}/preview", async (
+    string id,
+    int version,
+    ClaimsPrincipal principal,
+    IContentStore store,
+    IPolicyDecisionPoint policy,
+    IdentifierAuthority authority,
+    CancellationToken cancellationToken) =>
+{
+    var subject = SubjectFactory.From(principal);
+    if (subject is null)
+    {
+        return Results.Unauthorized();
+    }
+
+    var scoped = new ScopedContentStore(store, policy, subject);
+    var identity = new DocumentIdentity(authority.DocumentSystem, id);
+
+    EpiDocument? document;
+    try
+    {
+        document = await scoped.GetAsync(identity, version, cancellationToken);
+    }
+    catch (AccessDeniedException)
+    {
+        return Results.NotFound();
+    }
+
+    if (document is null)
+    {
+        return Results.NotFound();
+    }
+
+    // Draft, always. The flag is what keeps an author preview distinguishable from an official
+    // render (CAP-RND-004), and nothing here could produce the latter.
+    var rendered = HtmlRenderer.Render(document, PreviewTemplate.Scaffold, draft: true);
+
+    return Results.Text(
+        Encoding.UTF8.GetString(rendered.Content), "text/html", Encoding.UTF8);
+}).RequireAuthorization();
+
 app.Run();
 
 /// <summary>One search result on the wire.</summary>
@@ -1501,6 +1550,28 @@ static class Pinning
             // even though both come from the pinned packages today. They are different claims,
             // and a pin written now still means what it says once they diverge (ADR-036).
             [.. terminology.Select(b => new TerminologyBinding(b.System, b.Version))]);
+}
+
+/// <summary>
+/// The render template a preview is made with, which is scaffolding and says so.
+/// </summary>
+/// <remarks>
+/// ADR-033 decision 2 says render templates are content: versioned, immutable per version,
+/// approved by a regulatory owner, because a template determines what a patient reads. There is
+/// no template store yet, so this is not one - and it is deliberately not under `config/`
+/// either, because putting it there would say an administrator may edit what a patient reads,
+/// which is exactly what that decision rejects.
+///
+/// It exists so an author can see the shape of their content. Everything rendered with it is a
+/// preview, and the day a template store exists this goes.
+/// </remarks>
+internal static class PreviewTemplate
+{
+    public static RenderTemplate Scaffold { get; } = new(
+        "preview-scaffold",
+        0,
+        "Preview (not an approved template)",
+        "body { font-family: system-ui, sans-serif; max-width: 40rem; margin: 2rem auto; }");
 }
 
 /// <summary>What a caller sends when saving edited sections (ADR-038).</summary>

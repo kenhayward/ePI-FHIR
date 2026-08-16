@@ -405,6 +405,16 @@
     "iteration": "4",
     "status": "planned"
   },
+  "FN-AUT-015": {
+    "name": "Show the rendered leaflet in a sandboxed frame, never as the filed artefact",
+    "component": "Authoring & Template Service",
+    "satisfies": [
+      "CAP-RND-001",
+      "CAP-RND-004"
+    ],
+    "iteration": "4",
+    "status": "planned"
+  },
   "FN-EVT-001": {
     "name": "Build a content event from a persisted document",
     "component": "Notification & Event Backbone",

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { LabelEditor } from './LabelEditor';
 import { LabelPicker } from './LabelPicker';
+import { LeafletPreview } from './LeafletPreview';
 import { ProductChoice } from './ProductChoice';
 import { LifecycleActions } from './LifecycleActions';
 import { MarketApprovals } from './MarketApprovals';
@@ -59,6 +60,7 @@ export interface Platform {
   }): Promise<SignatureOutcome>;
   marketStandingsAsync(documentIdentifier: string, version: number): Promise<MarketStandings>;
   versionRecordAsync(documentIdentifier: string, version: number): Promise<VersionRecord>;
+  previewAsync(documentIdentifier: string, version: number): Promise<string>;
   marketTransitionAsync(
     documentIdentifier: string,
     version: number,
@@ -137,6 +139,17 @@ export function App({
       .then(setStandings)
       .catch(() => setStandings(null));
   }, [session.hasValidToken, platform, wanted.label, wanted.version]);
+
+  // Hoisted above every early return, because a hook called inside the JSX of a component that
+  // returns early is a hook called on some renders and not others - React refuses, and the
+  // whole application renders nothing. The tests caught it as an empty page.
+  const preview = useCallback(
+    () =>
+      version === null
+        ? Promise.reject(new Error('There is no version to preview.'))
+        : platform.previewAsync(version.documentIdentifier, version.version),
+    [platform, version],
+  );
 
   const save = useCallback(
     async (sections: readonly SectionDescription[]) => {
@@ -232,6 +245,7 @@ export function App({
           onDone={() => setVersion(null)}
         />
       )}
+      <LeafletPreview load={preview} />
       <VersionHistory
         load={() => platform.versionRecordAsync(version.documentIdentifier, version.version)}
       />
