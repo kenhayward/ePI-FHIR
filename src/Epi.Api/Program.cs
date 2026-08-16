@@ -1175,6 +1175,161 @@ app.MapGet("/admin/reconciliation/registrations", async (
     });
 }).RequireAuthorization();
 
+// A version as sections, and the way back (ADR-038, FN-CC-010).
+//
+// The gap ADR-037 decision 7 predicted the authoring surface would find: the surface must never
+// see a Bundle, and the only read path returned one. Derived on every read and stored nowhere -
+// FHIR remains the single source of truth, so there is nothing here that can come to disagree
+// with it.
+app.MapGet("/labels/{id}/versions/{version:int}/sections", async (
+    string id,
+    int version,
+    ClaimsPrincipal principal,
+    IContentStore store,
+    IPolicyDecisionPoint policy,
+    LifecycleService lifecycle,
+    IdentifierAuthority authority,
+    CancellationToken cancellationToken) =>
+{
+    var subject = SubjectFactory.From(principal);
+    if (subject is null)
+    {
+        return Results.Unauthorized();
+    }
+
+    // Read through scope, so a document the caller may not see is not found rather than
+    // forbidden - otherwise this endpoint would prove that a document exists (CAP-SCH-004).
+    var scoped = new ScopedContentStore(store, policy, subject);
+    var identity = new DocumentIdentity(authority.DocumentSystem, id);
+
+    EpiDocument? document;
+    try
+    {
+        document = await scoped.GetAsync(identity, version, cancellationToken);
+    }
+    catch (AccessDeniedException)
+    {
+        return Results.NotFound();
+    }
+
+    if (document is null)
+    {
+        return Results.NotFound();
+    }
+
+    // Whether this caller may write to this document at all, which is a scope and policy
+    // question and not the state of the version in front of them (ADR-038 decision 6). Every
+    // version is immutable; saving mints the next one, and drafting from an approved version is
+    // how a label evolves rather than an exception to immutability.
+    var scope = ContentScope.Of(document.Bundle, authority)!;
+    var mayAuthor = await policy.DecideAsync(
+        new AuthorizationQuery(subject, "author", new ResourceScope(scope.Affiliate, scope.Market)),
+        cancellationToken);
+
+    return Results.Ok(new
+    {
+        documentIdentifier = id,
+        version,
+        state = await lifecycle.CurrentStateAsync(new VersionRef(id, version), cancellationToken)
+                ?? "unknown",
+        editable = mayAuthor.Allowed,
+        sections = SectionProjection.Of(document.Bundle).Select(section => new
+        {
+            identity = section.Identity,
+            title = section.Title,
+            narrative = section.Narrative,
+        }),
+    });
+}).RequireAuthorization();
+
+// Saving edited sections, which mints the next version rather than changing this one.
+//
+// The Bundle is assembled by patching the version that was read, never rebuilt from the
+// sections (ADR-038 decision 2): a projection carries what an author may change and a Bundle
+// carries a great deal more. It then goes through exactly the same write pipeline as any other
+// version, so nothing about the gate is special-cased for authoring.
+app.MapPost("/labels/{id}/versions/{version:int}/sections", async (
+    string id,
+    int version,
+    SectionSaveRequest body,
+    ClaimsPrincipal principal,
+    IContentStore store,
+    IPolicyDecisionPoint policy,
+    StructuralValidator validator,
+    LifecycleService lifecycle,
+    IAuditSink audit,
+    IEventPublisher events,
+    IdentifierAuthority authority,
+    CancellationToken cancellationToken) =>
+{
+    var subject = SubjectFactory.From(principal);
+    if (subject is null)
+    {
+        return Results.Unauthorized();
+    }
+
+    var scoped = new ScopedContentStore(store, policy, subject);
+    var identity = new DocumentIdentity(authority.DocumentSystem, id);
+
+    try
+    {
+        var source = await scoped.GetAsync(identity, version, cancellationToken);
+        if (source is null)
+        {
+            return Results.NotFound();
+        }
+
+        var edited = SectionProjection.Apply(
+            source.Bundle,
+            [.. (body.Sections ?? []).Select(s =>
+                new ProjectedSection(s.Identity ?? string.Empty, s.Title, s.Narrative ?? string.Empty))]);
+
+        var next = (await scoped.VersionsAsync(identity, cancellationToken))[^1] + 1;
+
+        var gated = new AuditingContentStore(
+            new PublishingContentStore(
+                new MaterialisingContentStore(
+                    new CrossReferenceCheckingContentStore(
+                        new ValidatingContentStore(
+                            new ScopedContentStore(
+                                new RegisteringContentStore(store, lifecycle, subject.Id),
+                                policy, subject),
+                            validator)),
+                    new ScopedContentStore(store, policy, subject),
+                    authority),
+                events),
+            audit,
+            subject.Id);
+
+        var stored = await gated.CreateVersionAsync(identity, next, edited, cancellationToken);
+
+        return Results.Created(
+            $"/labels/{id}/versions/{stored.Version}/sections",
+            new { documentIdentifier = id, version = stored.Version });
+    }
+    catch (ArgumentException invalid)
+    {
+        // A section identity the version does not have. Adding a section is a separate
+        // operation with its own rules (ADR-038 decision 4).
+        return Results.BadRequest(new { problems = new[] { invalid.Message } });
+    }
+    catch (ContentRejectedException rejected)
+    {
+        return Results.BadRequest(new
+        {
+            problems = rejected.Issues.Select(issue => $"{issue.Location}: {issue.Message}"),
+        });
+    }
+    catch (AccessDeniedException denied)
+    {
+        return Results.Problem(denied.Message, statusCode: StatusCodes.Status403Forbidden);
+    }
+    catch (VersionConflictException conflict)
+    {
+        return Results.Problem(conflict.Message, statusCode: StatusCodes.Status409Conflict);
+    }
+}).RequireAuthorization();
+
 app.Run();
 
 /// <summary>One search result on the wire.</summary>
@@ -1219,6 +1374,15 @@ static class Pinning
             // and a pin written now still means what it says once they diverge (ADR-036).
             [.. terminology.Select(b => new TerminologyBinding(b.System, b.Version))]);
 }
+
+/// <summary>What a caller sends when saving edited sections (ADR-038).</summary>
+internal sealed record SectionSaveRequest(IReadOnlyList<SectionSave>? Sections);
+
+/// <param name="Identity">
+/// The identity the platform assigned. Named rather than positional, because a save that
+/// matched sections by order would rewrite the wrong one the moment the set changed.
+/// </param>
+internal sealed record SectionSave(string? Identity, string? Title, string? Narrative);
 
 /// <summary>What a caller asks for when moving a task to somebody else.</summary>
 internal sealed record ReassignmentRequest(string Assignee, string? Reason);

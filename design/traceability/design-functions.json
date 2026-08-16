@@ -322,6 +322,16 @@
     "iteration": "2",
     "status": "planned"
   },
+  "FN-CC-010": {
+    "name": "Project a version as sections, and patch edited sections back",
+    "component": "Content Core (FHIR)",
+    "satisfies": [
+      "CAP-TPL-005",
+      "CAP-SCM-009"
+    ],
+    "iteration": "4",
+    "status": "planned"
+  },
   "FN-LCM-001": {
     "name": "Load the lifecycle state model from configuration",
     "component": "Lifecycle & Workflow Service",
