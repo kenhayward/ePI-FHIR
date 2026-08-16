@@ -39,6 +39,7 @@ of them next needs revising, not as a bulk exercise.
 | [ADR-039](0039-authoring-sign-in.md) | Signing in to the authoring surface | accepted |
 | [ADR-040](0040-product-reference-in-content.md) | How a label says which product it is about | accepted |
 | [ADR-041](0041-signing-in-the-browser.md) | Signing a record in the browser | accepted |
+| [ADR-042](0042-template-store.md) | Where templates live, and how they are approved | accepted |
 
 A record stays `proposed` until the pull request carrying it is merged, at which point it
 becomes `accepted`. Superseding a decision means a new record that says so, never editing the
