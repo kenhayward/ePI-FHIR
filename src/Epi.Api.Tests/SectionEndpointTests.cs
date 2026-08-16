@@ -53,7 +53,8 @@ public sealed class SectionEndpointTests(WebApplicationFactory<Program> factory)
 
     private sealed record SectionsView(
         string DocumentIdentifier, int Version, string State, bool Editable,
-        ProductView? Product, IReadOnlyList<SectionView> Sections);
+        ProductView? Product, IReadOnlyList<string> Actions,
+        IReadOnlyList<string> SignedActions, IReadOnlyList<SectionView> Sections);
 
     private sealed record ProductView(string Identifier, string? Display);
 
@@ -327,6 +328,41 @@ public sealed class SectionEndpointTests(WebApplicationFactory<Program> factory)
             new { sections = view!.Sections, product = new { identifier = "", display = "Typed" } });
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task FN_CC_013_a_version_says_what_may_be_done_to_it_from_here()
+    {
+        // The surface must not work this out. Deriving permitted transitions in a browser would
+        // be a second implementation of the state model, and the weaker of the two
+        // (ADR-037 decision 1).
+        var host = Host();
+        var id = await AuthoredAsync(host);
+
+        var view = await As(host, "user-anna", "author")
+            .GetFromJsonAsync<SectionsView>($"/labels/{id}/versions/1/sections");
+
+        Assert.Contains("submit", view!.Actions);
+    }
+
+    [Fact]
+    public async Task FN_CC_013_it_says_which_of_those_need_a_signature()
+    {
+        // So the surface asks for a password at a signed gate and nowhere else. Asking for one
+        // anyway would teach people to type it whenever prompted, which is how the one that
+        // matters stops being a control (ADR-041).
+        var host = Host();
+        var id = await AuthoredAsync(host);
+        var client = As(host, "user-anna", "author");
+
+        using var submitted = await client.PostAsJsonAsync(
+            $"/labels/{id}/versions/1/transitions", new { action = "submit" });
+        submitted.EnsureSuccessStatusCode();
+
+        var view = await client.GetFromJsonAsync<SectionsView>($"/labels/{id}/versions/1/sections");
+
+        Assert.Contains("approve", view!.Actions);
+        Assert.Contains("approve", view.SignedActions);
     }
 
     private sealed class AlwaysDeny : IPolicyDecisionPoint
