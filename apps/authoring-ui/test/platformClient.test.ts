@@ -178,4 +178,20 @@ describe('FN-AUT-004 the platform client', () => {
 
     await expect(client.searchLabels({ text: 'x' })).rejects.toThrow(/403|not allowed/i);
   });
+
+  it('sends a product only where the author changed one', async () => {
+    // Omission is not removal: an absent product means unchanged, so sending the current one
+    // back would say nothing and sending null would detach the label from it (ADR-040).
+    const fetcher = respondWith(201, { version: 3 });
+    const client = clientOver(fetcher as unknown as typeof fetch);
+
+    await client.saveSections('doc-1', 2, []);
+    expect(JSON.parse(String(fetcher.mock.calls[0]![1]?.body))).not.toHaveProperty('product');
+
+    await client.saveSections('doc-1', 2, [], { identifier: 'PROD-0001', display: 'A product' });
+    expect(JSON.parse(String(fetcher.mock.calls[1]![1]?.body)).product).toEqual({
+      identifier: 'PROD-0001',
+      display: 'A product',
+    });
+  });
 });

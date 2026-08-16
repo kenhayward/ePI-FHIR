@@ -71,6 +71,15 @@ describe('FN-AUT-003 the label editor', () => {
     expect(save).not.toHaveBeenCalled();
   });
 
+  it('offers to save when something outside the sections has changed', async () => {
+    // Choosing a product changes the label without touching a word of it. Without this the save
+    // button stays disabled and the author cannot save what they just chose - which is how a
+    // surface teaches somebody that a control does not work.
+    render(<LabelEditor version={version} onSave={vi.fn()} alsoChanged onSaveLabel="Save" />);
+
+    expect(screen.getByRole('button', { name: 'Save' })).toHaveProperty('disabled', false);
+  });
+
   it('offers no editor where the platform says this caller may not write, and says why', async () => {
     render(<LabelEditor version={{ ...version, editable: false }} onSave={vi.fn()} />);
 
