@@ -6,6 +6,9 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <!-- The AWS SDK is Apache-2.0. It is used for the S3 API rather than for AWS: the object
+         store here is MinIO, and anything else speaking S3 would serve as well. -->
+    <PackageReference Include="AWSSDK.S3" Version="3.7.415.9" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
     <PackageReference Include="Testcontainers" Version="4.13.0" />
     <PackageReference Include="xunit" Version="2.9.2" />
@@ -14,6 +17,14 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Epi.Rendering\Epi.Rendering.csproj" />
+  </ItemGroup>
+
+  <!-- The asset-store conformance suite is shared source rather than a shipped test package:
+       these are the same assertions the in-memory store satisfies, run against a real object
+       store. Where the two get their write-once from differs, and the suite cannot tell. -->
+  <ItemGroup>
+    <Compile Include="../Epi.Rendering.Tests/AssetStoreConformance.cs"
+             Link="AssetStoreConformance.cs" />
   </ItemGroup>
 
 </Project>

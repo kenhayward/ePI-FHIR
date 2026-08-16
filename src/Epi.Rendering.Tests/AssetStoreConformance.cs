@@ -156,10 +156,3 @@ public abstract class AssetStoreConformance
         Assert.Empty(await store.ListAsync(AssetKey.RenderedLineage));
     }
 }
-
-/// <summary>The in-memory store, held to the contract every asset store must meet.</summary>
-public sealed class InMemoryAssetStoreConformanceTests : AssetStoreConformance
-{
-    protected override Task<IAssetStore> CreateStoreAsync() =>
-        Task.FromResult<IAssetStore>(new InMemoryAssetStore());
-}

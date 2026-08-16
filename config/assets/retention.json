@@ -1,0 +1,16 @@
+{
+  "_comment": "How long a stored artefact is retained under object-lock, per lineage (ADR-034 decision 2, ADR-012). Configuration rather than a constant, because how long a render must be kept is a regulatory question with different answers per market and per artefact class, and nothing in the store knows or needs to know why a period was chosen. Retention is a floor, not a schedule: it is how long the object store will refuse to destroy what was written, and nothing here deletes anything when it expires.",
+
+  "lineages": [
+    {
+      "lineage": "rendered",
+      "retentionDays": 3650,
+      "_why": "A rendered leaflet may be cited in a submission for the life of the product. Ten years matches the audit and archive buckets in the development stack and is the shortest period that outlives a typical marketing authorisation renewal cycle."
+    },
+    {
+      "lineage": "artwork",
+      "retentionDays": 3650,
+      "_why": "Artwork is evidence of what was physically distributed and is not reproducible from anything held here - nothing in this platform produced it, so a lost artwork object is lost outright."
+    }
+  ]
+}

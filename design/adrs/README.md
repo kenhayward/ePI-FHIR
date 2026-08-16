@@ -31,6 +31,7 @@ of them next needs revising, not as a bulk exercise.
 | [ADR-031](0031-workflow-routing.md) | Workflow routing | accepted |
 | [ADR-032](0032-translation-as-a-variant.md) | Translation as a variant, linked to a source version | accepted |
 | [ADR-033](0033-rendering.md) | Deterministic rendering, and the two PDF lineages | accepted |
+| [ADR-034](0034-durable-asset-storage.md) | Durable asset storage, and where write-once actually comes from | accepted |
 | [ADR-036](0036-master-data-and-terminology-binding.md) | Master-data and terminology binding points | accepted |
 
 A record stays `proposed` until the pull request carrying it is merged, at which point it
