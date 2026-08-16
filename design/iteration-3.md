@@ -89,6 +89,7 @@ iteration or a stated reason for waiting. Nothing is dropped by omission.
 | ~~The compose stack pinned Gotenberg to `:8`~~ - **paid**, PR 58: a major-version tag that moves, missed when PR 38 pinned every other image. Pinned to the version the stack is verified on | PR 58 | Done |
 | ~~PDF determinism is proven against a stand-in rather than the engine~~ - **paid**, PR 60: IT-019 runs against a real Gotenberg. The host crash was a Testcontainers wait strategy inside an xUnit collection fixture, which kills the VSTest process with no message | PR 58 | Done |
 | A Testcontainers wait strategy attached to a container built in an xUnit collection fixture crashes the VSTest host outright on 4.13.0 - no message, no exception, every test failing in about a millisecond. Worked around by polling after start; the other container fixtures use module builders and are unaffected, so nothing else needs changing today | PR 60 | Watch. Revisit on a Testcontainers upgrade |
+| Rendered output is not yet stored anywhere durable: the asset store contract and its reference implementation exist, and nothing writes to MinIO. Write-once currently comes from a check in application code rather than from object-lock, which is the guarantee that matters | PR 61 | Delivery row 11b, before rendering is demonstrated |
 | Inert registrations accumulate at whatever rate a content write fails after its registration, and nothing surfaces them | ADR-025 | Delivery row 1c. They are harmless individually and invisible in aggregate, which is the wrong pair of properties to leave together |
 | Terminology versions are absent from the pinned validating context | ADR-023 | With the terminology binding points. A context that omits the terminology a version was validated against is incomplete in exactly the way ADR-023 exists to prevent |
 | Validation is serialised outright, a correctness-first stopgap | PR 6a | Rendering and translation multiply validations per label by the number of languages. Measured here, and fixed if the measurement says so |
@@ -307,7 +308,8 @@ Provisional, and dependent on Section 8. Each row is a pull request, test-first,
 | 9 | Linguistic review routed and signed; source change marks translations out of date | M |
 | 10a | ADR and mechanism: deterministic rendering to HTML, keyed to a render-template version | M |
 | 10b | PDF from that HTML through the print engine, normalising the two dates Chromium writes for itself (measured - see ADR-033) | M |
-| 11 | Render storage in the asset store, with the rendered/artwork lineage enforced by type | M |
+| 11a | The asset store contract: keys, the two lineages, and write-once | M |
+| 11b | The durable store on MinIO with object-lock, held to the same conformance suite | M |
 | 12 | Master-data and terminology binding points; terminology version in the pinned context; ADR-016 amendment | M |
 | 13 | ADR: tags as code systems; secondary identifiers - **delivered early**, while the content model was open | S |
 
