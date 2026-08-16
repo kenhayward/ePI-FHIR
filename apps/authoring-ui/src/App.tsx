@@ -209,6 +209,7 @@ export function App({
         }}
         actions={version.actions ?? []}
         signedActions={version.signedActions ?? []}
+        signatureMeanings={version.signatureMeanings ?? {}}
         transition={(id, at, request) => platform.transitionAsync(id, at, request)}
         sign={(request) => platform.signAsync(request)}
         // Reopened, because a transition changes the state and what may be done from it - and a

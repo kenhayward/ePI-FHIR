@@ -54,7 +54,9 @@ public sealed class SectionEndpointTests(WebApplicationFactory<Program> factory)
     private sealed record SectionsView(
         string DocumentIdentifier, int Version, string State, bool Editable,
         ProductView? Product, IReadOnlyList<string> Actions,
-        IReadOnlyList<string> SignedActions, IReadOnlyList<SectionView> Sections);
+        IReadOnlyList<string> SignedActions,
+        IReadOnlyDictionary<string, string> SignatureMeanings,
+        IReadOnlyList<SectionView> Sections);
 
     private sealed record ProductView(string Identifier, string? Display);
 
@@ -363,6 +365,27 @@ public sealed class SectionEndpointTests(WebApplicationFactory<Program> factory)
 
         Assert.Contains("approve", view!.Actions);
         Assert.Contains("approve", view.SignedActions);
+    }
+
+    [Fact]
+    public async Task FN_CC_013_a_signed_gate_says_what_the_signature_must_mean()
+    {
+        // A signature that says the wrong thing is worse than none - the gate refuses it, and
+        // the record would have asserted something nobody intended (ADR-020). The surface was
+        // asserting a meaning of its own, which happened to match and would stop matching the
+        // moment a deployment configured a different one.
+        var host = Host();
+        var id = await AuthoredAsync(host);
+        var client = As(host, "user-anna", "author");
+
+        using var submitted = await client.PostAsJsonAsync(
+            $"/labels/{id}/versions/1/transitions", new { action = "submit" });
+        submitted.EnsureSuccessStatusCode();
+
+        var view = await client.GetFromJsonAsync<SectionsView>($"/labels/{id}/versions/1/sections");
+
+        Assert.True(view!.SignatureMeanings.ContainsKey("approve"));
+        Assert.False(string.IsNullOrWhiteSpace(view.SignatureMeanings["approve"]));
     }
 
     private sealed class AlwaysDeny : IPolicyDecisionPoint

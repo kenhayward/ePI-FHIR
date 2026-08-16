@@ -15,6 +15,7 @@ export function LifecycleActions({
   version,
   actions,
   signedActions = [],
+  signatureMeanings = {},
   transition,
   sign,
   onDone,
@@ -26,6 +27,17 @@ export function LifecycleActions({
   };
   readonly actions: readonly string[];
   readonly signedActions?: readonly string[];
+
+  /**
+   * What a signature at each signed gate must assert, as the platform configured it.
+   *
+   * @remarks
+   * Not chosen here. A signature that says the wrong thing is worse than none - the gate refuses
+   * it, and the record would have asserted something nobody intended (ADR-020). This used to be
+   * a literal, which happened to match and would have stopped matching the moment a deployment
+   * configured a different meaning.
+   */
+  readonly signatureMeanings?: Readonly<Record<string, string>>;
   readonly transition: (
     documentIdentifier: string,
     version: number,
@@ -64,7 +76,7 @@ export function LifecycleActions({
     const signature = await sign({
       documentIdentifier: version.documentIdentifier,
       version: version.version,
-      meaning: 'Approval',
+      meaning: signatureMeanings[action] ?? 'approval',
       password,
     });
 

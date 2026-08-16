@@ -540,6 +540,12 @@ app.MapGet("/labels/{id}/versions/{version:int}/state", async (
                                         && t.RequiresSignature)
                             .Select(t => t.Action),
 
+                        // What each signed act must assert, for the reason above.
+                        signatureMeanings = marketModel.Value.Transitions
+                            .Where(t => string.Equals(t.From, market.Value, StringComparison.Ordinal)
+                                        && t.RequiresSignature && t.SignatureMeaning is not null)
+                            .ToDictionary(t => t.Action, t => t.SignatureMeaning!),
+
                         // The same rule the engine applies: the transition that lands on the
                         // approved state must say when it takes effect, and no other may
                         // (ADR-029 decision 3).
@@ -1288,6 +1294,15 @@ app.MapGet("/labels/{id}/versions/{version:int}/sections", async (
             .Where(t => string.Equals(t.From, currentState, StringComparison.Ordinal)
                         && t.RequiresSignature)
             .Select(t => t.Action),
+
+        // What a signature at each signed gate must assert. Said by the platform because a
+        // signature that says the wrong thing is worse than none: the gate refuses it, and the
+        // record would have asserted something nobody intended (ADR-020). A surface choosing
+        // its own meaning happens to work until a deployment configures a different one.
+        signatureMeanings = labelModel.Value.Transitions
+            .Where(t => string.Equals(t.From, currentState, StringComparison.Ordinal)
+                        && t.RequiresSignature && t.SignatureMeaning is not null)
+            .ToDictionary(t => t.Action, t => t.SignatureMeaning!),
         sections = SectionProjection.Of(document.Bundle).Select(section => new
         {
             identity = section.Identity,

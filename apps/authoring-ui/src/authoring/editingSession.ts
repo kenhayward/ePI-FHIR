@@ -29,6 +29,7 @@ export interface VersionDescription {
    */
   readonly actions?: readonly string[];
   readonly signedActions?: readonly string[];
+  readonly signatureMeanings?: Readonly<Record<string, string>>;
   readonly sections: readonly SectionDescription[];
 }
 

@@ -312,6 +312,7 @@ describe('FN-AUT-004 the platform client', () => {
       actions: ['submit'],
       signedActions: ['submit'],
       actionsNeedingEffectiveDate: [],
+      signatureMeanings: {},
     });
     expect(standing.marketActions['DE']!.state).toBe('under-assessment');
   });
@@ -328,6 +329,7 @@ describe('FN-AUT-004 the platform client', () => {
       actions: [],
       signedActions: [],
       actionsNeedingEffectiveDate: [],
+      signatureMeanings: {},
     });
   });
 });

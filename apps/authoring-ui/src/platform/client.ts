@@ -117,6 +117,7 @@ export interface MarketStandings {
         readonly actions: readonly string[];
         readonly signedActions: readonly string[];
         readonly actionsNeedingEffectiveDate: readonly string[];
+        readonly signatureMeanings: Readonly<Record<string, string>>;
       }
     >
   >;
@@ -135,6 +136,7 @@ interface StateResponse {
         readonly actions?: readonly string[];
         readonly signedActions?: readonly string[];
         readonly actionsNeedingEffectiveDate?: readonly string[];
+        readonly signatureMeanings?: Readonly<Record<string, string>>;
       }
     >
   >;
@@ -394,6 +396,7 @@ export class PlatformClient {
             signedActions: body.marketActions?.[market]?.signedActions ?? [],
             actionsNeedingEffectiveDate:
               body.marketActions?.[market]?.actionsNeedingEffectiveDate ?? [],
+            signatureMeanings: body.marketActions?.[market]?.signatureMeanings ?? {},
           },
         ]),
       ),
