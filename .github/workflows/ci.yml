@@ -96,6 +96,13 @@ jobs:
       - name: Configuration paths are declared, mounted and present
         run: python3 tools/verify-configuration-paths.py
 
+      # A '_comment' added to the Keycloak realm seed made the realm import fail outright,
+      # which stopped Keycloak, the API and HAPI FHIR. The JSON was valid, compose config does
+      # not import realms, and nothing else starts Keycloak - so it surfaced only when the
+      # stack was next brought up by hand.
+      - name: No explanatory keys in third-party configuration
+        run: python3 tools/verify-foreign-config.py
+
       - name: Relative Markdown links resolve
         run: |
           fail=0

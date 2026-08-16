@@ -85,7 +85,6 @@
       ]
     },
     {
-      "_comment": "The authoring surface (ADR-039). Public, because a secret shipped to a browser is not a secret, and PKCE is what stands in for one. Standard flow only: direct access grants would mean the surface handled a password, which delegating to this identity provider exists to prevent.",
       "clientId": "epi-authoring-ui",
       "name": "ePI Authoring Surface",
       "enabled": true,

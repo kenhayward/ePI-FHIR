@@ -41,11 +41,14 @@ def token(user):
         return json.load(response)["access_token"]
 
 
-def call(method, path, jwt, body=None, content_type="application/json"):
+def call(method, path, jwt, body=None, content_type="application/json", base=None):
+    """Calls the API, or another service where one is named - the identity provider has
+    endpoints the surface depends on and the API knows nothing about."""
     data = None if body is None else (
         body.encode() if isinstance(body, str) else json.dumps(body).encode())
-    request = urllib.request.Request(f"{API}{path}", data=data, method=method)
-    request.add_header("Authorization", f"Bearer {jwt}")
+    request = urllib.request.Request(f"{base or API}{path}", data=data, method=method)
+    if jwt is not None:
+        request.add_header("Authorization", f"Bearer {jwt}")
     if data is not None:
         request.add_header("Content-Type", content_type)
     try:
@@ -84,8 +87,12 @@ status, state = call("GET", f"/labels/{identifier}/versions/1/state", anna)
 check("it is a draft, attributed to a stable subject id",
       status == 200 and state["state"] == "draft" and len(state["author"]) > 20,
       f"{status} {state}")
-check("markets are reported separately",
-      status == 200 and state["markets"] == {"GB": "not-submitted", "EU": "not-submitted"},
+# Every configured market, and nothing assumed about which they are: a market is added by
+# dropping a file into config/markets, so a walkthrough naming them is a walkthrough that
+# fails the next time somebody does. It went stale exactly that way when Germany was added.
+check("every configured market is reported separately, and none has been submitted to",
+      status == 200 and len(state["markets"]) >= 2
+      and set(state["markets"].values()) == {"not-submitted"},
       str(state.get("markets") if status == 200 else state))
 
 print("\nAnna submits it for review")
@@ -247,5 +254,73 @@ check("the historical content itself is retrievable by version",
 status, before = call(
     "GET", f"/labels/{identifier}/versions/1/state?asAt=2020-01-01T00:00:00Z", anna)
 check("and before the version existed it was in no state at all", status == 404, str(status))
+
+# ---------------------------------------------------------------------------
+# The authoring projection (ADR-038), which the surface is the only caller of.
+#
+# Every part of it is unit-tested against fakes. What no test reaches is the round trip through
+# a real HAPI FHIR store: whether the section identities a real Bundle carries survive being
+# projected and patched back, and whether a save through this path lands as an ordinary version.
+
+print("\nAnna opens the label as sections, and edits one")
+status, view = call("GET", f"/labels/{identifier}/versions/1/sections", anna)
+check("a version reads as sections rather than as a Bundle",
+      status == 200 and "sections" in view and "entry" not in str(view),
+      f"{status} {str(view)[:120]}")
+
+if status == 200 and view.get("sections"):
+    first = view["sections"][0]
+    check("each section carries the identity the platform assigned",
+          bool(first.get("identity")) and bool(first.get("title")),
+          f"{first.get('identity')} {first.get('title')}")
+
+    # Approved, and still editable: saving mints the next version rather than changing this one,
+    # which is what ADR-038 decision 6 corrected ADR-037 about.
+    check("an approved version is still editable, because saving drafts the next one",
+          view.get("editable") is True and view.get("state") == "approved",
+          f"editable={view.get('editable')} state={view.get('state')}")
+
+    edited = dict(first)
+    edited["narrative"] = ('<div xmlns="http://www.w3.org/1999/xhtml"><p>SYNTHETIC - rewritten '
+                           "by the walkthrough.</p></div>")
+
+    status, saved = call(
+        "POST", f"/labels/{identifier}/versions/1/sections", anna, {"sections": [edited]})
+    check("saving sections mints the next version", status == 201 and saved.get("version") == 2,
+          f"{status} {saved}")
+
+    status, reread = call("GET", f"/labels/{identifier}/versions/1/sections", anna)
+    check("the version that was read is untouched",
+          status == 200 and "rewritten by the walkthrough" not in str(reread), str(status))
+
+    status, later = call("GET", f"/labels/{identifier}/versions/2/sections", anna)
+    check("the new version carries the edit",
+          status == 200 and "rewritten by the walkthrough" in str(later), str(status))
+
+    if status == 200:
+        # The one a fake cannot answer: a real Bundle round-tripped through HAPI FHIR, projected
+        # and patched, must keep the identities that make a save addressable at all.
+        check("section identities survive the round trip through the content store",
+              [s["identity"] for s in later["sections"]]
+              == [s["identity"] for s in view["sections"]],
+              str([s["identity"] for s in later["sections"]][:2]))
+
+        check("everything the author did not touch is unchanged",
+              len(later["sections"]) == len(view["sections"])
+              and later["sections"][-1]["narrative"] == view["sections"][-1]["narrative"],
+              f"{len(later['sections'])} of {len(view['sections'])} sections")
+
+    status, refused = call(
+        "POST", f"/labels/{identifier}/versions/2/sections", anna,
+        {"sections": [{"identity": "sec-invented", "title": "Invented",
+                       "narrative": '<div xmlns="http://www.w3.org/1999/xhtml"><p>x</p></div>'}]})
+    check("a save naming a section the version does not have is refused",
+          status == 400, f"{status} {str(refused)[:120]}")
+
+print("\nThe surface's own client is registered with the identity provider")
+status, realm = call(
+    "GET", "/realms/epi/.well-known/openid-configuration", None, base=KEYCLOAK)
+check("the realm advertises the authorization endpoint the surface redirects to",
+      status == 200 and "authorization_endpoint" in realm, str(status))
 
 print("\n" + ("ALL CHECKS PASSED" if not failures else f"FAILURES: {failures}"))
