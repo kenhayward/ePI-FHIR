@@ -49,7 +49,7 @@ describe('FN-AUT-003 the label editor', () => {
 
     await userEvent.clear(screen.getByLabelText('1. What Examplinum is'));
     await userEvent.type(screen.getByLabelText('1. What Examplinum is'), 'A medicine for adults.');
-    await userEvent.click(screen.getByRole('button', { name: /save/i }));
+    await userEvent.click(screen.getByRole('button', { name: /^save as version/i }));
 
     expect(save).toHaveBeenCalledWith([
       {
@@ -67,17 +67,23 @@ describe('FN-AUT-003 the label editor', () => {
     const save = vi.fn();
     render(<LabelEditor version={version} onSave={save} />);
 
-    expect(screen.getByRole('button', { name: /save/i })).toHaveProperty('disabled', true);
+    expect(screen.getByRole('button', { name: /^save as version/i })).toHaveProperty('disabled', true);
     expect(save).not.toHaveBeenCalled();
   });
 
-  it('offers no editor at all for an approved version, and says why', async () => {
-    render(
-      <LabelEditor version={{ ...version, state: 'approved', editable: false }} onSave={vi.fn()} />,
-    );
+  it('offers no editor where the platform says this caller may not write, and says why', async () => {
+    render(<LabelEditor version={{ ...version, editable: false }} onSave={vi.fn()} />);
 
     expect(screen.queryByLabelText('1. What Examplinum is')).toBeNull();
-    expect(screen.getAllByText(/approved and cannot be changed/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/not allowed to write/i).length).toBeGreaterThan(0);
+  });
+
+  it('says which version saving will create, rather than that it will change this one', async () => {
+    // ADR-038 decision 6. An author needs to know that saving leaves the version in front of
+    // them exactly as it was - it is not what a text box usually does.
+    render(<LabelEditor version={{ ...version, state: 'approved' }} onSave={vi.fn()} />);
+
+    expect(screen.getByRole('button', { name: 'Save as version 3' })).toBeDefined();
   });
 
   it('says why a section it cannot represent is read-only, rather than hiding it', async () => {
