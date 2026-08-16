@@ -668,5 +668,15 @@
     ],
     "iteration": "2",
     "status": "planned"
+  },
+  "FN-TPL-003": {
+    "name": "Hold render templates as immutable versions, so a render can name one",
+    "component": "Authoring & Template Service",
+    "satisfies": [
+      "CAP-TPL-001",
+      "CAP-TPL-007"
+    ],
+    "iteration": "4",
+    "status": "planned"
   }
 }
