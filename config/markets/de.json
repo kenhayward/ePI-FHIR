@@ -1,0 +1,15 @@
+{
+  "code": "DE",
+  "name": "Germany",
+  "regulator": "BfArM",
+  "languages": [
+    "de-DE"
+  ],
+  "affiliates": [
+    "de-affiliate"
+  ],
+  "profile": {
+    "package": "hl7.fhir.uv.emedicinal-product-info",
+    "version": "1.0.0"
+  }
+}

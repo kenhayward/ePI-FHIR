@@ -41,8 +41,8 @@ public sealed class WorkflowRoutingTests
         var lifecycle = LifecycleModelConfiguration.LoadFrom(
             Path.Combine(RepositoryRoot(), "config", "lifecycle", "label-states.json"));
         var workflow = routed
-            ? WorkflowConfiguration.LoadFrom(
-                Path.Combine(RepositoryRoot(), "config", "workflow", "label-routing.json"))
+            ? WorkflowCatalogue.LoadFrom(
+                Path.Combine(RepositoryRoot(), "config", "workflow", "label"))
             : null;
 
         return (new LifecycleService(
@@ -204,22 +204,25 @@ public sealed class WorkflowRoutingTests
     [Fact]
     public void CAP_WFL_001_the_shipped_routing_asks_an_approver_to_approve()
     {
-        var model = WorkflowConfiguration.LoadFrom(
-            Path.Combine(RepositoryRoot(), "config", "workflow", "label-routing.json"));
+        var model = WorkflowCatalogue.LoadFrom(
+            Path.Combine(RepositoryRoot(), "config", "workflow", "label")).For(null, null);
 
-        var rule = model.For("in-review");
+        var rule = Assert.Single(model.ForState("in-review"));
 
-        Assert.NotNull(rule);
-        Assert.Equal("approve", rule!.Action);
+        Assert.Equal("approve", rule.Action);
         Assert.Equal("approver", rule.Assignee);
         Assert.Equal(TimeSpan.FromHours(120), rule.Within);
     }
 
     [Fact]
-    public void CAP_WFL_001_two_rules_for_one_state_are_refused()
+    public void CAP_WFL_001_the_same_role_asked_twice_for_one_state_is_refused()
     {
-        // The ask would depend on which was read first, which is not something a process may
-        // leave to chance.
+        // This case used to refuse *any* two rules for one state, on the grounds that the ask
+        // would depend on which was read first. ADR-035 decision 1 reverses that deliberately:
+        // several rules for a state are several people asked at once, which is what parallel
+        // review is (CAP-WFL-006). What remains refused is narrower and is a real defect - two
+        // identical asks are two tasks on one person's list for one job, and closing one leaves
+        // the other open.
         var directory = Directory.CreateTempSubdirectory("epi-workflow-").FullName;
         var path = Path.Combine(directory, "routing.json");
 
@@ -227,10 +230,10 @@ public sealed class WorkflowRoutingTests
         {
             File.WriteAllText(path, """
                 {
-                  "name": "ambiguous",
+                  "name": "duplicated",
                   "rules": [
                     {"state": "in-review", "action": "approve", "assignee": "approver"},
-                    {"state": "in-review", "action": "return", "assignee": "author"}
+                    {"state": "in-review", "action": "approve", "assignee": "approver"}
                   ]
                 }
                 """);
@@ -244,5 +247,55 @@ public sealed class WorkflowRoutingTests
         {
             Directory.Delete(directory, recursive: true);
         }
+    }
+
+    [Fact]
+    public async Task CAP_WFL_006_a_market_with_two_reviewers_asks_them_both()
+    {
+        // The whole of Germany's difference is a file (config/workflow/label). If selection
+        // stopped working the platform would fall back to the default and ask one person,
+        // which looks exactly like a platform that is working.
+        var (service, tasks) = Build();
+        await service.RegisterAsync(Version, "user-anna");
+
+        await service.TransitionAsync(
+            Version, "submit", "user-anna",
+            routingSubject: new RoutingSubject("package-leaflet", "DE"));
+
+        var asked = await tasks.ForVersionAsync(Version);
+
+        Assert.Equal(
+            ["approver", "linguistic-reviewer"],
+            asked.Select(t => t.Assignee).Order(StringComparer.Ordinal));
+    }
+
+    [Fact]
+    public async Task CAP_WFL_001_a_market_with_no_model_of_its_own_gets_the_default()
+    {
+        var (service, tasks) = Build();
+        await service.RegisterAsync(Version, "user-anna");
+
+        await service.TransitionAsync(
+            Version, "submit", "user-anna",
+            routingSubject: new RoutingSubject("package-leaflet", "GB"));
+
+        Assert.Equal("approver", Assert.Single(await tasks.ForVersionAsync(Version)).Assignee);
+    }
+
+    [Fact]
+    public async Task CAP_WFL_001_a_transition_out_closes_every_parallel_ask()
+    {
+        // Two asks in, and both have to end when the version leaves the state. One left open
+        // would sit on somebody's list for a version that has moved on.
+        var (service, tasks) = Build();
+        await service.RegisterAsync(Version, "user-anna");
+        await service.TransitionAsync(
+            Version, "submit", "user-anna", routingSubject: new RoutingSubject("package-leaflet", "DE"));
+
+        await service.TransitionAsync(
+            Version, "approve", "user-ben", signatureReference: "sig-1",
+            approvalContext: Approved, routingSubject: new RoutingSubject("package-leaflet", "DE"));
+
+        Assert.All(await tasks.ForVersionAsync(Version), task => Assert.False(task.IsOpen));
     }
 }

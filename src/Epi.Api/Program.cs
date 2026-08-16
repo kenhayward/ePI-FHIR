@@ -135,13 +135,20 @@ var workflowStore = string.IsNullOrWhiteSpace(governanceConnection)
     : (IWorkflowStore)new PostgresWorkflowStore(governanceConnection);
 builder.Services.AddSingleton(workflowStore);
 
-// Routing is configuration like every other model the platform applies (ADR-031 decision 3).
-// A deployment that has configured none raises no tasks, and the approval gate is unaffected
-// either way: a task never decides whether a transition may happen.
+// Routing is configuration like every other model the platform applies (ADR-031 decision 3,
+// ADR-035 decision 6). A directory of models rather than one file: which process applies is
+// selected per label type and market, and adding a market's process is adding a file.
+//
+// A deployment that has configured none still raises no tasks, and the approval gate is
+// unaffected either way: a task never decides whether a transition may happen. What has changed
+// is that the absence is now said out loud at start-up, and that a directory which exists but
+// cannot be loaded stops the service rather than quietly routing nothing. Routing loading
+// silently as absent has already happened once, in a container whose path was never wired.
 var routingPath = builder.Configuration["Epi:Workflow:RoutingPath"]
-    ?? Path.Combine(builder.Environment.ContentRootPath, "config", "workflow", "label-routing.json");
-var routing = new Lazy<WorkflowModel?>(
-    () => File.Exists(routingPath) ? WorkflowConfiguration.LoadFrom(routingPath) : null);
+    ?? Path.Combine(builder.Environment.ContentRootPath, "config", "workflow", "label");
+var routingConfigured = Directory.Exists(routingPath);
+var routing = new Lazy<WorkflowCatalogue?>(
+    () => routingConfigured ? WorkflowCatalogue.LoadFrom(routingPath) : null);
 
 // What the platform validates against, read once and recorded at every approval (ADR-023).
 // Lazy for the same reason the state models are: a host that never approves anything need not
@@ -246,6 +253,25 @@ if (string.IsNullOrWhiteSpace(auditConnection) || string.IsNullOrWhiteSpace(brok
         string.IsNullOrWhiteSpace(auditConnection) ? "in-memory" : "PostgreSQL",
         string.IsNullOrWhiteSpace(brokers) ? "in-memory" : "Kafka",
         string.IsNullOrWhiteSpace(governanceConnection) ? "in-memory" : "PostgreSQL");
+}
+
+// Resolved here rather than on the first transition. A routing model that cannot be loaded is
+// a configuration error, and one that surfaces as a 500 on somebody's approval - hours or days
+// after the deployment - is a configuration error nobody attributes to the deployment.
+if (routingConfigured)
+{
+    app.Logger.LogInformation(
+        "Routing models loaded from {Path}: {Models}.",
+        routingPath,
+        string.Join(", ", routing.Value!.Models.Select(model => model.Name)));
+}
+else
+{
+    app.Logger.LogWarning(
+        "No routing models were found at {Path}, so no review task will ever be raised and "
+        + "nobody will be asked to approve anything. The approval gate still holds; the ask "
+        + "simply does not happen.",
+        routingPath);
 }
 
 if (string.IsNullOrWhiteSpace(signingAuthority) || string.IsNullOrWhiteSpace(signingRealm))
@@ -557,12 +583,19 @@ app.MapPost("/labels/{id}/versions/{version:int}/transitions", async (
         // configuration moves (CAP-LCM-011, ADR-023 decision 1). The ingredients are supplied
         // here and the engine decides whether a pin is due, so the pin lands in the same
         // transaction as the transition (ADR-024 decision 3).
+        // What the document is and where it is going, read from the content rather than taken
+        // from the request: a caller that could state its own label type could choose its own
+        // reviewers (ADR-035 decision 4). Read through the same extraction the search index
+        // uses, so there is one decoder rather than two that can disagree.
+        var indexed = SearchableContent.Of(document.Bundle, authority);
+
         var transition = await lifecycle.TransitionAsync(
             new VersionRef(id, version), body.Action, subject.Id, body.Reason,
             body.SignatureReference,
             Pinning.ContextFor(
                 document, conformance, authority,
                 await terminology.BindingsAsync(cancellationToken)),
+            new RoutingSubject(indexed.DocumentType, indexed.Scope.Market),
             cancellationToken);
 
         return Results.Ok(new

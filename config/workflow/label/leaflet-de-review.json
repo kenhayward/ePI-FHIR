@@ -1,0 +1,12 @@
+{
+  "_comment": "Germany's package leaflets are reviewed by two people at once rather than one (ADR-035 decisions 1 and 2). This file is the whole of that difference: no code, no branch, no release. It exists to demonstrate the thing capability 21 claims - that a market with a different process is configuration - and to be the case that fails if selection stops working, because a platform that silently fell back to the default would look exactly like one that was working.",
+
+  "_parallelNotSequential": "Both reviewers are asked at once, because nothing about these two asks is sequential. A review path where one step must finish before the next begins is expressed as states in config/lifecycle/label-states.json, since a step completing is a lifecycle transition (CAP-WFL-005) and a transition is the evidence that it completed.",
+
+  "name": "leaflet-de-review",
+  "appliesTo": {"labelType": "package-leaflet", "market": "DE"},
+  "rules": [
+    {"state": "in-review", "action": "approve", "assignee": "approver", "withinHours": 120},
+    {"state": "in-review", "action": "approve", "assignee": "linguistic-reviewer", "withinHours": 72}
+  ]
+}

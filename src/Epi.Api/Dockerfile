@@ -20,8 +20,8 @@ ENV Epi__MarketsPath=/config/markets \
     Epi__IdentifiersPath=/config/identifiers.json \
     Epi__Lifecycle__StatesPath=/config/lifecycle/label-states.json \
     Epi__Lifecycle__MarketStatesPath=/config/lifecycle/market-approval-states.json \
-    Epi__Workflow__RoutingPath=/config/workflow/label-routing.json \
     Epi__MasterDataPath=/config/master-data/products.json \
+    Epi__Workflow__RoutingPath=/config/workflow/label \
     Epi__Validation__PackagesPath=/app/profiles/packages \
     ASPNETCORE_HTTP_PORTS=8080
 

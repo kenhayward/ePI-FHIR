@@ -81,7 +81,9 @@ iteration or a stated reason for waiting. Nothing is dropped by omission.
 | "Which version is in force here" is a scan of a version's market history on every ask. It is the obvious thing to project into the search index, and doing so is a projection change rather than a model one | ADR-029 | When in-force is queried at volume, or with publishing (capability 14) |
 | A migrated approval will have taken effect before the row recording it was written, which ADR-029 decision 5 refuses. The constraint has to hold against the original approval date rather than the date of the write | ADR-029 | With migration (capability 4) |
 | ~~Tasks are held in memory only~~ - **paid**, PR 53: durable, migrated and held to the same conformance suite as the in-memory store | ADR-031, PR 52 | Done |
-| Routing is one rule per state, so CAP-WFL-001's "multi-step, per market and label type" is not met: the shipped model has a single review step and nothing selects a different model per market | ADR-031, PR 53 | Delivery row 7c |
+| ~~Routing is one rule per state, and nothing selects a different model per market~~ - **paid**, PR 64: a catalogue selects by label type and market, and a state may ask several people at once. ADR-035 settles what "multi-step" means here - a sequence is states, because a step completing is a lifecycle transition (CAP-WFL-005), and simultaneous asks are rules | ADR-031, PR 53 | Done |
+| Routing describes the process; the state model enforces it. A market whose routing asks for two steps and a state model that permits going straight to approval can still go straight to approval. Enforcing a genuinely different path per market needs per-label-type state models, and the platform has exactly one internal state model | ADR-035 | Watch. A larger decision than routing, and named in ADR-035 rather than left to be discovered |
+| Conditional routing - CAP-WFL-006's third clause, where the path depends on the nature of the change rather than on the market - is not built and was not attempted | ADR-035 | With change classification (capability 8), which is what it would branch on |
 | Nothing tells anyone a task exists. Routing records the ask; carrying it is capability 20's, and that seam is not wired | ADR-031 | With notifications |
 | The Firely SDK expands the core specification into one cache directory under the temporary path, and nothing outside this repository serialises it. A lock file closes it for this platform's own construction path; any other code calling `ZipSource.CreateValidationSource` directly would race again | PR 53 | Watch. If it recurs, the answer is a cache directory per process rather than a lock |
 | Configuration paths that differ only inside a container have now caused three defects, each found by the walkthrough and invisible to CI. A start-up check naming every configuration file the platform expects, refusing to run without them rather than treating absence as a default, would turn all three into a failure to start | PR 53 | Before a deployment anyone relies on |
@@ -309,7 +311,7 @@ Provisional, and dependent on Section 8. Each row is a pull request, test-first,
 | 6 | Supersession and withdrawal, with the predecessor retrievable | M |
 | 7a | Workflow routing: the model, config-as-data, and tasks raised and closed by transitions | M |
 | 7b | The durable task store, and the API surface for what is waiting and reassigning it | M |
-| 7c | Multi-step routing and per-market rules, which CAP-WFL-001 asks for and one review step does not give | M |
+| 7c | Routing selected per label type and market, and several people asked at once; multi-step as states (ADR-035) | M |
 | 8 | ADR: translation as a version relationship; language variants linked to a source version | L |
 | 9 | Linguistic review routed and signed; source change marks translations out of date | M |
 | 10a | ADR and mechanism: deterministic rendering to HTML, keyed to a render-template version | M |

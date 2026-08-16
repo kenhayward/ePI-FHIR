@@ -376,6 +376,16 @@
     "iteration": "2",
     "status": "planned"
   },
+  "FN-WFL-004": {
+    "name": "Select a routing model by label type and market",
+    "component": "Lifecycle & Workflow Service",
+    "satisfies": [
+      "CAP-WFL-001",
+      "CAP-WFL-006"
+    ],
+    "iteration": "3",
+    "status": "planned"
+  },
   "FN-AUD-005": {
     "name": "Capture an electronic signature over the hash of the pinned version",
     "component": "Audit & e-Signature",
