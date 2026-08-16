@@ -72,6 +72,36 @@ public sealed class PostgresLifecycleStore(string connectionString)
         return reader.GetFieldValue<DateTimeOffset>(0);
     }
 
+    public async Task<IReadOnlyList<Registration>> RegistrationsBeforeAsync(
+        DateTimeOffset moment, CancellationToken cancellationToken = default)
+    {
+        // Exclusive of the moment itself, so a caller's settle period means what it says.
+        await using var command = _source.Value.CreateCommand("""
+            SELECT document_identifier, document_version, author, registered_at
+            FROM lifecycle_version
+            WHERE registered_at < $1
+            ORDER BY registered_at, document_identifier, document_version
+            """);
+
+        command.Parameters.AddWithValue(moment);
+
+        var registrations = new List<Registration>();
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+
+        while (await reader.ReadAsync(cancellationToken))
+        {
+            registrations.Add(new Registration(
+                new VersionRef(reader.GetString(0), reader.GetInt32(1)),
+                reader.GetString(2),
+
+                // GetFieldValue rather than a cast, for the reason recorded on
+                // RegisteredAtAsync: Npgsql hands back a DateTime for timestamptz.
+                reader.GetFieldValue<DateTimeOffset>(3)));
+        }
+
+        return registrations;
+    }
+
     public async Task<string?> AuthorOfAsync(
         VersionRef version, CancellationToken cancellationToken = default)
     {

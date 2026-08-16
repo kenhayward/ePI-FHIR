@@ -76,6 +76,12 @@ public sealed class ProjectingLifecycleStore(
         await _projection.ProjectStateAsync(version, initialState, cancellationToken);
     }
 
+    // Passed through without projecting. Reconciliation is an operational read over the
+    // governance record, not a content read, and there is nothing about it to index.
+    public Task<IReadOnlyList<Registration>> RegistrationsBeforeAsync(
+        DateTimeOffset moment, CancellationToken cancellationToken = default) =>
+        _inner.RegistrationsBeforeAsync(moment, cancellationToken);
+
     public async Task AppendAsync(
         StateTransition transition, PinnedContext? pin = null,
         StateTransition? consequence = null,

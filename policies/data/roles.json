@@ -35,6 +35,12 @@
         "read",
         "approve"
       ]
+    },
+    "platform-operator": {
+      "actions": [
+        "read",
+        "reconcile"
+      ]
     }
   }
 }

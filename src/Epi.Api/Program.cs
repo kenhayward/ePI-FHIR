@@ -178,6 +178,10 @@ builder.Services.AddSingleton<ISpentSignatures>(services => new SpentSignatures(
 builder.Services.AddSingleton<ISignatureCheck>(services =>
     new SignatureCheck(services.GetRequiredService<ISignatureStore>()));
 
+// The system clock, resolvable rather than reached for. Reconciliation compares a registration
+// against now, and a test that cannot move "now" cannot test a settle period at all.
+builder.Services.AddSingleton(TimeProvider.System);
+
 builder.Services.AddSingleton(services => new LifecycleService(
     labelModel.Value,
     services.GetRequiredService<ILifecycleStore>(),
@@ -1022,6 +1026,80 @@ app.MapPost("/tasks/{identifier}/assignment", async (
         cancellationToken);
 
     return Results.Ok(new { identifier, assignee = body.Assignee });
+}).RequireAuthorization();
+
+// Registrations no content write ever followed (FN-LCM-008, ADR-025).
+//
+// Not scoped, and it cannot be. Scope is decided on the content (ADR-025), and an inert
+// registration has none - a scoped version of this report would return nothing at all, for
+// exactly the reason the registration is worth reporting. So it is a platform-wide action
+// restricted by role, and the policy decision is the only control standing behind it.
+app.MapGet("/admin/reconciliation/registrations", async (
+    double? settleMinutes,
+    ClaimsPrincipal principal,
+    IPolicyDecisionPoint policy,
+    ILifecycleStore lifecycle,
+    IContentStore content,
+    IdentifierAuthority authority,
+    TimeProvider clock,
+    CancellationToken cancellationToken) =>
+{
+    var subject = SubjectFactory.From(principal);
+    if (subject is null)
+    {
+        return Results.Unauthorized();
+    }
+
+    // No affiliate and no market on the resource, because the records this reports have
+    // neither. The policy answers on the role alone for platform-wide actions.
+    var decision = await policy.DecideAsync(
+        new AuthorizationQuery(subject, "reconcile", ResourceScope.PlatformWide),
+        cancellationToken);
+
+    if (!decision.Allowed)
+    {
+        return Results.Problem(
+            $"Access denied for action 'reconcile': {decision.Reason}",
+            statusCode: StatusCodes.Status403Forbidden);
+    }
+
+    // Fifteen minutes: long enough that no content write is still in flight, short enough
+    // that a failure this morning shows up this morning. Overridable per call, because the
+    // right answer differs between a quick check and a scheduled sweep.
+    var settle = TimeSpan.FromMinutes(settleMinutes ?? 15);
+    if (settle <= TimeSpan.Zero)
+    {
+        return Results.BadRequest(new
+        {
+            problems = new[]
+            {
+                "A settle period must be greater than zero. A content write happens moments "
+                + "after its registration, so zero reports every write in flight and this "
+                + "report cannot tell those from the ones that failed.",
+            },
+        });
+    }
+
+    var report = await new InertRegistrationReport(
+            lifecycle, content, authority.DocumentSystem, clock)
+        .RunAsync(settle, cancellationToken);
+
+    return Results.Ok(new
+    {
+        ranAt = report.RanAt,
+
+        // Echoed, because a count of inert registrations means nothing without it: the same
+        // platform reports differently at fifteen minutes and at a day.
+        settleMinutes = report.SettlePeriod.TotalMinutes,
+        inert = report.Inert.Select(i => new
+        {
+            documentIdentifier = i.Version.DocumentIdentifier,
+            version = i.Version.Version,
+            author = i.Author,
+            registeredAt = i.RegisteredAt,
+            blocksVersionNumber = i.BlocksVersionNumber,
+        }),
+    });
 }).RequireAuthorization();
 
 app.Run();

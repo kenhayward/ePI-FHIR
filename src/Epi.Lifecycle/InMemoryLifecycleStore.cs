@@ -6,9 +6,12 @@ namespace Epi.Lifecycle;
 /// </summary>
 public sealed class InMemoryLifecycleStore : ILifecycleStore, IPinnedContextStore
 {
-    private readonly Dictionary<string, string> _authors = [];
+    // One entry per registration, keyed by the version itself. It used to be an author
+    // dictionary and a moment dictionary side by side; reconciliation needs to enumerate
+    // registrations, and reconstructing a VersionRef by parsing its own ToString() is a decoder
+    // nobody maintains (FN-LCM-008).
+    private readonly Dictionary<VersionRef, Registration> _registrations = [];
     private readonly Dictionary<string, string> _states = [];
-    private readonly Dictionary<string, DateTimeOffset> _registered = [];
     private readonly List<StateTransition> _transitions = [];
     private readonly Dictionary<VersionRef, PinnedContext> _pins = [];
     private readonly Lock _gate = new();
@@ -24,15 +27,14 @@ public sealed class InMemoryLifecycleStore : ILifecycleStore, IPinnedContextStor
             // Refused rather than overwritten. The recorded author is what segregation of
             // duties is checked against, so a second registration would let someone quietly
             // become eligible to approve their own work (CAP-IAM-006).
-            if (!_authors.TryAdd(version.ToString(), author))
+            if (!_registrations.TryAdd(version, new Registration(version, author, registeredAt)))
             {
                 throw new InvalidOperationException(
                     $"{version} is already under lifecycle management, authored by "
-                    + $"'{_authors[version.ToString()]}'.");
+                    + $"'{_registrations[version].Author}'.");
             }
 
             _states[version.ToString()] = initialState;
-            _registered[version.ToString()] = registeredAt;
         }
 
         return Task.CompletedTask;
@@ -42,7 +44,7 @@ public sealed class InMemoryLifecycleStore : ILifecycleStore, IPinnedContextStor
     {
         lock (_gate)
         {
-            return Task.FromResult(_authors.GetValueOrDefault(version.ToString()));
+            return Task.FromResult(_registrations.GetValueOrDefault(version)?.Author);
         }
     }
 
@@ -51,9 +53,23 @@ public sealed class InMemoryLifecycleStore : ILifecycleStore, IPinnedContextStor
     {
         lock (_gate)
         {
-            return Task.FromResult(_registered.TryGetValue(version.ToString(), out var at)
-                ? at
+            return Task.FromResult(_registrations.TryGetValue(version, out var registration)
+                ? registration.RegisteredAt
                 : (DateTimeOffset?)null);
+        }
+    }
+
+    public Task<IReadOnlyList<Registration>> RegistrationsBeforeAsync(
+        DateTimeOffset moment, CancellationToken cancellationToken = default)
+    {
+        lock (_gate)
+        {
+            return Task.FromResult<IReadOnlyList<Registration>>(
+            [
+                .. _registrations.Values
+                    .Where(r => r.RegisteredAt < moment)
+                    .OrderBy(r => r.RegisteredAt),
+            ]);
         }
     }
 

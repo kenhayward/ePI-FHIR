@@ -24,6 +24,9 @@ public sealed record StateTransition(
     string? Reason = null,
     string? SignatureReference = null);
 
+/// <summary>A version's entry into lifecycle management: who, and when.</summary>
+public sealed record Registration(VersionRef Version, string Author, DateTimeOffset RegisteredAt);
+
 /// <summary>
 /// The lifecycle store: who authored a version, and every transition it has been through.
 /// </summary>
@@ -49,6 +52,19 @@ public interface ILifecycleStore : ISpentSignatures
 
     /// <summary>When the version came under lifecycle management, or null if it never did.</summary>
     Task<DateTimeOffset?> RegisteredAtAsync(VersionRef version, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Every registration made before a moment, oldest first (FN-LCM-008).
+    /// </summary>
+    /// <remarks>
+    /// The only read here that does not start from a version somebody already knows about, and
+    /// the only one reconciliation can use: an inert registration is by definition one nobody
+    /// knows about. The cutoff is exclusive, and it is what lets a caller ignore registrations
+    /// too recent to judge - a content write happens moments after its registration, so
+    /// everything in flight looks inert.
+    /// </remarks>
+    Task<IReadOnlyList<Registration>> RegistrationsBeforeAsync(
+        DateTimeOffset moment, CancellationToken cancellationToken = default);
 
     /// <summary>The state a version holds now, or null if it was never registered.</summary>
     Task<string?> CurrentStateAsync(VersionRef version, CancellationToken cancellationToken = default);

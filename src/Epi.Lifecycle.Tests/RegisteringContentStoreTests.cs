@@ -169,6 +169,10 @@ public sealed class RegisteringContentStoreTests
             VersionRef version, CancellationToken cancellationToken = default) =>
             _inner.RegisteredAtAsync(version, cancellationToken);
 
+        public Task<IReadOnlyList<Registration>> RegistrationsBeforeAsync(
+            DateTimeOffset moment, CancellationToken cancellationToken = default) =>
+            _inner.RegistrationsBeforeAsync(moment, cancellationToken);
+
         public Task<string?> CurrentStateAsync(VersionRef version, CancellationToken cancellationToken = default) =>
             _inner.CurrentStateAsync(version, cancellationToken);
 
