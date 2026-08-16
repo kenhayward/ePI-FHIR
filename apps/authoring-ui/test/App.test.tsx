@@ -28,6 +28,9 @@ describe('FN-AUT-006 the authoring application', () => {
   const platform = (outcome: SaveOutcome = { ok: true, version: 3 }) => ({
     loadVersion: vi.fn(async () => version),
     saveSections: vi.fn(async () => outcome),
+    searchProducts: vi.fn(async () => [
+      { identifier: 'PROD-0001', name: 'SYNTHETIC - Examplinum 10 mg tablets', markets: ['GB'] },
+    ]),
     searchLabels: vi.fn(async () => ({
       total: 1,
       page: 1,
@@ -142,6 +145,44 @@ describe('FN-AUT-006 the authoring application', () => {
     expect(await screen.findByText(/^Saved as version 3\./)).toBeDefined();
   });
 
+  it('saves the product the author chose along with the sections', async () => {
+    // The end of the loop ADR-036 opened and ADR-040 made expressible: an author picks a
+    // product, and what reaches the platform is its identity rather than a typed name.
+    const client = platform();
+    render(<App session={session(true)} platform={client} location={at(label)} go={vi.fn()} />);
+
+    await userEvent.type(await screen.findByLabelText(/find a product/i), 'examplinum');
+    await userEvent.click(screen.getByRole('button', { name: /^find$/i }));
+    await userEvent.click(await screen.findByRole('button', { name: /10 mg tablets/ }));
+    await userEvent.click(screen.getByRole('button', { name: /^save as version/i }));
+
+    expect(client.saveSections).toHaveBeenCalledWith(
+      version.documentIdentifier,
+      version.version,
+      expect.anything(),
+      { identifier: 'PROD-0001', display: 'SYNTHETIC - Examplinum 10 mg tablets' },
+    );
+  });
+
+  it('mentions no product in a save where the author changed none', async () => {
+    // Omission is not removal, and the platform reads it that way - so sending one unchanged
+    // would be sending the same thing back for no reason, and sending null would detach it.
+    const client = platform();
+    render(<App session={session(true)} platform={client} location={at(label)} go={vi.fn()} />);
+
+    const box = await screen.findByLabelText('1. What Examplinum is');
+    await userEvent.clear(box);
+    await userEvent.type(box, 'Something.');
+    await userEvent.click(screen.getByRole('button', { name: /^save as version/i }));
+
+    expect(client.saveSections).toHaveBeenCalledWith(
+      version.documentIdentifier,
+      version.version,
+      expect.anything(),
+      undefined,
+    );
+  });
+
   it('shows the platform its own words when it refuses a save', async () => {
     // The whole point of the client carrying problems rather than summarising them. An author
     // reading a paraphrase of a validation failure cannot find the thing it refers to.
@@ -217,7 +258,10 @@ describe('FN-AUT-006 the authoring application', () => {
         throw new Error('Version 2 of that label was not found.');
       }),
       saveSections: vi.fn(async (): Promise<SaveOutcome> => ({ ok: true, version: 3 })),
-      searchLabels: vi.fn(async () => ({ total: 0, page: 1, pageSize: 20, hits: [] })),
+      searchProducts: vi.fn(async () => [
+      { identifier: 'PROD-0001', name: 'SYNTHETIC - Examplinum 10 mg tablets', markets: ['GB'] },
+    ]),
+    searchLabels: vi.fn(async () => ({ total: 0, page: 1, pageSize: 20, hits: [] })),
     };
     render(<App session={session(true)} platform={client} location={at(label)} go={vi.fn()} />);
 

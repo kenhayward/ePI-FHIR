@@ -15,6 +15,9 @@ export interface VersionDescription {
   readonly version: number;
   readonly state: string;
   readonly editable: boolean;
+
+  /** Which product the label is about, or null where it names none resolvably (ADR-040). */
+  readonly product?: { readonly identifier: string; readonly display: string | null } | null;
   readonly sections: readonly SectionDescription[];
 }
 

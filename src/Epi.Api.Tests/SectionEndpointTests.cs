@@ -53,7 +53,9 @@ public sealed class SectionEndpointTests(WebApplicationFactory<Program> factory)
 
     private sealed record SectionsView(
         string DocumentIdentifier, int Version, string State, bool Editable,
-        IReadOnlyList<SectionView> Sections);
+        ProductView? Product, IReadOnlyList<SectionView> Sections);
+
+    private sealed record ProductView(string Identifier, string? Display);
 
     private sealed record SectionView(string Identity, string Title, string Narrative);
 
@@ -248,6 +250,83 @@ public sealed class SectionEndpointTests(WebApplicationFactory<Program> factory)
             .GetAsync("/labels/01a00000-0000-7000-8000-0000000000ff/versions/1/sections");
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task FN_CC_012_a_label_about_no_product_says_so_rather_than_inventing_one()
+    {
+        // A template instantiated before anybody chose a product is normal (ADR-040 decision 5),
+        // and the surface has to be able to tell that from a product it was not shown.
+        var host = Host();
+        var id = await AuthoredAsync(host);
+
+        var view = await As(host, "user-anna", "author")
+            .GetFromJsonAsync<SectionsView>($"/labels/{id}/versions/1/sections");
+
+        Assert.Null(view!.Product);
+    }
+
+    [Fact]
+    public async Task FN_CC_012_a_save_can_say_which_product_the_label_is_about()
+    {
+        var host = Host();
+        var id = await AuthoredAsync(host);
+        var client = As(host, "user-anna", "author");
+        var view = await client.GetFromJsonAsync<SectionsView>($"/labels/{id}/versions/1/sections");
+
+        using var saved = await client.PostAsJsonAsync(
+            $"/labels/{id}/versions/1/sections",
+            new
+            {
+                sections = view!.Sections,
+                product = new { identifier = "PROD-0001", display = "SYNTHETIC - Examplinum 10 mg" },
+            });
+        saved.EnsureSuccessStatusCode();
+
+        var next = await client.GetFromJsonAsync<SectionsView>($"/labels/{id}/versions/2/sections");
+        Assert.Equal("PROD-0001", next!.Product!.Identifier);
+        Assert.Equal("SYNTHETIC - Examplinum 10 mg", next.Product.Display);
+    }
+
+    [Fact]
+    public async Task FN_CC_012_a_save_that_names_no_product_leaves_the_one_that_was_there()
+    {
+        // Omission is not removal. A surface that saved sections without mentioning a product
+        // would otherwise silently detach every label it touched from its product.
+        var host = Host();
+        var id = await AuthoredAsync(host);
+        var client = As(host, "user-anna", "author");
+        var view = await client.GetFromJsonAsync<SectionsView>($"/labels/{id}/versions/1/sections");
+
+        using var first = await client.PostAsJsonAsync(
+            $"/labels/{id}/versions/1/sections",
+            new { sections = view!.Sections, product = new { identifier = "PROD-0001", display = "A product" } });
+        first.EnsureSuccessStatusCode();
+
+        var second = await client.GetFromJsonAsync<SectionsView>($"/labels/{id}/versions/2/sections");
+        using var saved = await client.PostAsJsonAsync(
+            $"/labels/{id}/versions/2/sections", new { sections = second!.Sections });
+        saved.EnsureSuccessStatusCode();
+
+        var third = await client.GetFromJsonAsync<SectionsView>($"/labels/{id}/versions/3/sections");
+        Assert.Equal("PROD-0001", third!.Product!.Identifier);
+    }
+
+    [Fact]
+    public async Task FN_CC_012_a_product_with_no_identifier_is_a_bad_request()
+    {
+        // A display alone is the free text ADR-040 exists to replace, and accepting one here
+        // would put it straight back.
+        var host = Host();
+        var id = await AuthoredAsync(host);
+        var client = As(host, "user-anna", "author");
+        var view = await client.GetFromJsonAsync<SectionsView>($"/labels/{id}/versions/1/sections");
+
+        using var response = await client.PostAsJsonAsync(
+            $"/labels/{id}/versions/1/sections",
+            new { sections = view!.Sections, product = new { identifier = "", display = "Typed" } });
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
     private sealed class AlwaysDeny : IPolicyDecisionPoint
