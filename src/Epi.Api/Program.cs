@@ -1234,6 +1234,12 @@ app.MapGet("/labels/{id}/versions/{version:int}/sections", async (
         state = await lifecycle.CurrentStateAsync(new VersionRef(id, version), cancellationToken)
                 ?? "unknown",
         editable = mayAuthor.Allowed,
+
+        // Which product the label is about, where it names one resolvably (ADR-040). Null where
+        // it does not, which the surface has to be able to tell from a product it was not shown.
+        product = ProductReference.Of(document.Bundle, authority) is { } named
+            ? new { identifier = named.Identifier, display = named.Display }
+            : null,
         sections = SectionProjection.Of(document.Bundle).Select(section => new
         {
             identity = section.Identity,
@@ -1284,6 +1290,16 @@ app.MapPost("/labels/{id}/versions/{version:int}/sections", async (
             source.Bundle,
             [.. (body.Sections ?? []).Select(s =>
                 new ProjectedSection(s.Identity ?? string.Empty, s.Title, s.Narrative ?? string.Empty))]);
+
+        // Omission is not removal. A save that did not mention a product leaves the one that was
+        // there, or this would silently detach every label a section edit touched from its
+        // product (ADR-040).
+        if (body.Product is { } chosen)
+        {
+            edited = ProductReference.Stamp(
+                edited, new ProductReference(chosen.Identifier ?? string.Empty, chosen.Display),
+                authority);
+        }
 
         var next = (await scoped.VersionsAsync(identity, cancellationToken))[^1] + 1;
 
@@ -1414,7 +1430,16 @@ static class Pinning
 }
 
 /// <summary>What a caller sends when saving edited sections (ADR-038).</summary>
-internal sealed record SectionSaveRequest(IReadOnlyList<SectionSave>? Sections);
+/// <param name="Product">
+/// Which product the label is about, where the caller is changing it. Absent means unchanged,
+/// never removed: a surface saving sections without mentioning a product would otherwise detach
+/// the label from its product every time somebody edited a sentence (ADR-040).
+/// </param>
+internal sealed record SectionSaveRequest(
+    IReadOnlyList<SectionSave>? Sections, ProductSave? Product = null);
+
+/// <summary>Which product a save says the label is about.</summary>
+internal sealed record ProductSave(string? Identifier, string? Display);
 
 /// <param name="Identity">
 /// The identity the platform assigned. Named rather than positional, because a save that

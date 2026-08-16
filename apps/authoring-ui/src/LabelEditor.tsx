@@ -18,9 +18,22 @@ import { type Block, paragraph, text } from './authoring/narrative';
 export function LabelEditor({
   version,
   onSave,
+  alsoChanged = false,
+  onSaveLabel,
 }: {
   readonly version: VersionDescription;
   readonly onSave: (sections: readonly SectionDescription[]) => void;
+
+  /**
+   * Whether something outside the sections has changed - the product, today.
+   *
+   * @remarks
+   * The session knows what has been typed and nothing else. Without this the save button stays
+   * disabled after an author chooses a product, so they cannot save what they just chose, which
+   * is how a surface teaches somebody that a control does not work.
+   */
+  readonly alsoChanged?: boolean;
+  readonly onSaveLabel?: string;
 }) {
   const session = useMemo(() => openSession(version), [version]);
 
@@ -74,10 +87,10 @@ export function LabelEditor({
       */}
       <button
         type="button"
-        disabled={!session.hasUnsavedWork}
+        disabled={!session.hasUnsavedWork && !alsoChanged}
         onClick={() => onSave(session.toSections())}
       >
-        Save as version {version.version + 1}
+        {onSaveLabel ?? `Save as version ${version.version + 1}`}
       </button>
     </main>
   );

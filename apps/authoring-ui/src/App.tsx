@@ -1,8 +1,15 @@
 import { useCallback, useEffect, useState } from 'react';
 import { LabelEditor } from './LabelEditor';
 import { LabelPicker } from './LabelPicker';
+import { ProductChoice } from './ProductChoice';
 import type { SectionDescription, VersionDescription } from './authoring/editingSession';
-import type { SaveOutcome, SearchCriteria, SearchResults } from './platform/client';
+import type {
+  Product,
+  ProductChoiceValue,
+  SaveOutcome,
+  SearchCriteria,
+  SearchResults,
+} from './platform/client';
 
 /**
  * What the application needs of a sign-in, and of the platform.
@@ -24,8 +31,10 @@ export interface Platform {
     documentIdentifier: string,
     version: number,
     sections: readonly SectionDescription[],
+    product?: ProductChoiceValue,
   ): Promise<SaveOutcome>;
   searchLabels(criteria: SearchCriteria): Promise<SearchResults>;
+  searchProducts(text: string): Promise<readonly Product[]>;
 }
 
 /**
@@ -55,6 +64,11 @@ export function App({
   // What the author picked, where they picked one. The address still wins when it names a
   // label, so a link opens what it says.
   const [picked, setPicked] = useState<{ label: string; version: number } | null>(null);
+
+  // Undefined until the author changes it, and sent that way: omission is not removal, and the
+  // platform reads an absent product as unchanged (ADR-040). Sending the current one back
+  // unchanged would say nothing; sending null would detach the label from it.
+  const [product, setProduct] = useState<ProductChoiceValue | undefined>(undefined);
 
   const fromAddress = location.searchParams.get('label');
   const wanted =
@@ -87,9 +101,11 @@ export function App({
         return;
       }
 
-      setOutcome(await platform.saveSections(version.documentIdentifier, version.version, sections));
+      setOutcome(
+        await platform.saveSections(
+          version.documentIdentifier, version.version, sections, product));
     },
-    [platform, version],
+    [platform, version, product],
   );
 
   if (!session.hasValidToken) {
@@ -141,7 +157,16 @@ export function App({
   return (
     <main>
       <Outcome outcome={outcome} />
-      <LabelEditor version={version} onSave={(sections) => void save(sections)} />
+      <ProductChoice
+        current={product ?? version.product ?? null}
+        searchProducts={(text) => platform.searchProducts(text)}
+        onChoose={setProduct}
+      />
+      <LabelEditor
+        version={version}
+        onSave={(sections) => void save(sections)}
+        alsoChanged={product !== undefined}
+      />
     </main>
   );
 }

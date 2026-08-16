@@ -47,6 +47,9 @@ that sit behind the gateway.
 - `src/LabelPicker.tsx` - finding a label. Its wording is load-bearing: a scoped search leaves
   "no such label" and "not one you may see" genuinely indistinguishable, and the platform refuses
   to resolve that, so neither does this.
+- `src/ProductChoice.tsx` - which product the label is about, chosen rather than typed. The
+  identifier is never shown: it is what the platform stores and resolves, and it means nothing
+  to the person choosing.
 - `src/LabelEditor.tsx` - the surface over the working copy.
 - `src/platform/client.ts` - the only way this application reaches the platform. It speaks
   sections, never FHIR, and carries the platform's refusals in the platform's own words.
@@ -66,9 +69,8 @@ here so replacing the placeholder does not quietly shrink it:
 - **Paging through search results.** The platform pages and this shows the first page with an
   honest count of what it is not showing. Somebody looking for the thirtieth label cannot reach
   it yet.
-- **Choosing a product or a reusable unit.** The same shape as picking a label, and the reason
-  ADR-037 decision 3 exists - but the platform exposes no endpoint for either, which is the gap
-  ADR-038 closed for sections and has not for these.
+- **Choosing a reusable unit.** The same shape as picking a product, and the platform exposes no
+  endpoint for one - ADR-026 settled what a unit is, not how an author reaches one.
 - **Nothing has run against a real Keycloak or a real API.** Every part is tested against a
   fake, which is the right way to test them and no substitute for the redirect actually
   happening.

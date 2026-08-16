@@ -40,6 +40,25 @@ export interface SearchCriteria {
   readonly product?: string;
 }
 
+/** A product as the directory knows it (ADR-036). */
+export interface Product {
+  readonly identifier: string;
+  readonly name: string;
+  readonly markets?: readonly string[];
+}
+
+/**
+ * Which product a label is about.
+ *
+ * @remarks
+ * The identifier is what the platform stores and resolves; the display is carried for a reader
+ * and is never what anything resolves (ADR-040 decision 2).
+ */
+export interface ProductChoiceValue {
+  readonly identifier: string;
+  readonly display: string | null;
+}
+
 /** One label version the platform is willing to show this caller. */
 export interface LabelHit {
   readonly documentIdentifier: string;
@@ -150,10 +169,29 @@ export class PlatformClient {
     return (await response.json()) as SearchResults;
   }
 
+  /** Products matching what an author is looking for, so one can be chosen rather than typed. */
+  async searchProducts(text: string): Promise<readonly Product[]> {
+    const response = await this.#send(
+      `${this.#connection.baseUrl.replace(/\/$/, '')}/master-data/products` +
+        `?text=${encodeURIComponent(text)}`,
+      { method: 'GET' },
+    );
+
+    if (!response.ok) {
+      throw new Error(
+        `The platform answered ${response.status} to that product search, so this is not "no ` +
+          'products" - the search did not happen.',
+      );
+    }
+
+    return (await response.json()) as readonly Product[];
+  }
+
   async saveSections(
     documentIdentifier: string,
     version: number,
     sections: readonly SectionDescription[],
+    product?: ProductChoiceValue,
   ): Promise<SaveOutcome> {
     const known = this.#loaded.get(this.#key(documentIdentifier, version));
     const invented = sections.find(
@@ -173,7 +211,9 @@ export class PlatformClient {
       response = await this.#send(this.#url(documentIdentifier, version), {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ sections }),
+        // The product is sent only where the author changed it. Omission is not removal, and
+        // the platform reads an absent product as unchanged (ADR-040).
+        body: JSON.stringify(product === undefined ? { sections } : { sections, product }),
       });
     } catch (unreachable) {
       // Nothing was decided, so nothing was lost and retrying is safe. Worth saying, because
