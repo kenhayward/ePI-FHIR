@@ -17,7 +17,8 @@ public sealed class InMemoryLifecycleStore : ILifecycleStore, IPinnedContextStor
     private readonly Lock _gate = new();
 
     public Task RegisterAsync(VersionRef version, string author, string initialState,
-        DateTimeOffset registeredAt, CancellationToken cancellationToken = default)
+        DateTimeOffset registeredAt, string kind = RegisteredArtefact.Content,
+        CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(version);
         ArgumentException.ThrowIfNullOrWhiteSpace(author);
@@ -27,7 +28,7 @@ public sealed class InMemoryLifecycleStore : ILifecycleStore, IPinnedContextStor
             // Refused rather than overwritten. The recorded author is what segregation of
             // duties is checked against, so a second registration would let someone quietly
             // become eligible to approve their own work (CAP-IAM-006).
-            if (!_registrations.TryAdd(version, new Registration(version, author, registeredAt)))
+            if (!_registrations.TryAdd(version, new Registration(version, author, registeredAt, kind)))
             {
                 throw new InvalidOperationException(
                     $"{version} is already under lifecycle management, authored by "

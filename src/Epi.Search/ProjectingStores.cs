@@ -70,10 +70,16 @@ public sealed class ProjectingLifecycleStore(
 
     public async Task RegisterAsync(
         VersionRef version, string author, string initialState, DateTimeOffset registeredAt,
-        CancellationToken cancellationToken = default)
+        string kind = RegisteredArtefact.Content, CancellationToken cancellationToken = default)
     {
-        await _inner.RegisterAsync(version, author, initialState, registeredAt, cancellationToken);
-        await _projection.ProjectStateAsync(version, initialState, cancellationToken);
+        await _inner.RegisterAsync(version, author, initialState, registeredAt, kind, cancellationToken);
+
+        // Only content is searchable. A template is not a label and would appear in a search for
+        // one, with no scope to bound it (ADR-022 decision 3).
+        if (string.Equals(kind, RegisteredArtefact.Content, StringComparison.Ordinal))
+        {
+            await _projection.ProjectStateAsync(version, initialState, cancellationToken);
+        }
     }
 
     // Passed through without projecting. Reconciliation is an operational read over the

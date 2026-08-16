@@ -120,6 +120,10 @@
       {
         "name": "regulatory",
         "description": "May submit to a regulator and record its decision."
+      },
+      {
+        "name": "platform-operator",
+        "description": "Operates the platform rather than authoring for it: may read, and may run the reconciliation report over governance records."
       }
     ]
   },
@@ -204,6 +208,33 @@
         }
       ],
       "email": "rae.lindqvist@example.org",
+      "requiredActions": []
+    },
+    {
+      "username": "user-ops",
+      "firstName": "Omar",
+      "lastName": "Silva",
+      "enabled": true,
+      "emailVerified": true,
+      "attributes": {
+        "affiliates": [
+          "uk-affiliate"
+        ],
+        "markets": [
+          "GB"
+        ]
+      },
+      "realmRoles": [
+        "platform-operator"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Demo-Passw0rd!",
+          "temporary": false
+        }
+      ],
+      "email": "omar.silva@example.org",
       "requiredActions": []
     }
   ]

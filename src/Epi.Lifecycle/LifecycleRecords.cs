@@ -24,8 +24,30 @@ public sealed record StateTransition(
     string? Reason = null,
     string? SignatureReference = null);
 
-/// <summary>A version's entry into lifecycle management: who, and when.</summary>
-public sealed record Registration(VersionRef Version, string Author, DateTimeOffset RegisteredAt);
+/// <summary>
+/// What kind of artefact a registration is for.
+/// </summary>
+/// <remarks>
+/// The engine never needed to know until it managed more than one thing. It manages templates
+/// now (ADR-042 decision 3), and a registration that does not say what it is for is one the
+/// reconciliation report reads as a label whose content never arrived - which is what happened,
+/// and which reported every seeded template as a defect forever.
+/// </remarks>
+public static class RegisteredArtefact
+{
+    /// <summary>A label version, whose content lives in the content store.</summary>
+    public const string Content = "content";
+
+    /// <summary>A render template version, whose definition lives in the template store.</summary>
+    public const string Template = "template";
+}
+
+/// <summary>A version's entry into lifecycle management: who, when, and for what.</summary>
+public sealed record Registration(
+    VersionRef Version,
+    string Author,
+    DateTimeOffset RegisteredAt,
+    string Kind = RegisteredArtefact.Content);
 
 /// <summary>
 /// The lifecycle store: who authored a version, and every transition it has been through.
@@ -44,8 +66,14 @@ public interface ILifecycleStore : ISpentSignatures
     /// transition, and "what state was this in on the third of March" cannot distinguish a
     /// version that was a draft then from one that did not yet exist (CAP-LCM-006).
     /// </remarks>
+    /// <param name="kind">
+    /// What the registration is for (<see cref="RegisteredArtefact"/>). Defaults to content,
+    /// because that is what every registration was before the engine managed anything else, and
+    /// because a stored registration that predates this is a label's.
+    /// </param>
     Task RegisterAsync(VersionRef version, string author, string initialState,
-        DateTimeOffset registeredAt, CancellationToken cancellationToken = default);
+        DateTimeOffset registeredAt, string kind = RegisteredArtefact.Content,
+        CancellationToken cancellationToken = default);
 
     /// <summary>The person who authored a version, or null if it is unknown.</summary>
     Task<string?> AuthorOfAsync(VersionRef version, CancellationToken cancellationToken = default);

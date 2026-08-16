@@ -35,8 +35,14 @@ to FHIR and still is not a label: it is a description of what a label should con
 for the same reason: a render keyed to template version 2 must mean the same thing in five years
 as it did when it was filed (ADR-033 decision 1).
 
-**3. Approval uses the lifecycle engine labels use - the same engine, the same state model, the
-same segregation of duties, the same signature.** Not a second approval mechanism.
+**3. Approval uses the lifecycle engine labels use - the same engine, the same mechanisms, its
+own states.** Not a second approval mechanism.
+
+The wording here originally said "the same state model", and that is wrong in a way worth
+correcting rather than glossing: a label is superseded and a template is retired, and a template
+has no per-market approval at all. What is shared is the engine, the segregation-of-duties check,
+the signature gate, and the fact that the states are configuration - `config/lifecycle/template-states.json`
+sits beside the label's and is read by the same loader.
 
 This is the decision the rest rests on. The lifecycle engine works on a `VersionRef`, which is an
 identifier and a version and nothing about labels; the states are configuration; the signature

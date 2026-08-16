@@ -82,7 +82,13 @@ var marketStates = builder.Configuration["Epi:Lifecycle:MarketStatesPath"]
     ?? Path.Combine(builder.Environment.ContentRootPath, "config", "lifecycle",
         "market-approval-states.json");
 
+var templateStates = builder.Configuration["Epi:Lifecycle:TemplateStatesPath"]
+    ?? Path.Combine(builder.Environment.ContentRootPath, "config", "lifecycle",
+        "template-states.json");
+
 var labelModel = new Lazy<LifecycleModel>(() => LifecycleModelConfiguration.LoadFrom(lifecycleStates));
+var templateModel = new Lazy<LifecycleModel>(
+    () => LifecycleModelConfiguration.LoadFrom(templateStates));
 var marketModel = new Lazy<LifecycleModel>(() => LifecycleModelConfiguration.LoadFrom(marketStates));
 
 // Search is served from a projection, derived and never a source of truth (ADR-022 decision 6).
@@ -191,6 +197,16 @@ builder.Services.AddSingleton<ISignatureCheck>(services =>
 // durable counterpart lands.
 builder.Services.AddSingleton<ITemplateStore>(_ => new InMemoryTemplateStore());
 
+// The same engine a label passes through, over the template state model (ADR-042 decision 3).
+// One engine and two models rather than two engines: the segregation-of-duties check and the
+// signature gate are written once, and a template gets both by construction.
+builder.Services.AddKeyedSingleton("templates", (services, _) => new LifecycleService(
+    templateModel.Value,
+    services.GetRequiredService<ILifecycleStore>(),
+    time: null,
+    signatureCheck: services.GetRequiredService<ISignatureCheck>(),
+    spent: services.GetRequiredService<ISpentSignatures>()));
+
 // The system clock, resolvable rather than reached for. Reconciliation compares a registration
 // against now, and a test that cannot move "now" cannot test a settle period at all.
 builder.Services.AddSingleton(TimeProvider.System);
@@ -247,6 +263,32 @@ builder.Services.AddSingleton(services => new CurrentApprovedVersions(
         + "has approved (CAP-SCH-002).")));
 
 var app = builder.Build();
+
+// The governance schema, before anything at all uses it.
+//
+// Applied as ordered, recorded migrations rather than as a per-store bootstrap. CREATE TABLE IF
+// NOT EXISTS does nothing to a table that already exists, so the old arrangement could not add a
+// column to a database that predated it - and CI, which starts empty every time, could not see
+// the difference (ADR-024 decision 5). A failed migration is a start-up failure: a service
+// running against a schema it could not fully apply is a service whose writes may or may not
+// land.
+//
+// First, because start-up writes now: seeding registers a template with the lifecycle engine.
+// This stood below that write until a walkthrough found it, and what a walkthrough found is what
+// any deployment would have - the API died on the seeding write with 'column artefact_kind does
+// not exist', with the migration that adds it sitting a few lines further down. Ordering that
+// only holds while nothing writes early is ordering that will break again, quietly, whenever
+// something else needs to write at start-up.
+if (!string.IsNullOrWhiteSpace(governanceConnection))
+{
+    await GovernanceSchema.ApplyAsync(governanceConnection);
+}
+
+if (!string.IsNullOrWhiteSpace(auditConnection) && auditConnection != governanceConnection)
+{
+    // The audit trail may be held apart from the rest of the governance records.
+    await GovernanceSchema.ApplyAsync(auditConnection);
+}
 
 // Every configuration the platform reads from a path, resolved here rather than on first use
 // (CAP-CFG-006, FN-CFG-002).
@@ -328,6 +370,21 @@ var seededTemplates = await TemplateSeeding.ApplyAsync(
     builder.Configuration["Epi:TemplateSeedPath"]
     ?? Path.Combine(builder.Environment.ContentRootPath, "config", "templates", "seed"));
 
+// Each seeded template comes under lifecycle management, authored by the platform.
+//
+// Recorded as the platform rather than as whoever happened to start the service, because that
+// is what is true: nobody wrote these. The consequence is that anybody may approve one, and it
+// is the right consequence - segregation of duties disqualifies the person who wrote something
+// from approving it, and no person wrote this. Attributing it to an operator would disqualify
+// them from approving a template they did not write, and would put a name against work nobody
+// did.
+foreach (var seeded in seededTemplates)
+{
+    await app.Services.GetRequiredKeyedService<LifecycleService>("templates")
+        .RegisterAsync(new VersionRef(seeded, 1), TemplateSeeding.SeedAuthor,
+            RegisteredArtefact.Template);
+}
+
 app.Logger.LogInformation(
     seededTemplates.Count == 0
         ? "No templates were seeded; the store already holds what it needs."
@@ -342,23 +399,6 @@ if (string.IsNullOrWhiteSpace(signingAuthority) || string.IsNullOrWhiteSpace(sig
         "No identity provider is configured for signing, so every signature will be refused. "
         + "Approval gates cannot be passed until Epi:Signing:KeycloakUrl and Epi:Signing:Realm "
         + "are set.");
-}
-
-// The governance schema is applied as ordered, recorded migrations rather than as a
-// per-store bootstrap. CREATE TABLE IF NOT EXISTS does nothing to a table that already
-// exists, so the old arrangement could not add a column to a database that predated it -
-// and CI, which starts empty every time, could not see the difference (ADR-024 decision 5).
-// A failed migration is a start-up failure: a service running against a schema it could not
-// fully apply is a service whose writes may or may not land.
-if (!string.IsNullOrWhiteSpace(governanceConnection))
-{
-    await GovernanceSchema.ApplyAsync(governanceConnection);
-}
-
-if (!string.IsNullOrWhiteSpace(auditConnection) && auditConnection != governanceConnection)
-{
-    // The audit trail may be held apart from the rest of the governance records.
-    await GovernanceSchema.ApplyAsync(auditConnection);
 }
 
 app.UseAuthentication();
@@ -1524,6 +1564,86 @@ app.MapGet("/labels/{id}/versions/{version:int}/preview", async (
 
     return Results.Text(
         Encoding.UTF8.GetString(rendered.Content), "text/html", Encoding.UTF8);
+}).RequireAuthorization();
+
+// The templates a deployment has, with the state each is in (FN-TPL-005).
+//
+// Nobody types a template identifier and nobody guesses whether one may be used: both come from
+// the platform, as the permitted actions on a label do (ADR-037 decision 3).
+app.MapGet("/templates", async (
+    ClaimsPrincipal principal,
+    ITemplateStore templates,
+    [FromKeyedServices("templates")] LifecycleService templateLifecycle,
+    CancellationToken cancellationToken) =>
+{
+    if (SubjectFactory.From(principal) is null)
+    {
+        return Results.Unauthorized();
+    }
+
+    var known = await templates.ListAsync(cancellationToken);
+    var described = new List<object>();
+
+    foreach (var template in known)
+    {
+        var reference = new VersionRef(template.Identifier, template.Version);
+        var state = await templateLifecycle.CurrentStateAsync(reference, cancellationToken)
+                    ?? templateModel.Value.Initial;
+
+        described.Add(new
+        {
+            identifier = template.Identifier,
+            version = template.Version,
+            name = template.Name,
+            state,
+            actions = templateModel.Value.Transitions
+                .Where(t => string.Equals(t.From, state, StringComparison.Ordinal))
+                .Select(t => t.Action),
+            signedActions = templateModel.Value.Transitions
+                .Where(t => string.Equals(t.From, state, StringComparison.Ordinal)
+                            && t.RequiresSignature)
+                .Select(t => t.Action),
+        });
+    }
+
+    return Results.Ok(described);
+}).RequireAuthorization();
+
+// Moving a template through its lifecycle - the same engine, the same refusals.
+app.MapPost("/templates/{identifier}/versions/{version:int}/transitions", async (
+    string identifier,
+    int version,
+    TransitionRequest body,
+    ClaimsPrincipal principal,
+    ITemplateStore templates,
+    [FromKeyedServices("templates")] LifecycleService templateLifecycle,
+    CancellationToken cancellationToken) =>
+{
+    var subject = SubjectFactory.From(principal);
+    if (subject is null)
+    {
+        return Results.Unauthorized();
+    }
+
+    if (await templates.GetAsync(identifier, version, cancellationToken) is null)
+    {
+        return Results.NotFound();
+    }
+
+    try
+    {
+        var transition = await templateLifecycle.TransitionAsync(
+            new VersionRef(identifier, version), body.Action, subject.Id, body.Reason,
+            body.SignatureReference, cancellationToken: cancellationToken);
+
+        return Results.Ok(new { from = transition.From, to = transition.To });
+    }
+    catch (TransitionRefusedException refused)
+    {
+        // 409, as a label's refusals are: the request was understood and the state model or the
+        // segregation-of-duties check would not have it.
+        return Results.Problem(refused.Message, statusCode: StatusCodes.Status409Conflict);
+    }
 }).RequireAuthorization();
 
 app.Run();

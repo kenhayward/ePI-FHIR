@@ -688,5 +688,15 @@
     ],
     "iteration": "4",
     "status": "planned"
+  },
+  "FN-TPL-005": {
+    "name": "Take a template through the lifecycle engine a label uses, under the same signature and segregation gates",
+    "component": "Authoring & Template Service",
+    "satisfies": [
+      "CAP-TPL-008",
+      "CAP-TPL-001"
+    ],
+    "iteration": "4",
+    "status": "planned"
   }
 }

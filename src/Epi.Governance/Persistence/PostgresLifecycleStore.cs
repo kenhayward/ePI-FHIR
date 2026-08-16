@@ -24,7 +24,7 @@ public sealed class PostgresLifecycleStore(string connectionString)
 
     public async Task RegisterAsync(
         VersionRef version, string author, string initialState, DateTimeOffset registeredAt,
-        CancellationToken cancellationToken = default)
+        string kind = RegisteredArtefact.Content, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(version);
         ArgumentException.ThrowIfNullOrWhiteSpace(author);
@@ -34,8 +34,9 @@ public sealed class PostgresLifecycleStore(string connectionString)
         // primary key refuses it.
         await using var command = _source.Value.CreateCommand("""
             INSERT INTO lifecycle_version
-                (document_identifier, document_version, author, initial_state, registered_at)
-            VALUES ($1, $2, $3, $4, $5)
+                (document_identifier, document_version, author, initial_state, registered_at,
+                 artefact_kind)
+            VALUES ($1, $2, $3, $4, $5, $6)
             """);
 
         command.Parameters.AddWithValue(version.DocumentIdentifier);
@@ -43,6 +44,7 @@ public sealed class PostgresLifecycleStore(string connectionString)
         command.Parameters.AddWithValue(author);
         command.Parameters.AddWithValue(initialState);
         command.Parameters.AddWithValue(registeredAt);
+        command.Parameters.AddWithValue(kind);
 
         await command.ExecuteNonQueryAsync(cancellationToken);
     }
@@ -77,7 +79,7 @@ public sealed class PostgresLifecycleStore(string connectionString)
     {
         // Exclusive of the moment itself, so a caller's settle period means what it says.
         await using var command = _source.Value.CreateCommand("""
-            SELECT document_identifier, document_version, author, registered_at
+            SELECT document_identifier, document_version, author, registered_at, artefact_kind
             FROM lifecycle_version
             WHERE registered_at < $1
             ORDER BY registered_at, document_identifier, document_version
@@ -96,7 +98,8 @@ public sealed class PostgresLifecycleStore(string connectionString)
 
                 // GetFieldValue rather than a cast, for the reason recorded on
                 // RegisteredAtAsync: Npgsql hands back a DateTime for timestamptz.
-                reader.GetFieldValue<DateTimeOffset>(3)));
+                reader.GetFieldValue<DateTimeOffset>(3),
+                reader.IsDBNull(4) ? RegisteredArtefact.Content : reader.GetString(4)));
         }
 
         return registrations;

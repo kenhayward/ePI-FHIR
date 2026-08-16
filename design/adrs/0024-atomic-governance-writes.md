@@ -112,3 +112,10 @@ closing both.
   it could not fully apply is a service whose writes may or may not land.
 - Registration remains non-atomic and is recorded as such. It is the next pull request, not a
   someday.
+- **Migrations are applied before anything start-up writes.** Added after the fact, and after a
+  walkthrough found the omission: template seeding registers with the lifecycle engine during
+  start-up, and that write sat above the migration that added the column it needed. The API
+  died on it. Ordering that holds only while nothing writes early is ordering that breaks again,
+  quietly, the next time something does - so the schema is applied immediately after the host is
+  built, before any start-up work at all, and `Epi.Api.IntegrationTests` starts the API against
+  an empty PostgreSQL to hold it there.

@@ -156,10 +156,11 @@ public sealed class RegisteringContentStoreTests
 
         public Task RegisterAsync(
             VersionRef version, string author, string initialState, DateTimeOffset registeredAt,
-            CancellationToken cancellationToken = default)
+            string kind = RegisteredArtefact.Content, CancellationToken cancellationToken = default)
         {
             RegisteredAt = Interlocked.Increment(ref Sequence.Next);
-            return _inner.RegisterAsync(version, author, initialState, registeredAt, cancellationToken);
+            return _inner.RegisterAsync(
+                version, author, initialState, registeredAt, kind, cancellationToken);
         }
 
         public Task<string?> AuthorOfAsync(VersionRef version, CancellationToken cancellationToken = default) =>

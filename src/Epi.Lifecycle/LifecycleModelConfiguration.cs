@@ -135,7 +135,13 @@ public static class LifecycleModelConfiguration
         IReadOnlyList<TransitionFile>? Transitions,
         string? ApprovedState = null);
 
+    /// <remarks>
+    /// Carries a comment of its own, because the reasoning for a gate belongs beside the gate.
+    /// A model-level comment cannot say why one transition is signed and its neighbour is not,
+    /// and that is exactly the sort of thing somebody changes without knowing.
+    /// </remarks>
     private sealed record TransitionFile(
+        [property: JsonPropertyName("_comment")] string? Comment,
         string? From, string? To, string? Action,
         bool RequiresSignature = false, bool SegregatedFromAuthor = false,
         string? SignatureMeaning = null);

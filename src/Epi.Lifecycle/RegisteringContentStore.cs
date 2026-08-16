@@ -40,7 +40,9 @@ public sealed class RegisteringContentStore(
     {
         ArgumentNullException.ThrowIfNull(identity);
 
-        await _lifecycle.RegisterAsync(new VersionRef(identity.Value, 1), _author, cancellationToken);
+        await _lifecycle.RegisterAsync(
+            new VersionRef(identity.Value, 1), _author,
+            RegisteredArtefact.Content, cancellationToken);
         return await _inner.CreateAsync(identity, bundle, cancellationToken);
     }
 
@@ -51,7 +53,8 @@ public sealed class RegisteringContentStore(
         ArgumentNullException.ThrowIfNull(identity);
 
         await _lifecycle.RegisterAsync(
-            new VersionRef(identity.Value, version), _author, cancellationToken);
+            new VersionRef(identity.Value, version), _author,
+            RegisteredArtefact.Content, cancellationToken);
         return await _inner.CreateVersionAsync(identity, version, bundle, cancellationToken);
     }
 

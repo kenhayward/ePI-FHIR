@@ -1,0 +1,22 @@
+{
+  "_comment": "The lifecycle of a render template (CAP-TPL-008, ADR-042 decision 3). The same engine, the same segregation of duties and the same signature gate a label passes through - because a template determines what a patient reads, and approving one is a regulatory act with a named accountable person behind it. Its states are its own: a label is superseded by a newer version and a template is retired when it should no longer be used, and a template has no per-market approval at all.",
+
+  "name": "render-template",
+  "initial": "draft",
+  "approvedState": "approved",
+  "states": ["draft", "in-review", "approved", "retired"],
+  "transitions": [
+    {"from": "draft", "to": "in-review", "action": "submit"},
+    {"from": "in-review", "to": "draft", "action": "return"},
+
+    {"_comment": "Signed, and segregated from whoever wrote it - the same two conditions a label's approval carries, for the same reason. Somebody signs to say this is fit to shape what patients read, and it is not the person who shaped it.",
+     "from": "in-review", "to": "approved", "action": "approve",
+     "requiresSignature": true, "segregatedFromAuthor": true, "signatureMeaning": "approval"},
+
+    {"_comment": "Retiring an approved template is signed too. Renders already filed with it stay valid and stay reproducible - retiring says nothing new may be rendered with it, which is a decision somebody owns.",
+     "from": "approved", "to": "retired", "action": "retire",
+     "requiresSignature": true, "signatureMeaning": "approval"},
+
+    {"from": "draft", "to": "retired", "action": "retire"}
+  ]
+}

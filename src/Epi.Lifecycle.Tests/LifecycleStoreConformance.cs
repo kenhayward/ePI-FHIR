@@ -227,6 +227,36 @@ public abstract class LifecycleStoreConformance : IAsyncDisposable
     }
 
     [Fact]
+    public async Task FN_LCM_008_a_registration_says_what_kind_of_artefact_it_is()
+    {
+        // ADR-042 decision 3 put render templates through the same engine, and the engine's
+        // indifference to what a VersionRef refers to stopped being free at the point something
+        // reads registrations back and goes looking for the artefact behind one.
+        var store = await NewStoreAsync();
+        await store.RegisterAsync(
+            Version, "user-anna", "draft", Registered, RegisteredArtefact.Template);
+
+        var registration = Assert.Single(
+            await store.RegistrationsBeforeAsync(Registered.AddDays(1)));
+
+        Assert.Equal(RegisteredArtefact.Template, registration.Kind);
+    }
+
+    [Fact]
+    public async Task FN_LCM_008_a_registration_that_does_not_say_is_content()
+    {
+        // Not an unknown. Everything registered before templates existed was a label, and a
+        // caller that says nothing is registering one.
+        var store = await NewStoreAsync();
+        await store.RegisterAsync(Version, "user-anna", "draft", Registered);
+
+        var registration = Assert.Single(
+            await store.RegistrationsBeforeAsync(Registered.AddDays(1)));
+
+        Assert.Equal(RegisteredArtefact.Content, registration.Kind);
+    }
+
+    [Fact]
     public async Task FN_LCM_008_a_store_holding_no_registrations_returns_none()
     {
         var store = await NewStoreAsync();
