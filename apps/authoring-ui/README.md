@@ -50,6 +50,10 @@ that sit behind the gateway.
 - `src/WaitingWork.tsx` - what routing has asked of this person. A failure is never shown as an
   empty list: "nothing is waiting" is a claim, and saying it when nobody knows tells somebody
   their work is done.
+- `src/LifecycleActions.tsx` - submitting, approving, and the one password field in this
+  application. It is there because signing a record is not signing in (ADR-041): re-entering
+  credentials is what makes a signature attributable to a person rather than to a session
+  somebody left open.
 - `src/ProductChoice.tsx` - which product the label is about, chosen rather than typed. The
   identifier is never shown: it is what the platform stores and resolves, and it means nothing
   to the person choosing.
@@ -69,9 +73,10 @@ it.
 The placeholder this replaced named the whole of the surface's eventual job. Keeping that list
 here so replacing the placeholder does not quietly shrink it:
 
-- **Acting on a task.** A task can be seen and the label it names opened; submitting, approving
-  and signing all happen over HTTP and none of them are on a screen. That is the next thing, and
-  it is the one that makes the governed lifecycle visible rather than described.
+- **Per-market approval.** Internal lifecycle is on a screen; submitting to a regulator and
+  recording its decision are not, and they are held separately on purpose (ADR-005).
+- **A version's history.** What happened, who did it and what they signed is all recorded and
+  none of it is shown.
 - **Paging through search results.** The platform pages and this shows the first page with an
   honest count of what it is not showing. Somebody looking for the thirtieth label cannot reach
   it yet.

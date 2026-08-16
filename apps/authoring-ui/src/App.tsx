@@ -2,10 +2,14 @@ import { useCallback, useEffect, useState } from 'react';
 import { LabelEditor } from './LabelEditor';
 import { LabelPicker } from './LabelPicker';
 import { ProductChoice } from './ProductChoice';
+import { LifecycleActions } from './LifecycleActions';
 import { WaitingWork } from './WaitingWork';
 import type { SectionDescription, VersionDescription } from './authoring/editingSession';
 import type {
   Product,
+  SignatureOutcome,
+  TransitionOutcome,
+  TransitionRequest,
   WaitingTask,
   ProductChoiceValue,
   SaveOutcome,
@@ -38,6 +42,17 @@ export interface Platform {
   searchLabels(criteria: SearchCriteria): Promise<SearchResults>;
   searchProducts(text: string): Promise<readonly Product[]>;
   openTasks(): Promise<readonly WaitingTask[]>;
+  transitionAsync(
+    documentIdentifier: string,
+    version: number,
+    request: TransitionRequest,
+  ): Promise<TransitionOutcome>;
+  signAsync(request: {
+    documentIdentifier: string;
+    version: number;
+    meaning: string;
+    password: string;
+  }): Promise<SignatureOutcome>;
 }
 
 /**
@@ -164,6 +179,20 @@ export function App({
   return (
     <Shell>
       <Outcome outcome={outcome} />
+      <LifecycleActions
+        version={{
+          state: version.state,
+          documentIdentifier: version.documentIdentifier,
+          version: version.version,
+        }}
+        actions={version.actions ?? []}
+        signedActions={version.signedActions ?? []}
+        transition={(id, at, request) => platform.transitionAsync(id, at, request)}
+        sign={(request) => platform.signAsync(request)}
+        // Reopened, because a transition changes the state and what may be done from it - and a
+        // screen still offering "submit" after submitting is a screen that will be wrong.
+        onDone={() => setVersion(null)}
+      />
       <ProductChoice
         current={product ?? version.product ?? null}
         searchProducts={(text) => platform.searchProducts(text)}

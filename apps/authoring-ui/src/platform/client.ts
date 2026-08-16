@@ -69,6 +69,44 @@ export interface WaitingTask {
   readonly raisedAt: string;
 }
 
+/**
+ * What a signature asks for.
+ *
+ * @remarks
+ * The password is here because signing a record is not signing in (ADR-041 decision 1). Part 11
+ * requires the signer to supply identification components at the moment of signing; a signature
+ * on the session alone is an assertion by a browser tab. It exists for one request and is never
+ * held (ADR-041 decision 2).
+ */
+export interface SignatureRequest {
+  readonly documentIdentifier: string;
+  readonly version: number;
+  readonly meaning: string;
+  readonly password: string;
+  readonly reason?: string;
+}
+
+/** A signature the platform minted, or its refusal. */
+export type SignatureOutcome =
+  | {
+      readonly refused: false;
+      readonly reference: string;
+      readonly printedName?: string | undefined;
+    }
+  | { readonly refused: true; readonly detail: string };
+
+/** What a transition asks for. */
+export interface TransitionRequest {
+  readonly action: string;
+  readonly reason?: string;
+  readonly signatureReference?: string;
+}
+
+/** What the platform did with a transition, or why it would not. */
+export type TransitionOutcome =
+  | { readonly ok: true; readonly from: string; readonly to: string }
+  | { readonly ok: false; readonly detail: string };
+
 /** One label version the platform is willing to show this caller. */
 export interface LabelHit {
   readonly documentIdentifier: string;
@@ -198,6 +236,88 @@ export class PlatformClient {
     }
 
     return (await response.json()) as readonly WaitingTask[];
+  }
+
+  /**
+   * Asks the platform for a signature over a version.
+   *
+   * @remarks
+   * To the platform, never to the identity provider (ADR-041 decision 3): a browser posting
+   * credentials straight to Keycloak would be a second authentication path with none of the
+   * platform's segregation-of-duties checks around it.
+   */
+  async signAsync(request: SignatureRequest): Promise<SignatureOutcome> {
+    const response = await this.#send(
+      `${this.#connection.baseUrl.replace(/\/$/, '')}/signatures`,
+      {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+
+        // In the body. A password in a URL is a password in every access log and referrer
+        // header - the same rule the access token follows, and more so.
+        body: JSON.stringify(request),
+      },
+    );
+
+    const body = (await this.#body(response)) as {
+      reference?: string;
+      printedName?: string;
+      detail?: string;
+    };
+
+    if (!response.ok || body.reference === undefined) {
+      return {
+        refused: true,
+        detail: body.detail ?? `The platform answered ${response.status}.`,
+      };
+    }
+
+    return { refused: false, reference: body.reference, printedName: body.printedName };
+  }
+
+  /**
+   * Moves a version between states, citing a signature where the gate needs one.
+   *
+   * @remarks
+   * The surface never decides whether a transition may happen and never mints a signature
+   * reference: it cites one, and the platform decides whether it is valid, unspent and over the
+   * right content hash (ADR-041 decision 4). Being wrong here is refused rather than admitted.
+   */
+  async transitionAsync(
+    documentIdentifier: string,
+    version: number,
+    request: TransitionRequest,
+  ): Promise<TransitionOutcome> {
+    const response = await this.#send(
+      `${this.#connection.baseUrl.replace(/\/$/, '')}` +
+        `/labels/${encodeURIComponent(documentIdentifier)}/versions/${version}/transitions`,
+      {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(request),
+      },
+    );
+
+    const body = (await this.#body(response)) as {
+      from?: string;
+      to?: string;
+      detail?: string;
+      problems?: string[];
+    };
+
+    if (!response.ok || body.to === undefined) {
+      // The platform's own reason. Its refusals are the interesting part - the author of a
+      // version may not approve it - and being told exactly that is the point.
+      return {
+        ok: false,
+        detail:
+          body.detail
+          ?? body.problems?.join('; ')
+          ?? `The platform answered ${response.status}.`,
+      };
+    }
+
+    return { ok: true, from: body.from ?? '', to: body.to };
   }
 
   /** Products matching what an author is looking for, so one can be chosen rather than typed. */
