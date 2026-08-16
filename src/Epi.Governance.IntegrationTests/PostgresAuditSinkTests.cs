@@ -11,7 +11,7 @@ namespace Epi.Governance.IntegrationTests;
 public sealed class PostgresServer : IAsyncLifetime
 {
     /// <summary>The image the development stack runs (deploy/docker-compose).</summary>
-    private const string Image = "postgres:16";
+    private const string Image = "postgres:16.15";
 
     /// <remarks>
     /// The Testcontainers PostgreSQL module rather than a hand-built container, for its

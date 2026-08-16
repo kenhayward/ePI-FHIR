@@ -223,12 +223,12 @@
   "CAP-RND-007": {
     "iteration": "3",
     "status": "partial",
-    "evidence": "CAP_RND_007 tests: two renders of one label version and render-template version are byte-identical in HTML, and in PDF against an engine that reproduces the measured behaviour. The measurement against the real engine is recorded in ADR-033; IT-019 automating it is outstanding"
+    "evidence": "CAP_RND_007 and IT_019: two renders of one label version and render-template version are byte-identical, in HTML and in PDF against the engine that writes the bytes. Verified to discriminate - with normalisation removed the case fails"
   },
   "CAP-RND-002": {
     "iteration": "3",
     "status": "partial",
-    "evidence": "ADR-033 plus CAP_RND_002 tests: rendered and artwork are separate types so neither can be stored as the other, and a label version renders to PDF carrying both versions it came from. Proven against a stand-in engine; IT-019 against a real one is outstanding"
+    "evidence": "ADR-033 plus CAP_RND_002 tests and IT_019 against a real print engine: rendered and artwork are separate types so neither can be stored as the other, and a label version renders to PDF carrying both versions it came from. PDF/A and PDF/UA are CAP-RND-005, later"
   },
   "CAP-RND-004": {
     "iteration": "3",
