@@ -89,6 +89,13 @@ jobs:
       - name: Container images are pinned
         run: python3 tools/verify-image-pins.py
 
+      # Three defects have come from a configuration path that differed only inside a
+      # container: the service started, reported healthy, and had loaded nothing. Each was
+      # found by running the walkthrough, because a test host sets its own paths and a
+      # compose smoke test cannot tell a service that loaded nothing from one that did.
+      - name: Configuration paths are declared, mounted and present
+        run: python3 tools/verify-configuration-paths.py
+
       - name: Relative Markdown links resolve
         run: |
           fail=0

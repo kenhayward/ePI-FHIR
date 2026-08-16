@@ -36,6 +36,8 @@ public sealed class TaskEndpointTests(WebApplicationFactory<Program> factory)
             TestFixtures.RepositoryPath("config", "lifecycle", "label-states.json"));
         host.UseSetting("Epi:Lifecycle:MarketStatesPath",
             TestFixtures.RepositoryPath("config", "lifecycle", "market-approval-states.json"));
+        host.UseSetting("Epi:MasterDataPath",
+            TestFixtures.RepositoryPath("config", "master-data", "products.json"));
         host.UseSetting("Epi:Workflow:RoutingPath",
             TestFixtures.RepositoryPath("config", "workflow", "label"));
         host.ConfigureTestServices(services =>
@@ -209,8 +211,8 @@ public sealed class TaskEndpointTests(WebApplicationFactory<Program> factory)
     [Fact]
     public async Task CAP_WFL_001_tasks_are_refused_without_a_token()
     {
-        using var listed = await factory.CreateClient().GetAsync("/tasks");
-        using var moved = await factory.CreateClient()
+        using var listed = await TestFixtures.Configured(factory).CreateClient().GetAsync("/tasks");
+        using var moved = await TestFixtures.Configured(factory).CreateClient()
             .PostAsJsonAsync("/tasks/anything/assignment", new { assignee = "user-rae" });
 
         Assert.Equal(HttpStatusCode.Unauthorized, listed.StatusCode);

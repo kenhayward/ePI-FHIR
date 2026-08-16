@@ -44,6 +44,8 @@ public sealed class SigningEndpointTests(WebApplicationFactory<Program> factory)
             TestFixtures.RepositoryPath("config", "lifecycle", "label-states.json"));
         host.UseSetting("Epi:Lifecycle:MarketStatesPath",
             TestFixtures.RepositoryPath("config", "lifecycle", "market-approval-states.json"));
+        host.UseSetting("Epi:MasterDataPath",
+            TestFixtures.RepositoryPath("config", "master-data", "products.json"));
         host.ConfigureTestServices(services =>
         {
             services.AddAuthentication(WhoeverAsked.Name)
@@ -211,6 +213,8 @@ public sealed class SigningEndpointTests(WebApplicationFactory<Program> factory)
                 TestFixtures.RepositoryPath("config", "lifecycle", "label-states.json"));
             host.UseSetting("Epi:Lifecycle:MarketStatesPath",
                 TestFixtures.RepositoryPath("config", "lifecycle", "market-approval-states.json"));
+            host.UseSetting("Epi:MasterDataPath",
+                TestFixtures.RepositoryPath("config", "master-data", "products.json"));
             host.ConfigureTestServices(services =>
             {
                 services.AddAuthentication(WhoeverAsked.Name)
@@ -228,7 +232,7 @@ public sealed class SigningEndpointTests(WebApplicationFactory<Program> factory)
     [Fact]
     public async Task IT_010_a_transition_is_refused_without_a_token()
     {
-        using var response = await factory.CreateClient().PostAsJsonAsync(
+        using var response = await TestFixtures.Configured(factory).CreateClient().PostAsJsonAsync(
             $"/labels/{Guid.NewGuid()}/versions/1/transitions", new { action = "submit" });
 
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);

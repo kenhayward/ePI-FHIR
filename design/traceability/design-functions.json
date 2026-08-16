@@ -210,6 +210,15 @@
     "iteration": "3",
     "status": "planned"
   },
+  "FN-CFG-005": {
+    "name": "Resolve every configuration path at start-up and refuse to run without one",
+    "component": "Configuration & Rules Service",
+    "satisfies": [
+      "CAP-CFG-006"
+    ],
+    "iteration": "3",
+    "status": "planned"
+  },
   "FN-MDM-001": {
     "name": "Resolve a product reference through a replaceable master-data directory",
     "component": "Master Data & Identifier Service",
