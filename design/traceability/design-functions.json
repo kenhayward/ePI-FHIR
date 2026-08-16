@@ -357,6 +357,15 @@
     "iteration": "2",
     "status": "planned"
   },
+  "FN-LCM-008": {
+    "name": "Report registrations with no content behind them",
+    "component": "Lifecycle & Workflow Service",
+    "satisfies": [
+      "CAP-LCM-002"
+    ],
+    "iteration": "3",
+    "status": "planned"
+  },
   "FN-WFL-003": {
     "name": "Require a valid, unused signature at a gate the model says must be signed",
     "component": "Lifecycle & Workflow Service",

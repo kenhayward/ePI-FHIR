@@ -12,6 +12,21 @@ allow if {
 	scope_covers_resource
 }
 
+# Platform-wide actions: the role must grant them, and there is nothing to scope
+# against (FN-LCM-008). Reconciliation reports governance records with no content
+# behind them, and scope is decided on the content (ADR-025) - so a scope test
+# here would deny every one of them for want of an affiliate to compare.
+#
+# The set is enumerated rather than inferred from a missing resource. Inferring it
+# would mean any request that arrived without a resource skipped the scope test,
+# which is a hole rather than a rule.
+allow if {
+	input.action in platform_wide_actions
+	role_allows_action
+}
+
+platform_wide_actions := {"reconcile"}
+
 role_allows_action if {
 	some role in input.subject.roles
 	input.action in data.roles[role].actions
