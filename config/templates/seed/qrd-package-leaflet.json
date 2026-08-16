@@ -1,0 +1,9 @@
+{
+  "_comment": "A starting point for a package leaflet, seeded as a DRAFT (ADR-042 decision 7). It is not approved and nothing may be officially rendered with it until a regulatory owner takes it through the same gate a label goes through. Editing this file changes what a fresh deployment starts from; it cannot change what a patient reads, because a draft reaches nobody. A template already in the store is never rewritten by seeding.",
+
+  "_shape": "Styling only. The structure a leaflet has comes from the label template and the content comes from the label; this decides how it reads on a page. Sized and spaced for reading rather than for looking modern - a leaflet is read by people who are unwell, in bad light, holding a small piece of paper.",
+
+  "identifier": "qrd-package-leaflet",
+  "name": "Package leaflet (starting point, not approved)",
+  "stylesheet": "body { font-family: Georgia, 'Times New Roman', serif; font-size: 12pt; line-height: 1.6; max-width: 34rem; margin: 2rem auto; padding: 0 1rem; color: #111; } h1 { font-size: 1.5rem; line-height: 1.3; } h2 { font-size: 1.15rem; margin-top: 2rem; } p, li { max-width: 32rem; } ul { padding-left: 1.4rem; } a { color: #0b3d91; }"
+}
