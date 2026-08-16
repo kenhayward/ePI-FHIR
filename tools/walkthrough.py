@@ -400,4 +400,45 @@ if status == 200 and products:
           status == 200 and still.get("product", {}).get("identifier") == chosen["identifier"],
           str(still.get("product")))
 
+# ---------------------------------------------------------------------------
+# The rendered leaflet, which the API could not reach at all until now.
+#
+# The renderer, the print engine and the asset store were built in iteration 3 and the API had
+# no project reference to any of them. What no unit test can answer is whether a Bundle that has
+# been through HAPI FHIR - stamped, materialised, round-tripped - still renders, and whether the
+# determinism the renderer promises survives two real requests.
+
+print("\nAnna looks at the leaflet her content produces")
+status, preview = call("GET", f"/labels/{identifier}/versions/1/preview", anna)
+check("a version renders as a leaflet", status == 200 and "<html" in str(preview).lower(),
+      f"{status} {str(preview)[:80]}")
+check("the leaflet carries the label's own words",
+      status == 200 and "Examplinum" in str(preview), "")
+check("and says it is a preview rather than the artefact a regulator would be sent",
+      status == 200 and "preview" in str(preview).lower(), "")
+
+# Determinism through the whole stack rather than through the renderer alone (ADR-033
+# decision 1). Two real requests, a second apart, against content that came back from a FHIR
+# server in between.
+import time
+time.sleep(1)
+status, again = call("GET", f"/labels/{identifier}/versions/1/preview", anna)
+check("two renders of one version are the same bytes", status == 200 and again == preview, "")
+
+status, missing = call(
+    "GET", "/labels/01a00000-0000-7000-8000-0000000000ff/versions/1/preview", anna)
+check("a version nobody wrote has no leaflet", status == 404, str(missing)[:60])
+
+# Nothing is stored and nothing is minted. An official render needs an approved template and
+# there is no template store, so a preview that quietly wrote to the asset store would be
+# filing an artefact made with scaffolding (ADR-033 decision 2, ADR-034). Counted as versions
+# before and after rather than as a search total - the search returns a hit per version, and by
+# this point in the walkthrough there are several.
+status, before_preview = call("GET", f"/labels/search?identifier={identifier}", anna)
+call("GET", f"/labels/{identifier}/versions/1/preview", anna)
+status, after_preview = call("GET", f"/labels/search?identifier={identifier}", anna)
+check("previewing mints no version and changes nothing",
+      status == 200 and after_preview.get("total") == before_preview.get("total"),
+      f"{before_preview.get('total')} before, {after_preview.get('total')} after")
+
 print("\n" + ("ALL CHECKS PASSED" if not failures else f"FAILURES: {failures}"))
