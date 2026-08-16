@@ -35,6 +35,8 @@ public sealed class StartUpConfigurationTests(WebApplicationFactory<Program> fac
                 TestFixtures.RepositoryPath("config", "lifecycle", "label-states.json"));
             host.UseSetting("Epi:Lifecycle:MarketStatesPath",
                 TestFixtures.RepositoryPath("config", "lifecycle", "market-approval-states.json"));
+            host.UseSetting("Epi:MasterDataPath",
+                TestFixtures.RepositoryPath("config", "master-data", "products.json"));
             host.UseSetting(setting, value);
         });
 
@@ -43,6 +45,7 @@ public sealed class StartUpConfigurationTests(WebApplicationFactory<Program> fac
     [InlineData("Epi:IdentifiersPath")]
     [InlineData("Epi:Lifecycle:StatesPath")]
     [InlineData("Epi:Lifecycle:MarketStatesPath")]
+    [InlineData("Epi:MasterDataPath")]
     public void FN_CFG_005_a_configuration_path_that_is_not_there_stops_the_service(string setting)
     {
         // Creating the client is what starts the host. The exception type differs by loader -

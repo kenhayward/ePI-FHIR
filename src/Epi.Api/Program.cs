@@ -242,6 +242,46 @@ builder.Services.AddSingleton(services => new CurrentApprovedVersions(
 
 var app = builder.Build();
 
+// Every configuration the platform reads from a path, resolved here rather than on first use
+// (CAP-CFG-006, FN-CFG-002).
+//
+// Three defects have now shared one shape, and each was found by running the walkthrough rather
+// than by CI: a path that differed only inside a container, so the service started, reported
+// healthy, and had silently loaded nothing. The failure appeared later, as something not
+// happening - no task raised, no market state model, no routing.
+//
+// Each loader already refuses a path it cannot read. What was missing is that nothing asked
+// them until something needed them, so the refusal arrived as a 500 on somebody's approval
+// days after the deployment that caused it. Touching each one here turns all three into a
+// failure to start, which is attributable.
+//
+// The vendored conformance packages are deliberately not among these: a host that never
+// validates or approves anything need not have them present, and requiring them would make the
+// packages a start-up dependency of every deployment rather than of the work that uses them.
+foreach (var configuration in new (string Setting, Func<object> Resolve)[]
+{
+    ("Epi:MarketsPath", () => app.Services.GetRequiredService<MarketCatalogue>()),
+    ("Epi:IdentifiersPath", () => app.Services.GetRequiredService<IdentifierAuthority>()),
+    ("Epi:Lifecycle:StatesPath", () => labelModel.Value),
+    ("Epi:Lifecycle:MarketStatesPath", () => marketModel.Value),
+    ("Epi:MasterDataPath", () => app.Services.GetRequiredService<IProductDirectory>()),
+})
+{
+    try
+    {
+        configuration.Resolve();
+    }
+    catch (Exception unreadable)
+    {
+        // Rethrown with the setting named. A loader says what it could not read; only this
+        // knows which setting pointed it there, and that is the half an operator needs.
+        throw new InvalidOperationException(
+            $"The platform cannot start: configuration for '{configuration.Setting}' could not "
+            + $"be loaded. {unreadable.Message}",
+            unreadable);
+    }
+}
+
 if (string.IsNullOrWhiteSpace(auditConnection) || string.IsNullOrWhiteSpace(brokers)
     || string.IsNullOrWhiteSpace(fhirServer) || string.IsNullOrWhiteSpace(governanceConnection))
 {

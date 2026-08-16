@@ -54,6 +54,8 @@ public sealed class ContentEndpointTests : IClassFixture<WebApplicationFactory<P
                 TestFixtures.RepositoryPath("config", "lifecycle", "label-states.json"));
             host.UseSetting("Epi:Lifecycle:MarketStatesPath",
                 TestFixtures.RepositoryPath("config", "lifecycle", "market-approval-states.json"));
+            host.UseSetting("Epi:MasterDataPath",
+                TestFixtures.RepositoryPath("config", "master-data", "products.json"));
             host.ConfigureTestServices(configure);
         });
 

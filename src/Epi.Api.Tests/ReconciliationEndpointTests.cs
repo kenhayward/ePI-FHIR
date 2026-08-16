@@ -40,6 +40,8 @@ public sealed class ReconciliationEndpointTests(WebApplicationFactory<Program> f
                 TestFixtures.RepositoryPath("config", "lifecycle", "label-states.json"));
             host.UseSetting("Epi:Lifecycle:MarketStatesPath",
                 TestFixtures.RepositoryPath("config", "lifecycle", "market-approval-states.json"));
+            host.UseSetting("Epi:MasterDataPath",
+                TestFixtures.RepositoryPath("config", "master-data", "products.json"));
             host.ConfigureTestServices(services =>
             {
                 services.AddAuthentication(WhoeverAsked.Name)
@@ -126,7 +128,7 @@ public sealed class ReconciliationEndpointTests(WebApplicationFactory<Program> f
     {
         // The unmodified factory, so the real bearer scheme applies. Host() installs a test
         // scheme that authenticates every caller, which would make this case prove nothing.
-        using var response = await factory.CreateClient()
+        using var response = await TestFixtures.Configured(factory).CreateClient()
             .GetAsync("/admin/reconciliation/registrations");
 
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);

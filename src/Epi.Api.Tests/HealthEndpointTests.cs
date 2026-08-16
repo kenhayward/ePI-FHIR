@@ -17,7 +17,7 @@ public sealed class HealthEndpointTests : IClassFixture<WebApplicationFactory<Pr
     [Fact]
     public async Task Health_endpoint_reports_the_service_as_healthy()
     {
-        using var client = _factory.CreateClient();
+        using var client = TestFixtures.Configured(_factory).CreateClient();
 
         using var response = await client.GetAsync("/health");
 

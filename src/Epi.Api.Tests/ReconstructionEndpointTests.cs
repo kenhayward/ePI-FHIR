@@ -47,6 +47,8 @@ public sealed class ReconstructionEndpointTests(WebApplicationFactory<Program> f
             TestFixtures.RepositoryPath("config", "lifecycle", "label-states.json"));
         host.UseSetting("Epi:Lifecycle:MarketStatesPath",
             TestFixtures.RepositoryPath("config", "lifecycle", "market-approval-states.json"));
+        host.UseSetting("Epi:MasterDataPath",
+            TestFixtures.RepositoryPath("config", "master-data", "products.json"));
         host.ConfigureTestServices(services =>
         {
             services.AddAuthentication(WhoeverAsked.Name)
@@ -279,7 +281,7 @@ public sealed class ReconstructionEndpointTests(WebApplicationFactory<Program> f
     [Fact]
     public async Task CAP_LCM_006_reconstruction_is_refused_without_a_token()
     {
-        using var response = await factory.CreateClient()
+        using var response = await TestFixtures.Configured(factory).CreateClient()
             .GetAsync($"/labels/{Guid.NewGuid()}/versions/1/reconstruction");
 
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
