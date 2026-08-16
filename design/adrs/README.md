@@ -35,6 +35,7 @@ of them next needs revising, not as a bulk exercise.
 | [ADR-035](0035-multi-step-routing.md) | Multi-step routing, per market and label type | accepted |
 | [ADR-036](0036-master-data-and-terminology-binding.md) | Master-data and terminology binding points | accepted |
 | [ADR-037](0037-authoring-surface.md) | The authoring surface | accepted |
+| [ADR-038](0038-authoring-projection.md) | The authoring projection | accepted |
 
 A record stays `proposed` until the pull request carrying it is merged, at which point it
 becomes `accepted`. Superseding a decision means a new record that says so, never editing the
