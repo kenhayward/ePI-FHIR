@@ -40,6 +40,9 @@ that sit behind the gateway.
 - `src/LabelEditor.tsx` - the surface over it.
 - `src/platform/client.ts` - the only way this application reaches the platform. It speaks
   sections, never FHIR, and carries the platform's refusals in the platform's own words.
+- `src/platform/signIn.ts` - authorization code with PKCE against the identity provider. The
+  access token lives in memory and is written nowhere, which costs a sign-in after every page
+  refresh and means a cross-site scripting flaw has no stored token to read (ADR-039).
 
 The model is deliberately separate from React and has no framework in it. It is where the rules
 that matter live, it is tested without a DOM, and replacing the editing controls does not touch
@@ -50,9 +53,9 @@ it.
 The placeholder this replaced named the whole of the surface's eventual job. Keeping that list
 here so replacing the placeholder does not quietly shrink it:
 
-- **Authentication.** Nothing signs in. The client asks for an access token per request and
-  something has to supply one; obtaining it from Keycloak (OIDC) is the remaining gap, and it is
-  the reason none of this is reachable from a browser yet. That is the next thing.
+- **Wiring.** `LabelEditor` still takes a version as a prop and calls `onSave`; nothing yet
+  joins the sign-in, the client and the editor into an application with a page to land on. That
+  is the next thing, and it is the last of it - every part exists and is tested.
 - **In-context translation** (capability 9), side by side with the source.
 - **Validation and compliance feedback** (11, 12) shown against the section that caused it.
 - **Review and e-signature flows** (16, 19), which is where the segregation-of-duties rules

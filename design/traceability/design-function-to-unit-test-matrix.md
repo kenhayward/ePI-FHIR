@@ -13,8 +13,8 @@ Name unit tests for the function they verify, for example
 
 ## Coverage
 
-- Design functions declared: **54**
-- Verified by at least one unit test: **50**
+- Design functions declared: **55**
+- Verified by at least one unit test: **51**
 - Not yet verified: **4**
 
 ## Matrix
@@ -30,6 +30,7 @@ Name unit tests for the function they verify, for example
 | FN-AUT-002 | Hold a working copy of a version until the author saves | Authoring & Template Service | CAP-TPL-005, CAP-LCM-002 | 4 | verified | `FN-AUT-002` (apps/authoring-ui/test/editingSession.test.ts) |
 | FN-AUT-003 | Present a label's sections without exposing FHIR | Authoring & Template Service | CAP-TPL-005 | 4 | verified | `FN-AUT-003` (apps/authoring-ui/test/LabelEditor.test.tsx) |
 | FN-AUT-004 | Reach the platform's authoring endpoints, carrying its refusals intact | Authoring & Template Service | CAP-TPL-005 | 4 | verified | `FN-AUT-004` (apps/authoring-ui/test/platformClient.test.ts) |
+| FN-AUT-005 | Obtain an access token by authorization code with PKCE, and keep it in memory | Authoring & Template Service | CAP-IAM-001 | 4 | verified | `FN-AUT-005` (apps/authoring-ui/test/signIn.test.ts) |
 | FN-CC-001 | Parse an ePI document Bundle anchored by a Composition | Content Core (FHIR) | CAP-SCM-001 | 1 | verified | `FN_CC_001_reads_a_document_bundle_anchored_by_a_composition` (src/Epi.ContentCore.Tests/EpiBundleReaderTests.cs)<br>`FN_CC_001_rejects_a_bundle_that_is_not_of_type_document` (src/Epi.ContentCore.Tests/EpiBundleReaderTests.cs)<br>`FN_CC_001_rejects_a_bundle_with_no_entries` (src/Epi.ContentCore.Tests/EpiBundleReaderTests.cs)<br>`FN_CC_001_rejects_a_document_bundle_whose_first_entry_is_not_a_composition` (src/Epi.ContentCore.Tests/EpiBundleReaderTests.cs)<br>`FN_CC_001_rejects_content_carrying_elements_that_are_not_in_the_model` (src/Epi.ContentCore.Tests/EpiBundleReaderTests.cs)<br>`FN_CC_001_rejects_content_that_is_not_a_bundle` (src/Epi.ContentCore.Tests/EpiBundleReaderTests.cs)<br>`FN_CC_001_rejects_malformed_json_without_leaking_a_parser_stack_trace` (src/Epi.ContentCore.Tests/EpiBundleReaderTests.cs) |
 | FN-CC-002 | Assign a canonical identifier to a document | Content Core (FHIR) | CAP-SCM-007 | 1 | verified | `FN_CC_002_assigns_a_canonical_identifier_the_caller_did_not_supply` (src/Epi.ContentCore.Tests/ContentStoreConformance.cs)<br>`FN_CC_002_encodes_no_business_meaning_in_the_identifier` (src/Epi.ContentCore.Tests/ContentStoreConformance.cs)<br>`FN_CC_002_mints_a_distinct_identifier_for_every_document` (src/Epi.ContentCore.Tests/ContentStoreConformance.cs) |
 | FN-CC-003 | Create an immutable version snapshot and record its lineage | Content Core (FHIR) | CAP-SCM-007 | 1 | verified | `FN_CC_003_records_the_identifier_on_the_stored_bundle` (src/Epi.ContentCore.Tests/ContentStoreConformance.cs)<br>`FN_CC_003_rejects_a_new_version_of_a_document_that_does_not_exist` (src/Epi.ContentCore.Tests/ContentStoreConformance.cs)<br>`FN_CC_003_starts_at_version_one_and_increments_monotonically` (src/Epi.ContentCore.Tests/ContentStoreConformance.cs) |
@@ -88,7 +89,7 @@ Name unit tests for the function they verify, for example
 | CAP-CFG-006 | FN-CFG-003, FN-CFG-005 | Validate configuration consistency before activation. |
 | CAP-CFG-007 | FN-CFG-004 | Support environment-aware configuration (dev/test/prod) with controlled promotion (GxP/CSV). |
 | CAP-EVT-001 | FN-EVT-001, FN-EVT-002 | Provide a publish/subscribe event backbone for inter-capability communication. |
-| CAP-IAM-001 | FN-IAM-001 | Authenticate via the enterprise IdP (OIDC/SAML) with SSO/federation and MFA (delegated to IdP). |
+| CAP-IAM-001 | FN-AUT-005, FN-IAM-001 | Authenticate via the enterprise IdP (OIDC/SAML) with SSO/federation and MFA (delegated to IdP). |
 | CAP-IAM-002 | FN-IAM-002, FN-IAM-003 | Enforce combined RBAC + ABAC authorization on every action and API. |
 | CAP-IAM-006 | FN-WFL-002 | Enforce segregation of duties (e.g. author != approver) across workflows (#16). |
 | CAP-IAM-007 | FN-IAM-004, FN-IAM-005 | Enforce multi-tenant isolation of affiliate data. |
