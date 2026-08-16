@@ -343,6 +343,16 @@
     "iteration": "4",
     "status": "planned"
   },
+  "FN-AUT-009": {
+    "name": "Show a person what routing has asked of them, and never as an empty list",
+    "component": "Authoring & Template Service",
+    "satisfies": [
+      "CAP-WFL-001",
+      "CAP-WFL-002"
+    ],
+    "iteration": "4",
+    "status": "planned"
+  },
   "FN-EVT-001": {
     "name": "Build a content event from a persisted document",
     "component": "Notification & Event Backbone",

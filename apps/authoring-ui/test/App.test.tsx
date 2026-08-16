@@ -28,6 +28,16 @@ describe('FN-AUT-006 the authoring application', () => {
   const platform = (outcome: SaveOutcome = { ok: true, version: 3 }) => ({
     loadVersion: vi.fn(async () => version),
     saveSections: vi.fn(async () => outcome),
+    openTasks: vi.fn(async () => [
+      {
+        identifier: 'task-1',
+        documentIdentifier: '01a00000-0000-7000-8000-00000000000a',
+        version: 2,
+        action: 'approve',
+        assignee: 'approver',
+        raisedAt: '2026-08-16T09:00:00Z',
+      },
+    ]),
     searchProducts: vi.fn(async () => [
       { identifier: 'PROD-0001', name: 'SYNTHETIC - Examplinum 10 mg tablets', markets: ['GB'] },
     ]),
@@ -107,6 +117,42 @@ describe('FN-AUT-006 the authoring application', () => {
     render(<App session={session(true)} platform={platform()} location={at('')} go={vi.fn()} />);
 
     expect(await screen.findByRole('heading', { name: /find a label/i })).toBeDefined();
+  });
+
+  it('offers the places a signed-in author can go', async () => {
+    // A shell, so a third and fourth screen do not arrive as a pile. Two places today: finding
+    // something to work on, and being told what somebody has asked of you.
+    render(<App session={session(true)} platform={platform()} location={at('')} go={vi.fn()} />);
+
+    expect(screen.getByRole('link', { name: /find a label/i })).toBeDefined();
+    expect(screen.getByRole('link', { name: /waiting for you/i })).toBeDefined();
+  });
+
+  it('shows what is waiting when the address asks for it', async () => {
+    render(
+      <App session={session(true)} platform={platform()} location={at('?view=tasks')} go={vi.fn()} />,
+    );
+
+    expect(await screen.findByRole('heading', { name: /waiting for you/i })).toBeDefined();
+  });
+
+  it('opens the label a waiting task is about', async () => {
+    const client = platform();
+    render(
+      <App session={session(true)} platform={client} location={at('?view=tasks')} go={vi.fn()} />,
+    );
+
+    await userEvent.click(await screen.findByRole('button', { name: 'approve' }));
+
+    await waitFor(() =>
+      expect(client.loadVersion).toHaveBeenCalledWith('01a00000-0000-7000-8000-00000000000a', 2),
+    );
+  });
+
+  it('offers nowhere to go to somebody who has not signed in', async () => {
+    render(<App session={session(false)} platform={platform()} location={at('')} go={vi.fn()} />);
+
+    expect(screen.queryByRole('link', { name: /waiting for you/i })).toBeNull();
   });
 
   it('opens a label the author picked out of a search', async () => {
@@ -258,7 +304,17 @@ describe('FN-AUT-006 the authoring application', () => {
         throw new Error('Version 2 of that label was not found.');
       }),
       saveSections: vi.fn(async (): Promise<SaveOutcome> => ({ ok: true, version: 3 })),
-      searchProducts: vi.fn(async () => [
+      openTasks: vi.fn(async () => [
+      {
+        identifier: 'task-1',
+        documentIdentifier: '01a00000-0000-7000-8000-00000000000a',
+        version: 2,
+        action: 'approve',
+        assignee: 'approver',
+        raisedAt: '2026-08-16T09:00:00Z',
+      },
+    ]),
+    searchProducts: vi.fn(async () => [
       { identifier: 'PROD-0001', name: 'SYNTHETIC - Examplinum 10 mg tablets', markets: ['GB'] },
     ]),
     searchLabels: vi.fn(async () => ({ total: 0, page: 1, pageSize: 20, hits: [] })),

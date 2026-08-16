@@ -59,6 +59,16 @@ export interface ProductChoiceValue {
   readonly display: string | null;
 }
 
+/** Something routing has asked this caller to do (ADR-031). */
+export interface WaitingTask {
+  readonly identifier: string;
+  readonly documentIdentifier: string;
+  readonly version: number;
+  readonly action: string;
+  readonly assignee: string;
+  readonly raisedAt: string;
+}
+
 /** One label version the platform is willing to show this caller. */
 export interface LabelHit {
   readonly documentIdentifier: string;
@@ -167,6 +177,27 @@ export class PlatformClient {
     }
 
     return (await response.json()) as SearchResults;
+  }
+
+  /**
+   * What routing has asked this caller to do.
+   *
+   * @remarks
+   * A failure is never an empty list. Nothing waiting is a claim - it tells somebody their work
+   * is done - and reporting a failure as one would say that when nobody knows.
+   */
+  async openTasks(): Promise<readonly WaitingTask[]> {
+    const response = await this.#send(
+      `${this.#connection.baseUrl.replace(/\/$/, '')}/tasks`, { method: 'GET' });
+
+    if (!response.ok) {
+      throw new Error(
+        `The platform answered ${response.status} when asked what is waiting for you, so this ` +
+          'is not "nothing waiting" - it was not answered.',
+      );
+    }
+
+    return (await response.json()) as readonly WaitingTask[];
   }
 
   /** Products matching what an author is looking for, so one can be chosen rather than typed. */

@@ -2,9 +2,11 @@ import { useCallback, useEffect, useState } from 'react';
 import { LabelEditor } from './LabelEditor';
 import { LabelPicker } from './LabelPicker';
 import { ProductChoice } from './ProductChoice';
+import { WaitingWork } from './WaitingWork';
 import type { SectionDescription, VersionDescription } from './authoring/editingSession';
 import type {
   Product,
+  WaitingTask,
   ProductChoiceValue,
   SaveOutcome,
   SearchCriteria,
@@ -35,6 +37,7 @@ export interface Platform {
   ): Promise<SaveOutcome>;
   searchLabels(criteria: SearchCriteria): Promise<SearchResults>;
   searchProducts(text: string): Promise<readonly Product[]>;
+  openTasks(): Promise<readonly WaitingTask[]>;
 }
 
 /**
@@ -126,36 +129,40 @@ export function App({
 
   if (wanted.label === null || wanted.version < 1) {
     return (
-      <main>
-        <h1>ePI authoring</h1>
-        <LabelPicker
-          search={(criteria) => platform.searchLabels(criteria)}
-          onOpen={(label, version) => setPicked({ label, version })}
-        />
-      </main>
+      <Shell>
+        {location.searchParams.get('view') === 'tasks' ? (
+          <WaitingWork
+            tasks={() => platform.openTasks()}
+            onOpen={(label, version) => setPicked({ label, version })}
+          />
+        ) : (
+          <LabelPicker
+            search={(criteria) => platform.searchLabels(criteria)}
+            onOpen={(label, version) => setPicked({ label, version })}
+          />
+        )}
+      </Shell>
     );
   }
 
   if (problem !== null) {
     return (
-      <main>
-        <h1>ePI authoring</h1>
+      <Shell>
         <p role="alert">{problem}</p>
-      </main>
+      </Shell>
     );
   }
 
   if (version === null) {
     return (
-      <main>
-        <h1>ePI authoring</h1>
+      <Shell>
         <p role="status">Opening the label.</p>
-      </main>
+      </Shell>
     );
   }
 
   return (
-    <main>
+    <Shell>
       <Outcome outcome={outcome} />
       <ProductChoice
         current={product ?? version.product ?? null}
@@ -167,6 +174,26 @@ export function App({
         onSave={(sections) => void save(sections)}
         alsoChanged={product !== undefined}
       />
+    </Shell>
+  );
+}
+
+/**
+ * The places a signed-in author can go.
+ *
+ * @remarks
+ * Two today - finding something to work on, and being told what somebody has asked of you - and
+ * this exists now rather than at the fourth so that they do not arrive as a pile. The address is
+ * the state: a link is a link, and somebody can send one.
+ */
+function Shell({ children }: { readonly children: React.ReactNode }) {
+  return (
+    <main>
+      <h1>ePI authoring</h1>
+      <nav>
+        <a href="?">Find a label</a> <a href="?view=tasks">Waiting for you</a>
+      </nav>
+      {children}
     </main>
   );
 }

@@ -194,4 +194,30 @@ describe('FN-AUT-004 the platform client', () => {
       display: 'A product',
     });
   });
+
+  it('asks what is waiting for the author', async () => {
+    const fetcher = respondWith(200, [
+      {
+        identifier: 'task-1',
+        documentIdentifier: 'doc-1',
+        version: 2,
+        action: 'approve',
+        assignee: 'approver',
+        raisedAt: '2026-08-16T09:00:00Z',
+      },
+    ]);
+
+    const waiting = await clientOver(fetcher as unknown as typeof fetch).openTasks();
+
+    expect(waiting[0]!.action).toBe('approve');
+    expect(String(fetcher.mock.calls[0]![0])).toContain('/tasks');
+  });
+
+  it('reports a task list that could not be fetched, rather than an empty one', async () => {
+    // An empty list means nothing is waiting, which is a claim. A failure that presented as one
+    // would tell somebody their work is done when nobody knows.
+    const client = clientOver(respondWith(503, {}) as unknown as typeof fetch);
+
+    await expect(client.openTasks()).rejects.toThrow(/503/);
+  });
 });
