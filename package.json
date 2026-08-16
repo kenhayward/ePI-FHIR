@@ -1,0 +1,14 @@
+{
+  "name": "epi-fhir",
+  "private": true,
+  "description": "Workspace root. The applications live under apps/; the services are .NET and are built by EpiPlatform.sln.",
+  "license": "Apache-2.0",
+  "workspaces": [
+    "apps/*"
+  ],
+  "scripts": {
+    "lint": "npm run lint --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "build": "npm run build --workspaces --if-present"
+  }
+}

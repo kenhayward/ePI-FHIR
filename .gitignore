@@ -49,3 +49,7 @@ venv/
 # broken checkout.
 !policies/data/
 !policies/data/**
+
+# The authoring surface's build output. node_modules and dist are already
+# ignored above; this is the Vite cache, which is per-machine.
+apps/*/.vite/

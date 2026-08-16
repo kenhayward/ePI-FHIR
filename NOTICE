@@ -14,3 +14,15 @@ software that are subject to their own licenses and terms, including but not
 limited to HL7 FHIR, SNOMED CT, MedDRA, EDQM, LOINC, and the various
 open-source components listed in the technical architecture (design/). Use of
 those standards and components is governed by their respective licenses.
+
+The web tier (apps/) is built with npm-distributed components, overwhelmingly
+MIT, ISC, Apache-2.0 and BSD licensed. Two entries in that dependency tree
+warrant naming here:
+
+  - caniuse-lite, which is browser-support *data* under CC-BY-4.0. It is a
+    build-time input to the bundler's target selection and is not redistributed
+    in the built application. CC-BY-4.0 requires attribution, which this is.
+
+  - No copyleft, source-available or non-compete licensed component is present,
+    and the same rule applies to this tree as to every other dependency in this
+    repository (CLAUDE.md, ADR-001).
