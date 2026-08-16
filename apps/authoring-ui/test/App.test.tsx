@@ -41,6 +41,7 @@ describe('FN-AUT-006 the authoring application', () => {
       },
     })),
     marketTransitionAsync: vi.fn(async () => ({ ok: true as const, from: 'x', to: 'y' })),
+    previewAsync: vi.fn(async () => '<!DOCTYPE html><html><body><p>Preview</p></body></html>'),
     versionRecordAsync: vi.fn(async () => ({
       state: 'draft',
       author: 'user-anna',
@@ -382,7 +383,8 @@ describe('FN-AUT-006 the authoring application', () => {
       { identifier: 'PROD-0001', name: 'SYNTHETIC - Examplinum 10 mg tablets', markets: ['GB'] },
     ]),
     searchLabels: vi.fn(async () => ({ total: 0, page: 1, pageSize: 20, hits: [] })),
-      versionRecordAsync: vi.fn(async () => ({
+      previewAsync: vi.fn(async () => '<!DOCTYPE html><html><body><p>Preview</p></body></html>'),
+    versionRecordAsync: vi.fn(async () => ({
         state: 'draft',
         author: null,
         contentHash: 'sha-256:abc',

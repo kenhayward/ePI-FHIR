@@ -57,6 +57,10 @@ that sit behind the gateway.
 - `src/VersionHistory.tsx` - what happened, who did it, what they signed and what it was approved
   against. The one thing on it that must never be subtle is a pinned package whose bytes no
   longer match: that is tamper-evidence firing (ADR-023).
+- `src/LeafletPreview.tsx` - the leaflet the content produces. The rendered HTML goes into a
+  sandboxed frame and never into this page: it is the platform's own output and still a document
+  assembled from what people type, and a leaflet needs none of this page's origin, session or
+  token.
 - `src/MarketApprovals.tsx` - where each market stands. Two rules meet here and must not blur:
   submitting to a regulator is signed and recording its decision is not (CAP-LCM-012), and only
   the action that records an approval may say when it takes effect (ADR-029).
@@ -93,6 +97,11 @@ The consequence is that **inspection wants its own surface**, reading the same r
 different questions in mind. It is not built and it is not this.
 
 ## What is not built yet
+
+- **An official render.** The preview is rendered with scaffolding, not with a template anybody
+  approved - and ADR-033 decision 2 says a render template is content, versioned and approved,
+  because it determines what a patient reads. Until there is a template store there is nothing to
+  render an official artefact *with*, and nothing is written to the asset store.
 
 The placeholder this replaced named the whole of the surface's eventual job. Keeping that list
 here so replacing the placeholder does not quietly shrink it:

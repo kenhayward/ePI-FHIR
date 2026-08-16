@@ -519,6 +519,30 @@ export class PlatformClient {
     };
   }
 
+  /**
+   * The leaflet a version produces, as HTML.
+   *
+   * @remarks
+   * Text rather than JSON, because it is a document. It goes into a sandboxed frame and never
+   * into the application's own page.
+   */
+  async previewAsync(documentIdentifier: string, version: number): Promise<string> {
+    const response = await this.#send(
+      `${this.#connection.baseUrl.replace(/\/$/, '')}` +
+        `/labels/${encodeURIComponent(documentIdentifier)}/versions/${version}/preview`,
+      { method: 'GET' },
+    );
+
+    if (!response.ok) {
+      throw new Error(
+        `The platform answered ${response.status} for that preview, so this is not an empty ` +
+          'leaflet - it was not rendered.',
+      );
+    }
+
+    return response.text();
+  }
+
   /** Products matching what an author is looking for, so one can be chosen rather than typed. */
   async searchProducts(text: string): Promise<readonly Product[]> {
     const response = await this.#send(
