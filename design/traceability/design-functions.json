@@ -286,6 +286,15 @@
     "iteration": "4",
     "status": "planned"
   },
+  "FN-AUT-004": {
+    "name": "Reach the platform's authoring endpoints, carrying its refusals intact",
+    "component": "Authoring & Template Service",
+    "satisfies": [
+      "CAP-TPL-005"
+    ],
+    "iteration": "4",
+    "status": "planned"
+  },
   "FN-EVT-001": {
     "name": "Build a content event from a persisted document",
     "component": "Notification & Event Backbone",

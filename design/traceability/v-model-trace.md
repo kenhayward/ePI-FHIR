@@ -22,7 +22,7 @@ set is in [requirements-traceability-matrix.md](requirements-traceability-matrix
 - Scheduled requirements: **47**
 - With at least one design function: **32**
 - With at least one integration test: **30**
-- Design functions awaiting a unit test: **4** of 53
+- Design functions awaiting a unit test: **4** of 54
 - Integration tests awaiting implementation: **2** of 19
 
 ## Trace

@@ -38,6 +38,8 @@ that sit behind the gateway.
   turns it into markup. Bounded to what the write gate accepts (ADR-037 decision 4).
 - `src/authoring/editingSession.ts` - the working copy, held until the author saves.
 - `src/LabelEditor.tsx` - the surface over it.
+- `src/platform/client.ts` - the only way this application reaches the platform. It speaks
+  sections, never FHIR, and carries the platform's refusals in the platform's own words.
 
 The model is deliberately separate from React and has no framework in it. It is where the rules
 that matter live, it is tested without a DOM, and replacing the editing controls does not touch
@@ -48,16 +50,16 @@ it.
 The placeholder this replaced named the whole of the surface's eventual job. Keeping that list
 here so replacing the placeholder does not quietly shrink it:
 
-- **Authentication.** Nothing signs in. The platform authenticates through Keycloak (OIDC) and
-  this surface has no token, so it cannot yet call the API at all - it renders a version handed
-  to it. That is the next thing.
+- **Authentication.** Nothing signs in. The client asks for an access token per request and
+  something has to supply one; obtaining it from Keycloak (OIDC) is the remaining gap, and it is
+  the reason none of this is reachable from a browser yet. That is the next thing.
 - **In-context translation** (capability 9), side by side with the source.
 - **Validation and compliance feedback** (11, 12) shown against the section that caused it.
 - **Review and e-signature flows** (16, 19), which is where the segregation-of-duties rules
   become visible rather than merely enforced.
-- **Reusable units and product selection** (2, 5). The narrative model carries cross-references
-  and the platform has a product directory; neither has an API endpoint this could call, which
-  is exactly the kind of gap ADR-037 decision 7 expected building this to find.
+- **Reusable units and product selection** (2, 5). The platform has a product directory and no
+  endpoint exposes it - the same kind of gap ADR-037 decision 7 expected building this to find,
+  and the same kind that ADR-038 closed for sections.
 - **Rich editing controls.** The narrative model carries emphasis, lists and cross-references;
   the editing control is a text area and can only produce paragraphs. It is deliberately the
   most bounded control there is rather than a rich-text component that would emit markup the

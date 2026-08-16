@@ -4,9 +4,11 @@ import { type Block, parseNarrative, serialiseNarrative } from './narrative';
  * A version as the platform described it.
  *
  * @remarks
- * `editable` is the platform's answer, not this surface's opinion (ADR-037 decision 1). Whether
- * a version may be written to depends on its state, who is asking, and what scope they hold -
- * all decided on the server, all still enforced there. Nothing here re-derives it.
+ * `editable` is the platform's answer, not this surface's opinion (ADR-037 decision 1). It means
+ * "may this caller create the next version", not "may this version be changed" - no version may
+ * ever be changed, and saving mints the next one (ADR-038 decision 6). So an approved version
+ * opens like any other: drafting from one is how a label evolves, and a surface refusing it
+ * would be disabling something the platform permits.
  */
 export interface VersionDescription {
   readonly documentIdentifier: string;
@@ -87,7 +89,7 @@ export class EditingSession {
         editable: description.editable,
         readOnlyBecause: description.editable
           ? null
-          : `This version is ${description.state} and cannot be changed.`,
+          : 'You are not allowed to write to this label.',
       };
     });
   }
@@ -127,8 +129,8 @@ export class EditingSession {
 
     if (!this.#description.editable) {
       throw new Error(
-        `This version is ${this.#description.state} and cannot be changed. Immutability is the ` +
-          'platform\'s, and it would refuse the write in any case (ADR-019).',
+        'You are not allowed to write to this label. That is the platform\'s answer, carried ' +
+          'in the version it sent, and it would refuse the write in any case.',
       );
     }
 

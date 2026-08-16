@@ -44,8 +44,7 @@ export function LabelEditor({
       <h1>Editing a label</h1>
       {!version.editable && (
         <p role="status">
-          This version is {version.state} and cannot be changed. Approved content is immutable;
-          to change it, a new version is drafted from it.
+          You are not allowed to write to this label, so it is shown read-only.
         </p>
       )}
 
@@ -68,12 +67,17 @@ export function LabelEditor({
         </section>
       ))}
 
+      {/*
+        Saying what saving does, because it is not what a text box usually does. No version is
+        ever changed: this mints version {version.version + 1} and leaves the one on screen
+        exactly as it was (ADR-038 decision 6).
+      */}
       <button
         type="button"
         disabled={!session.hasUnsavedWork}
         onClick={() => onSave(session.toSections())}
       >
-        Save as a new version
+        Save as version {version.version + 1}
       </button>
     </main>
   );

@@ -68,16 +68,27 @@ describe('FN-AUT-002 the working copy', () => {
     expect(session.hasUnsavedWork).toBe(false);
   });
 
-  it('offers no editor for a version the platform will not accept a write to', () => {
-    // ADR-037 decision 5. Presenting a text box that will certainly fail on save teaches people
-    // that the platform is unreliable. The platform still refuses the write; this only stops
-    // the author finding out after they have written it.
-    const approved = { ...version, state: 'approved', editable: false };
-
-    const session = openSession(approved);
+  it('offers no editor where the platform says this caller may not write', () => {
+    // ADR-037 decision 5 said this was about the version's state, and ADR-038 decision 6
+    // corrects that: every version is immutable, saving mints the next one, and drafting from
+    // an approved version is how a label evolves. What decides this is whether the caller may
+    // write to the document at all - the platform's answer, carried in `editable`, never
+    // re-derived here.
+    const session = openSession({ ...version, editable: false });
 
     expect(session.sections.every((s) => s.editable)).toBe(false);
-    expect(() => session.edit('sec-1', [paragraph(text('...'))])).toThrow(/approved/i);
+    expect(() => session.edit('sec-1', [paragraph(text('...'))])).toThrow(/not allowed/i);
+  });
+
+  it('opens an approved version, because saving it drafts the next one', () => {
+    // The case that would have caught the mistake. A surface refusing this would be disabling
+    // something the platform permits: a control the platform does not have, invented by the
+    // web tier, which is the more damaging direction of the two.
+    const session = openSession({ ...version, state: 'approved', editable: true });
+
+    expect(session.sections.every((s) => s.editable)).toBe(true);
+    session.edit('sec-1', [paragraph(text('A medicine for adults.'))]);
+    expect(session.hasUnsavedWork).toBe(true);
   });
 
   it('marks a section it cannot represent as read-only, with the reason', () => {
