@@ -257,6 +257,35 @@
     "iteration": "3",
     "status": "planned"
   },
+  "FN-AUT-001": {
+    "name": "Bound the narrative an author can produce to what validates",
+    "component": "Authoring & Template Service",
+    "satisfies": [
+      "CAP-TPL-005",
+      "CAP-SCM-003"
+    ],
+    "iteration": "4",
+    "status": "planned"
+  },
+  "FN-AUT-002": {
+    "name": "Hold a working copy of a version until the author saves",
+    "component": "Authoring & Template Service",
+    "satisfies": [
+      "CAP-TPL-005",
+      "CAP-LCM-002"
+    ],
+    "iteration": "4",
+    "status": "planned"
+  },
+  "FN-AUT-003": {
+    "name": "Present a label's sections without exposing FHIR",
+    "component": "Authoring & Template Service",
+    "satisfies": [
+      "CAP-TPL-005"
+    ],
+    "iteration": "4",
+    "status": "planned"
+  },
   "FN-EVT-001": {
     "name": "Build a content event from a persisted document",
     "component": "Notification & Event Backbone",
