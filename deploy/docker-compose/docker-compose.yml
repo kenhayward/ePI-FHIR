@@ -31,7 +31,9 @@ services:
 
   # ---- Relational database (shared; separate DBs per component) ----
   postgres:
-    image: postgres:16
+    # pin-ok: PostgreSQL's version is major.minor - 16.15 is a complete version, not a
+    # major line that moves. There is no third component to pin to.
+    image: postgres:16.15
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
@@ -185,7 +187,7 @@ services:
 
   # ---- Identity provider (OIDC/SAML) ----
   keycloak:
-    image: quay.io/keycloak/keycloak:26.0
+    image: quay.io/keycloak/keycloak:26.0.8
     # The demonstration realm is imported at start-up rather than clicked together, so the
     # identity provider is reproducible and reviewable like every other piece of configuration
     # here. Import is skipped silently if the realm already exists, so this is safe to leave on.
@@ -337,7 +339,7 @@ services:
 
   # ============ optional profile: messaging ============
   rabbitmq:
-    image: rabbitmq:3-management
+    image: rabbitmq:3.13.7-management
     profiles: ["messaging"]
     ports:
       - "${RABBITMQ_PORT:-5672}:5672"
