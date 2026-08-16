@@ -323,4 +323,81 @@ status, realm = call(
 check("the realm advertises the authorization endpoint the surface redirects to",
       status == 200 and "authorization_endpoint" in realm, str(status))
 
+# ---------------------------------------------------------------------------
+# What the authoring surface reads, in the shape it actually arrives in.
+#
+# Every part of the surface is tested against fakes, and a fake is written from what the
+# component wants rather than from what the platform sends. That gap has already produced one
+# defect - a market rendered with no state at all, because the fake returned the joined shape
+# the screen wanted and the platform answers two fields. These checks are the shape itself.
+
+print("\nThe surface reads what may be done, rather than working it out")
+status, view = call("GET", f"/labels/{identifier}/versions/2/sections", anna)
+check("the projection says what the state model permits from here",
+      status == 200 and isinstance(view.get("actions"), list) and len(view["actions"]) > 0,
+      f"{status} {view.get('actions')}")
+check("and which of those the platform will require a signature for",
+      status == 200 and isinstance(view.get("signedActions"), list),
+      str(view.get("signedActions")))
+
+status, state = call("GET", f"/labels/{identifier}/versions/2/state", anna)
+check("market states are still a map of market to state, as callers already read them",
+      status == 200 and all(isinstance(v, str) for v in state.get("markets", {}).values()),
+      str(state.get("markets"))[:120])
+check("what may be done per market is a second field beside it",
+      status == 200 and isinstance(state.get("marketActions"), dict)
+      and set(state["marketActions"]) == set(state["markets"]),
+      str(sorted(state.get("marketActions", {})))[:120])
+
+if status == 200 and state.get("marketActions"):
+    # The distinction the whole market model exists around (CAP-LCM-012), asserted against the
+    # configured model rather than against a fixture that agrees with itself.
+    not_submitted = [m for m, s in state["markets"].items() if s == "not-submitted"]
+    if not_submitted:
+        actions = state["marketActions"][not_submitted[0]]
+        check("submitting to a regulator is a signed act",
+              "submit" in actions.get("signedActions", []), str(actions.get("signedActions")))
+        check("and nothing at not-submitted asks for an effective date",
+              actions.get("actionsNeedingEffectiveDate") == [],
+              str(actions.get("actionsNeedingEffectiveDate")))
+
+print("\nAnna says which product the label is about")
+status, products = call("GET", "/master-data/products?text=examplinum", anna)
+check("the product directory answers over HTTP", status == 200 and len(products) > 0,
+      f"{status} {str(products)[:100]}")
+check("an empty query is refused rather than listing the catalogue",
+      call("GET", "/master-data/products", anna)[0] == 400, "")
+
+if status == 200 and products:
+    chosen = products[0]
+    status, view = call("GET", f"/labels/{identifier}/versions/2/sections", anna)
+    status, saved = call(
+        "POST", f"/labels/{identifier}/versions/2/sections", anna,
+        {"sections": view["sections"],
+         "product": {"identifier": chosen["identifier"], "display": chosen["name"]}})
+    check("a save can say which product the label is about", status == 201, f"{status} {saved}")
+
+    status, after = call("GET", f"/labels/{identifier}/versions/3/sections", anna)
+    check("and the version comes back naming it resolvably",
+          status == 200 and after.get("product", {}).get("identifier") == chosen["identifier"],
+          str(after.get("product")))
+
+    # ADR-040 decision 3: the whole reason the reference exists rather than a typed name.
+    status, found = call(
+        "GET", f"/labels/search?productIdentifier={chosen['identifier']}", anna)
+    check("which labels are about this product is now a query",
+          status == 200 and found.get("total", 0) >= 1, f"{status} total={found.get('total')}")
+
+    status, unmatched = call("GET", "/labels/search?productIdentifier=PROD-does-not-exist", anna)
+    check("and a product nothing is about finds nothing, rather than everything",
+          status == 200 and unmatched.get("total") == 0, str(unmatched.get("total")))
+
+    status, unchanged = call(
+        "POST", f"/labels/{identifier}/versions/3/sections", anna, {"sections": after["sections"]})
+    check("a save mentioning no product is not a save removing one", status == 201, str(status))
+    status, still = call("GET", f"/labels/{identifier}/versions/4/sections", anna)
+    check("the product survives a save that did not mention it",
+          status == 200 and still.get("product", {}).get("identifier") == chosen["identifier"],
+          str(still.get("product")))
+
 print("\n" + ("ALL CHECKS PASSED" if not failures else f"FAILURES: {failures}"))
