@@ -184,4 +184,53 @@ public abstract class LifecycleStoreConformance : IAsyncDisposable
 
         Assert.False(await store.IsSignatureUsedAsync("sig-1"));
     }
+
+    // Enumerating registrations, which is what reconciliation needs and no other read gives.
+    // Every other query here starts from a version somebody already knows about; an inert
+    // registration is by definition one nobody knows about (FN-LCM-008).
+
+    [Fact]
+    public async Task FN_LCM_008_registrations_made_before_a_moment_come_back()
+    {
+        var store = await NewStoreAsync();
+        await store.RegisterAsync(Version, "user-anna", "draft", Registered);
+
+        var registered = Assert.Single(
+            await store.RegistrationsBeforeAsync(Registered.AddMinutes(1)));
+
+        Assert.Equal(Version, registered.Version);
+        Assert.Equal("user-anna", registered.Author);
+        Assert.Equal(Registered, registered.RegisteredAt);
+    }
+
+    [Fact]
+    public async Task FN_LCM_008_a_registration_after_the_moment_does_not()
+    {
+        // The cutoff is what makes a settle period possible, so it has to be exclusive of
+        // anything at or after it rather than approximately right.
+        var store = await NewStoreAsync();
+        await store.RegisterAsync(Version, "user-anna", "draft", Registered);
+
+        Assert.Empty(await store.RegistrationsBeforeAsync(Registered));
+    }
+
+    [Fact]
+    public async Task FN_LCM_008_registrations_come_back_oldest_first()
+    {
+        var store = await NewStoreAsync();
+        await store.RegisterAsync(new VersionRef("doc-2", 1), "user-bea", "draft", Registered.AddHours(2));
+        await store.RegisterAsync(Version, "user-anna", "draft", Registered);
+
+        var registrations = await store.RegistrationsBeforeAsync(Registered.AddDays(1));
+
+        Assert.Equal([Registered, Registered.AddHours(2)], registrations.Select(r => r.RegisteredAt));
+    }
+
+    [Fact]
+    public async Task FN_LCM_008_a_store_holding_no_registrations_returns_none()
+    {
+        var store = await NewStoreAsync();
+
+        Assert.Empty(await store.RegistrationsBeforeAsync(Registered.AddDays(1)));
+    }
 }
