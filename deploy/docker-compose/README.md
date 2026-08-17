@@ -112,6 +112,12 @@ off the identity provider with "Client not found", which reads like a bug in the
 python tools/verify-realm.py
 ```
 
+**The same shape catches OPA.** It loads `policies/` at start-up, so a role added to
+`policies/data/roles.json` after the container started is not in the running decision point - and
+the symptom is a 403 with a correct-looking token. `docker compose restart opa` after changing
+anything under `policies/`. This cost a diagnosis: the reconciliation report refused `user-ops`
+whose token carried `platform-operator`, because the decision point had never heard of the role.
+
 That says what the running realm lacks and changes nothing. To take a realm change into an
 existing stack, delete the `epi` realm from the admin console and restart Keycloak, or start from
 a fresh volume - but note first that **recreating the realm mints new subject identifiers**, and
@@ -179,6 +185,12 @@ makes the whole realm import fail - which stops Keycloak, and with it the API an
 wait on it. `tools/verify-foreign-config.py` refuses one in CI. The reasoning that would have
 gone inline lives here instead:
 
+- **`epi-authoring-ui`** is the authoring surface, public and PKCE-only (ADR-039). It carries the
+  same four protocol mappers `epi-signing` does, and it has to: without the audience mapper the API
+  refuses its tokens as issued to somebody else, and without roles, affiliates and markets every
+  authorization decision denies for want of anything to decide on. It shipped with none of them,
+  and the symptom was a 401 from every call the surface made - found by opening the surface, not by
+  reading (ADR-050). Its redirect URIs are `http://localhost:5173/*` and `http://localhost:8000/*`.
 - **`epi-api`** is the audience. Confidential, and no flows enabled: it is what tokens are issued
   *for*, never what anybody signs in *through*.
 - **`epi-signing`** backs the electronic-signature check, which verifies a signer's credentials

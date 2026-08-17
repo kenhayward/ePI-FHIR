@@ -302,6 +302,10 @@ services:
       Epi__Assets__AccessKey: ${MINIO_ROOT_USER}
       Epi__Assets__SecretKey: ${MINIO_ROOT_PASSWORD}
       Epi__Assets__Bucket: epi-rendered
+      # Which origins a browser may read an answer from (ADR-050). The authoring surface is served
+      # from its own origin, so without this a browser throws away every answer unread - which is
+      # how it was found. Named origins, never '*', which the API refuses at start-up.
+      Epi__Cors__Origins: "http://localhost:${EPI_UI_PORT:-5173}"
       ASPNETCORE_ENVIRONMENT: Development
     volumes:
       # Configuration and the pinned conformance packages are mounted, so changing a market or

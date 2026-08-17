@@ -249,7 +249,10 @@ export class PlatformClient {
 
   constructor(connection: PlatformConnection) {
     this.#connection = connection;
-    this.#fetch = connection.fetcher ?? globalThis.fetch;
+    // Bound, for the reason recorded on SignIn: called as this object's method, an unbound
+    // globalThis.fetch reaches the browser with this object as its receiver and Chrome refuses
+    // it as an illegal invocation.
+    this.#fetch = connection.fetcher ?? globalThis.fetch.bind(globalThis);
   }
 
   async loadVersion(documentIdentifier: string, version: number): Promise<VersionDescription> {

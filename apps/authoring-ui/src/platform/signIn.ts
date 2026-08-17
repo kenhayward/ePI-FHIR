@@ -51,7 +51,12 @@ export class SignIn {
 
   constructor(settings: SignInSettings) {
     this.#settings = settings;
-    this.#fetch = settings.fetcher ?? globalThis.fetch;
+    // Bound, because it is then called as this object's method. An unbound globalThis.fetch
+    // invoked as this.#fetch(...) arrives at the browser with this object as its receiver, and
+    // Chrome refuses a Window method called on anything else: "Failed to execute 'fetch' on
+    // 'Window': Illegal invocation". Nothing caught it because every test injects a fetcher, and
+    // Node's fetch does not check its receiver even when the real one is used.
+    this.#fetch = settings.fetcher ?? globalThis.fetch.bind(globalThis);
   }
 
   #endpoint(name: 'auth' | 'token'): string {
