@@ -368,6 +368,38 @@ else
         routingPath);
 }
 
+// The search projection is derived and never a source of truth (ADR-022 decision 6), which is a
+// claim with an obligation attached: it has to be reconstructible from the stores that are. The
+// obligation went unmet until a walkthrough restart priced it - the index is in memory, so a
+// restart emptied it, and content still in the FHIR server became unfindable with nothing to
+// bring it back. Every surface reaching content through search showed an empty platform
+// (ADR-044).
+//
+// Before the service starts serving, because a search answered from a half-built index is a
+// wrong answer rather than a slow one.
+var searchRebuild = await new SearchProjectionRebuild(
+        lifecycleStore,
+        contentStore,
+        app.Services.GetRequiredService<ISearchProjection>(),
+        app.Services.GetRequiredService<IdentifierAuthority>())
+    .RunAsync();
+
+app.Logger.LogInformation(
+    "Search projection rebuilt from the canonical stores: {Projected} version(s) indexed.",
+    searchRebuild.Projected);
+
+if (searchRebuild.WithoutContent > 0)
+{
+    // Inert registrations, seen from the other side (FN-LCM-008). The reconciliation report is
+    // where an operator goes to find out what to do about them; this is where they find out
+    // there is something to go and look at.
+    app.Logger.LogWarning(
+        "{Count} registration(s) had no content to project. Each one is a governance record "
+        + "whose content write never landed - run the reconciliation report at "
+        + "/admin/reconciliation/registrations.",
+        searchRebuild.WithoutContent);
+}
+
 // Standard templates a deployment starts from, created as drafts and never as approvals
 // (ADR-042 decision 7). Nothing already in the store is touched: it belongs to whoever put it
 // there, and a seed correcting it would change what a patient reads without anybody deciding to.
