@@ -29,7 +29,7 @@ public sealed class ElectronicSignatureService(
     private readonly TimeProvider _time = time ?? TimeProvider.System;
 
     /// <summary>Signs a version, or explains why the signature was refused.</summary>
-    public async Task<SignatureManifest> SignAsync(
+    public Task<SignatureManifest> SignAsync(
         EpiDocument document,
         string signerIdentifier,
         string password,
@@ -38,6 +38,23 @@ public sealed class ElectronicSignatureService(
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(document);
+
+        return SignAsync(
+            new SignableArtefact(
+                document.Identity, document.Version, ContentHash.Of(document.Bundle)),
+            signerIdentifier, password, meaning, reason, cancellationToken);
+    }
+
+    /// <summary>Signs anything the platform can name and hash, or explains the refusal.</summary>
+    public async Task<SignatureManifest> SignAsync(
+        SignableArtefact artefact,
+        string signerIdentifier,
+        string password,
+        SignatureMeaning meaning,
+        string? reason = null,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(artefact);
         ArgumentException.ThrowIfNullOrWhiteSpace(signerIdentifier);
 
         // A blank password is refused here rather than handed on. Some directory servers treat
@@ -62,9 +79,9 @@ public sealed class ElectronicSignatureService(
             signer.Identifier,
             signer.PrintedName,
             meaning,
-            document.Identity,
-            document.Version,
-            ContentHash.Of(document.Bundle),
+            artefact.Identity,
+            artefact.Version,
+            artefact.ContentHash,
 
             // The platform's clock, not the caller's, for the reason ADR-018 gives for audit
             // records: a contemporaneous time the signer could set is not contemporaneous.

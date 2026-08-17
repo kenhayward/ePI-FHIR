@@ -691,6 +691,7 @@ app.MapPost("/signatures", async (
     IContentStore store,
     IPolicyDecisionPoint policy,
     IElectronicSignatureService signing,
+    ITemplateStore templates,
     IdentifierAuthority authority,
     CancellationToken cancellationToken) =>
 {
@@ -712,18 +713,62 @@ app.MapPost("/signatures", async (
         });
     }
 
-    // Read through scope: a signer may only sign content they are allowed to see. Otherwise
-    // signing becomes a way of discovering that a document exists, and of attesting to
-    // content the signer was never permitted to read.
-    var scoped = new ScopedContentStore(store, policy, subject);
-    var document = await scoped.GetAsync(
-        new DocumentIdentity(authority.DocumentSystem, body.DocumentIdentifier),
-        body.Version,
-        cancellationToken);
+    var artefact = body.Artefact ?? RegisteredArtefact.Content;
 
-    if (document is null)
+    if (!string.Equals(artefact, RegisteredArtefact.Content, StringComparison.Ordinal)
+        && !string.Equals(artefact, RegisteredArtefact.Template, StringComparison.Ordinal))
     {
-        return Results.NotFound();
+        return Results.BadRequest(new
+        {
+            problems = new[]
+            {
+                $"'{artefact}' is not something this platform signs for. Sign for "
+                + $"'{RegisteredArtefact.Content}' or '{RegisteredArtefact.Template}'.",
+            },
+        });
+    }
+
+    // What is being signed, and the hash of it. A template is a stylesheet rather than a
+    // Bundle, and until it could be hashed its approval gate was configured and unreachable:
+    // a template could be submitted for review and never approved (ADR-047).
+    SignableArtefact signable;
+
+    if (string.Equals(artefact, RegisteredArtefact.Template, StringComparison.Ordinal))
+    {
+        var template = await templates.GetAsync(
+            body.DocumentIdentifier, body.Version, cancellationToken);
+
+        if (template is null)
+        {
+            return Results.NotFound();
+        }
+
+        // Not scope-checked, and deliberately: a template belongs to the platform rather than to
+        // an affiliate and a market, so there is no scope to check it against. Everybody who may
+        // read the template list may read this one (GET /templates).
+        signable = new SignableArtefact(
+            new DocumentIdentity(authority.TemplateSystem, template.Identifier),
+            template.Version,
+            ContentHash.Of(TemplateCanonicalForm.Of(template)));
+    }
+    else
+    {
+        // Read through scope: a signer may only sign content they are allowed to see. Otherwise
+        // signing becomes a way of discovering that a document exists, and of attesting to
+        // content the signer was never permitted to read.
+        var scoped = new ScopedContentStore(store, policy, subject);
+        var document = await scoped.GetAsync(
+            new DocumentIdentity(authority.DocumentSystem, body.DocumentIdentifier),
+            body.Version,
+            cancellationToken);
+
+        if (document is null)
+        {
+            return Results.NotFound();
+        }
+
+        signable = new SignableArtefact(
+            document.Identity, document.Version, ContentHash.Of(document.Bundle));
     }
 
     try
@@ -733,7 +778,7 @@ app.MapPost("/signatures", async (
         // username rather than the subject because that is what an identity provider
         // authenticates; the manifest still records the subject the credentials proved.
         var manifest = await signing.SignAsync(
-            document, subject.Username, body.Password, meaning, body.Reason, cancellationToken);
+            signable, subject.Username, body.Password, meaning, body.Reason, cancellationToken);
 
         return Results.Ok(new
         {
@@ -1681,6 +1726,7 @@ app.MapPost("/templates/{identifier}/versions/{version:int}/transitions", async 
     ClaimsPrincipal principal,
     ITemplateStore templates,
     [FromKeyedServices("templates")] LifecycleService templateLifecycle,
+    IdentifierAuthority authority,
     CancellationToken cancellationToken) =>
 {
     var subject = SubjectFactory.From(principal);
@@ -1696,9 +1742,26 @@ app.MapPost("/templates/{identifier}/versions/{version:int}/transitions", async 
 
     try
     {
+        // What this template was approved against, in the same terms a label's approval is
+        // recorded in (CAP-LCM-011, ADR-024 decision 3). Its own canonical bytes, because that
+        // is what an approver signed for - there is no FHIR content behind a stylesheet, and
+        // pinning nothing would leave an approval nobody can later say what it covered.
+        //
+        // No conformance packages, and that is not an omission: a template is not validated
+        // against the ePI implementation guide, so naming packages here would record a check
+        // that never happened. No template of its own either - that field says which template a
+        // label was instantiated from, and this is the template.
+        var approving = new ApprovalContext(
+            ContentHash.Of(TemplateCanonicalForm.Of(
+                await templates.GetAsync(identifier, version, cancellationToken)
+                ?? throw new InvalidOperationException(
+                    "The template was there a moment ago and is not now."))),
+            [],
+            authority.TemplateSystem);
+
         var transition = await templateLifecycle.TransitionAsync(
             new VersionRef(identifier, version), body.Action, subject.Id, body.Reason,
-            body.SignatureReference, cancellationToken: cancellationToken);
+            body.SignatureReference, approving, cancellationToken: cancellationToken);
 
         return Results.Ok(new { from = transition.From, to = transition.To });
     }
@@ -1800,8 +1863,18 @@ internal sealed record SectionSave(string? Identity, string? Title, string? Narr
 internal sealed record ReassignmentRequest(string Assignee, string? Reason);
 
 /// <summary>What a caller asks for when signing. The signer is the token, never the body.</summary>
+/// <param name="Artefact">
+/// What is being signed for: a label's content, or a render template (ADR-047). Defaults to
+/// content, because that is what almost every signature is over and because the field did not
+/// exist until templates needed one.
+/// </param>
 internal sealed record SignatureRequest(
-    string DocumentIdentifier, int Version, string Meaning, string Password, string? Reason);
+    string DocumentIdentifier,
+    int Version,
+    string Meaning,
+    string Password,
+    string? Reason,
+    string? Artefact = null);
 
 /// <summary>What a caller asks for when moving a version between states.</summary>
 /// <param name="EffectiveFrom">

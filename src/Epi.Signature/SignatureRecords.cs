@@ -102,7 +102,35 @@ public interface IElectronicSignatureService
         SignatureMeaning meaning,
         string? reason = null,
         CancellationToken cancellationToken = default);
+
+    /// <summary>Signs anything the platform can name and hash, or explains the refusal.</summary>
+    /// <remarks>
+    /// The general form, and the one the document overload is written in terms of. A render
+    /// template determines what a patient reads and is approved under signature (ADR-042
+    /// decision 3), and it is a stylesheet rather than a Bundle - so a signing gate that could
+    /// only hash FHIR was a gate no template could pass (ADR-047).
+    /// </remarks>
+    Task<SignatureManifest> SignAsync(
+        SignableArtefact artefact,
+        string signerIdentifier,
+        string password,
+        SignatureMeaning meaning,
+        string? reason = null,
+        CancellationToken cancellationToken = default);
 }
+
+/// <summary>
+/// Something a person can sign for: what it is, which version, and the hash of what they are
+/// signing (ADR-047).
+/// </summary>
+/// <remarks>
+/// The hash is computed by whoever owns the artefact, because only they know what an approver is
+/// signing for. Passing the bytes here instead would put "what a template means" inside the
+/// signing service, which knows about credentials and manifests and should not also know about
+/// stylesheets.
+/// </remarks>
+public sealed record SignableArtefact(
+    DocumentIdentity Identity, int Version, string ContentHash);
 
 /// <summary>
 /// Raised when a signature is refused. Carries why, in terms safe to show the person signing.
