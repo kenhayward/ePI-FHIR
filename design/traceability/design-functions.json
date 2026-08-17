@@ -660,6 +660,16 @@
     "iteration": "4",
     "status": "planned"
   },
+  "FN-SCH-005": {
+    "name": "Return search results most-recently-touched first, in a total order",
+    "component": "Search & Retrieval Service",
+    "satisfies": [
+      "CAP-SCH-001",
+      "CAP-SCH-006"
+    ],
+    "iteration": "4",
+    "status": "planned"
+  },
   "FN-TPL-001": {
     "name": "Instantiate a conformant draft from an approved template",
     "component": "Authoring & Template Service",

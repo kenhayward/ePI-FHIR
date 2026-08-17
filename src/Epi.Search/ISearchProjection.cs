@@ -15,7 +15,15 @@ namespace Epi.Search;
 public interface ISearchProjection
 {
     /// <summary>Records a version's searchable metadata, at the state it starts in.</summary>
-    Task ProjectAsync(EpiDocument document, string state, CancellationToken cancellationToken = default);
+    /// <param name="at">
+    /// When this happened. Results come back most-recently-touched first (ADR-045), so the
+    /// moment is part of what is projected rather than something an index decides for itself:
+    /// a rebuild replays what happened and must reproduce the order it happened in, which an
+    /// index stamping its own clock could not.
+    /// </param>
+    Task ProjectAsync(
+        EpiDocument document, string state, DateTimeOffset at,
+        CancellationToken cancellationToken = default);
 
     /// <summary>Records that a version has moved state.</summary>
     /// <remarks>
@@ -24,5 +32,7 @@ public interface ISearchProjection
     /// scope or language would be a result nobody could act on and, worse, one with no scope to
     /// filter it by.
     /// </remarks>
-    Task ProjectStateAsync(VersionRef version, string state, CancellationToken cancellationToken = default);
+    Task ProjectStateAsync(
+        VersionRef version, string state, DateTimeOffset at,
+        CancellationToken cancellationToken = default);
 }

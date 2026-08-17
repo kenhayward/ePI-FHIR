@@ -584,4 +584,13 @@ if healthy:
           status == 200 and approved.get("total", 0) > 0,
           f"total={approved.get('total') if status == 200 else '?'}")
 
+    # The order a rebuild has to reproduce (ADR-045). The label this run has just been working
+    # on is the most recently touched thing in the corpus, so it leads the first page - which is
+    # the page a picker shows. Ordering by identifier put the oldest label in the deployment
+    # first and this one last, on a page nobody was going to look at.
+    status, recent = call("GET", "/labels/search", anna)
+    leading = recent.get("hits", [{}])[0].get("documentIdentifier") if status == 200 else None
+    check("and the label just worked on leads the first page",
+          leading == identifier, f"{leading} (wanted {identifier})")
+
 print("\n" + ("ALL CHECKS PASSED" if not failures else f"FAILURES: {failures}"))

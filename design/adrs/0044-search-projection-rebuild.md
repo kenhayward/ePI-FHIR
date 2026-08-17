@@ -90,6 +90,8 @@ as empty as the walkthrough had left it. A deployment that has been used has mor
 approved versions, so the check now asks the question it always meant - is *this* label findable
 as approved.
 
-Nothing here addresses ordering. Search returns a page without a defined sort, which was
-invisible while the index held only what one walkthrough had written and is a real question for
-a picker showing the first twenty of a large corpus. Recorded as the next thing search owes.
+Nothing here addresses ordering, and this is where the correction belongs: the order was
+defined - identifier ascending, then version descending - and it was the wrong question
+answered stably. Identifiers are time-ordered, so every page led with the oldest label in the
+deployment. Invisible while the index held only what one walkthrough had written; settled in
+[ADR-045](0045-search-result-order.md).

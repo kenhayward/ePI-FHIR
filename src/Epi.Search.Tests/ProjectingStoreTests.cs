@@ -9,6 +9,9 @@ namespace Epi.Search.Tests;
 // sees, which makes forgetting the worst kind of defect to rely on review for.
 public sealed class ProjectingStoreTests
 {
+    private static readonly DateTimeOffset Projected =
+        new DateTimeOffset(2026, 8, 17, 9, 0, 0, TimeSpan.Zero);
+
     private static readonly DateTimeOffset Registered =
         new(2026, 8, 14, 9, 0, 0, TimeSpan.Zero);
 
@@ -50,7 +53,7 @@ public sealed class ProjectingStoreTests
     public async Task FN_SCH_001_a_registration_puts_the_version_in_its_initial_state()
     {
         var index = new InMemorySearchIndex();
-        await index.ProjectAsync(SearchFixtures.Document("doc-1", 1, SearchFixtures.Uk), "unknown");
+        await index.ProjectAsync(SearchFixtures.Document("doc-1", 1, SearchFixtures.Uk), "unknown", Projected);
         var store = new ProjectingLifecycleStore(new InMemoryLifecycleStore(), index);
 
         await store.RegisterAsync(new VersionRef("doc-1", 1), "user-anna", "draft", Registered);
@@ -63,7 +66,7 @@ public sealed class ProjectingStoreTests
     public async Task FN_SCH_001_a_recorded_transition_reaches_the_projection()
     {
         var index = new InMemorySearchIndex();
-        await index.ProjectAsync(SearchFixtures.Document("doc-1", 1, SearchFixtures.Uk), "draft");
+        await index.ProjectAsync(SearchFixtures.Document("doc-1", 1, SearchFixtures.Uk), "draft", Projected);
         var inner = new InMemoryLifecycleStore();
         var store = new ProjectingLifecycleStore(inner, index);
         await store.RegisterAsync(new VersionRef("doc-1", 1), "user-anna", "draft", Registered);

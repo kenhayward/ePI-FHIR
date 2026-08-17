@@ -14,10 +14,15 @@ public sealed class InMemorySearchIndex(IdentifierAuthority? authority = null)
     private readonly Dictionary<VersionRef, Entry> _entries = [];
     private readonly Lock _gate = new();
 
-    private sealed record Entry(SearchableContent Content, string State);
+    /// <param name="LastTouched">
+    /// When this version was last written or moved. What the results are ordered by (ADR-045).
+    /// </param>
+    private sealed record Entry(
+        SearchableContent Content, string State, DateTimeOffset LastTouched);
 
     public Task ProjectAsync(
-        EpiDocument document, string state, CancellationToken cancellationToken = default)
+        EpiDocument document, string state, DateTimeOffset at,
+        CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(document);
         ArgumentException.ThrowIfNullOrWhiteSpace(state);
@@ -29,14 +34,15 @@ public sealed class InMemorySearchIndex(IdentifierAuthority? authority = null)
         {
             // Keyed by version, so replaying what produced the projection converges rather than
             // accumulating. That is what makes a rebuild safe to run.
-            _entries[key] = new Entry(content, state);
+            _entries[key] = new Entry(content, state, at);
         }
 
         return Task.CompletedTask;
     }
 
     public Task ProjectStateAsync(
-        VersionRef version, string state, CancellationToken cancellationToken = default)
+        VersionRef version, string state, DateTimeOffset at,
+        CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(version);
         ArgumentException.ThrowIfNullOrWhiteSpace(state);
@@ -48,7 +54,9 @@ public sealed class InMemorySearchIndex(IdentifierAuthority? authority = null)
             // caller matches.
             if (_entries.TryGetValue(version, out var entry))
             {
-                _entries[version] = entry with { State = state };
+                // Moving a version is touching it: an author who has just submitted something
+                // finds it where they left it rather than where it was created (ADR-045).
+                _entries[version] = entry with { State = state, LastTouched = at };
             }
         }
 
@@ -75,7 +83,12 @@ public sealed class InMemorySearchIndex(IdentifierAuthority? authority = null)
                 .. _entries
                     .Where(e => permitted.Contains(e.Value.Content.Scope))
                     .Where(e => Matches(e.Key, e.Value, criteria))
-                    .OrderBy(e => e.Key.DocumentIdentifier, StringComparer.Ordinal)
+                    // Most recently touched first, then a total tie-break so a caller paging
+                    // through sees every version once (ADR-045). Ordering used to be identifier
+                    // ascending, which is deterministic and useless: identifiers are
+                    // time-ordered, so the oldest label in the corpus led every page.
+                    .OrderByDescending(e => e.Value.LastTouched)
+                    .ThenBy(e => e.Key.DocumentIdentifier, StringComparer.Ordinal)
                     .ThenByDescending(e => e.Key.Version),
             ];
         }
