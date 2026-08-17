@@ -325,6 +325,40 @@ builder.Services.AddSingleton(services => new CurrentApprovedVersions(
         + "approved a version, or the platform cannot answer which version a market currently "
         + "has approved (CAP-SCH-002).")));
 
+// Which origins a browser may read an answer from (ADR-050).
+//
+// Found by opening the authoring surface: it signed in and then every call failed with "Failed to
+// fetch". The surface is served from one origin and this API answers on another, and it sent no
+// cross-origin headers at all - so a browser threw every response away unread and a preflight got
+// 405. Nothing caught it because every test talks to a test host, and a browser is the only thing
+// that enforces this.
+//
+// Named origins, never any origin. A regulated platform that answered every page on the internet
+// would be one whose access control rested entirely on a token nobody had stolen yet, and '*' is
+// exactly the shape somebody reaches for when a browser refuses them - so it is refused here,
+// where it is a decision to correct, rather than accepted quietly.
+const string BrowsersPolicy = "browsers";
+
+var browserOrigins = (builder.Configuration["Epi:Cors:Origins"] ?? string.Empty)
+    .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+if (browserOrigins.Contains("*", StringComparer.Ordinal))
+{
+    throw new InvalidOperationException(
+        "Epi:Cors:Origins contains '*'. Any origin would make this platform readable by every "
+        + "page a signed-in author happens to visit, so it has to name the origins that serve a "
+        + "surface. Set it to those, or leave it unset and no browser will reach the API.");
+}
+
+builder.Services.AddCors(cors => cors.AddPolicy(BrowsersPolicy, policy => policy
+    .WithOrigins(browserOrigins)
+    .WithHeaders("authorization", "content-type")
+
+    // No AllowCredentials. Tokens travel in the Authorization header (ADR-039), so nothing here
+    // needs cookies - and allowing credentials is what makes a cross-origin request able to act
+    // as somebody's session.
+    .AllowAnyMethod()));
+
 var app = builder.Build();
 
 // The governance schema, before anything at all uses it.
@@ -514,6 +548,19 @@ if (registeredTemplates.Count > seeding.Created.Count)
         string.Join(", ", registeredTemplates.Except(seeding.Created)));
 }
 
+if (browserOrigins.Length == 0)
+{
+    app.Logger.LogWarning(
+        "No browser origins are configured, so no web surface can reach this API - a browser "
+        + "will throw away every answer unread. Set Epi:Cors:Origins to the origins that serve "
+        + "one.");
+}
+else
+{
+    app.Logger.LogInformation(
+        "Browsers may read answers from: {Origins}.", string.Join(", ", browserOrigins));
+}
+
 if (string.IsNullOrWhiteSpace(signingAuthority) || string.IsNullOrWhiteSpace(signingRealm))
 {
     app.Logger.LogWarning(
@@ -521,6 +568,10 @@ if (string.IsNullOrWhiteSpace(signingAuthority) || string.IsNullOrWhiteSpace(sig
         + "Approval gates cannot be passed until Epi:Signing:KeycloakUrl and Epi:Signing:Realm "
         + "are set.");
 }
+
+// Before authentication, because a preflight carries no token: a browser asks whether it may
+// send the Authorization header at all, and a 401 to that question is a call that never happens.
+app.UseCors(BrowsersPolicy);
 
 app.UseAuthentication();
 app.UseAuthorization();

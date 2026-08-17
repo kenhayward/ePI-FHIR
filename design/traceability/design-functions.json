@@ -223,7 +223,8 @@
     "name": "Resolve every configuration path at start-up and refuse to run without one",
     "component": "Configuration & Rules Service",
     "satisfies": [
-      "CAP-CFG-006"
+      "CAP-CFG-006",
+      "CAP-IAM-001"
     ],
     "iteration": "3",
     "status": "planned"
@@ -430,6 +431,15 @@
     "component": "Authoring & Template Service",
     "satisfies": [
       "CAP-CFG-006"
+    ],
+    "iteration": "4",
+    "status": "planned"
+  },
+  "FN-AUT-018": {
+    "name": "Call the browser APIs the way a browser requires them to be called",
+    "component": "Authoring & Template Service",
+    "satisfies": [
+      "CAP-IAM-001"
     ],
     "iteration": "4",
     "status": "planned"

@@ -45,7 +45,9 @@ function isBrowsable(given: string): boolean {
   return protocol === 'http:' || protocol === 'https:';
 }
 
-export async function loadSettings(fetcher: typeof fetch = fetch): Promise<Settings> {
+export async function loadSettings(
+  fetcher: typeof fetch = globalThis.fetch.bind(globalThis),
+): Promise<Settings> {
   const response = await fetcher(file, { cache: 'no-store' });
 
   if (!response.ok) {

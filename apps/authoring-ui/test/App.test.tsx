@@ -113,6 +113,23 @@ describe('FN-AUT-006 the authoring application', () => {
 
   const at = (query: string) => new URL(`https://epi.example.org/${query}`);
 
+  /**
+   * A sign-in that behaves as the real one does: the token appears when the exchange resolves,
+   * and hasValidToken answers differently afterwards. The plain fake never becomes signed in,
+   * which is why it could not see the defect.
+   */
+  const returningSession = () => {
+    const signIn = {
+      hasValidToken: false,
+      beginAsync: vi.fn(async () => 'https://keycloak.example.org/authorize'),
+      completeAsync: vi.fn(async () => {
+        signIn.hasValidToken = true;
+      }),
+    };
+
+    return signIn;
+  };
+
   const label = '?label=01a00000-0000-7000-8000-00000000000a&version=2';
 
   it('asks a signed-out author to sign in, and shows them no label', async () => {
@@ -147,6 +164,65 @@ describe('FN-AUT-006 the authoring application', () => {
     );
 
     await waitFor(() => expect(signIn.completeAsync).toHaveBeenCalled());
+  });
+
+  it('opens the label the callback address names once the exchange has succeeded', async () => {
+    // The defect this replaces was found by signing in through a browser: the exchange succeeded,
+    // the token was in memory, and the screen still said "You are signed out". hasValidToken is a
+    // getter on a mutable object, so nothing told React the answer had changed.
+    //
+    // The test above could not catch it, because it asserts that completeAsync was called and
+    // nothing about what the author then sees - the same shape as a gate whose tests only assert
+    // its refusals (ADR-047).
+    const signIn = returningSession();
+
+    render(
+      <App
+        session={signIn}
+        platform={platform()}
+        location={at(`${label}&code=abc&state=xyz`)}
+        go={vi.fn()}
+      />,
+    );
+
+    expect(await screen.findByRole('heading', { name: '1. What Examplinum is' })).toBeDefined();
+    expect(screen.queryByRole('button', { name: /sign in/i })).toBeNull();
+  });
+
+  it('shows the author the application after a callback that names no label', async () => {
+    // Exactly what a browser does: the identity provider sends the author back to the root with
+    // a code and nothing else. This is the case that was broken in the browser and is worth
+    // asserting separately, because the case above happens to carry a label in the address and a
+    // label is a second reason to render.
+    render(
+      <App
+        session={returningSession()}
+        platform={platform()}
+        location={at('?code=abc&state=xyz')}
+        go={vi.fn()}
+      />,
+    );
+
+    expect(await screen.findByRole('heading', { name: /find a label/i })).toBeDefined();
+  });
+
+  it('takes the spent authorization code out of the address', async () => {
+    // An authorization code is spent once (ADR-039 decision 4). Leaving it in the address means a
+    // refresh replays a code the identity provider has already consumed, and the author is shown
+    // a state-mismatch refusal for having pressed F5.
+    const replace = vi.fn();
+    render(
+      <App
+        session={returningSession()}
+        platform={platform()}
+        location={at('callback?code=abc&state=xyz')}
+        go={vi.fn()}
+        replaceAddress={replace}
+      />,
+    );
+
+    await waitFor(() => expect(replace).toHaveBeenCalled());
+    expect(String(replace.mock.calls[0]![0])).not.toContain('code=');
   });
 
   it('shows a draft a preview, and never the artefact of record', async () => {

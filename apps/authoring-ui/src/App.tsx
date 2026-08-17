@@ -105,11 +105,19 @@ export function App({
   platform,
   location,
   go,
+  replaceAddress = (url) => window.history.replaceState(null, '', url.toString()),
 }: {
   readonly session: Session;
   readonly platform: Platform;
   readonly location: URL;
   readonly go: (url: string) => void;
+
+  /**
+   * Rewrites the address without navigating, so a spent authorization code can be taken out of
+   * it. Injectable because a test has no history to inspect, and defaulted because every caller
+   * in a browser wants the same thing.
+   */
+  readonly replaceAddress?: (url: URL) => void;
 }) {
   const [version, setVersion] = useState<VersionDescription | null>(null);
   const [problem, setProblem] = useState<string | null>(null);
@@ -125,6 +133,12 @@ export function App({
   // unchanged would say nothing; sending null would detach the label from it.
   const [product, setProduct] = useState<ProductChoiceValue | undefined>(undefined);
 
+  /**
+   * How many sign-ins have completed. Its value means nothing; changing it is what makes React
+   * look at session.hasValidToken again.
+   */
+  const [signIns, setSignIns] = useState(0);
+
   const fromAddress = location.searchParams.get('label');
   const wanted =
     fromAddress !== null
@@ -134,10 +148,37 @@ export function App({
   const returning = location.searchParams.has('code');
 
   useEffect(() => {
-    if (returning && !session.hasValidToken) {
-      session.completeAsync(location).catch((failed: Error) => setProblem(failed.message));
+    if (!returning || session.hasValidToken) {
+      return;
     }
-  }, [returning, session, location]);
+
+    session
+      .completeAsync(location)
+      .then(() => {
+        // Counted, because hasValidToken is a getter on a mutable object and nothing else tells
+        // React the answer has changed. Without this the exchange succeeded, the token sat in
+        // memory, and the author went on being shown "You are signed out" - found by signing in
+        // through a browser, and invisible to a test that only asserted completeAsync was called.
+        setSignIns((count) => count + 1);
+
+        // The spent code taken out of the address. An authorization code is used once (ADR-039
+        // decision 4), so leaving it there means a refresh replays a code the identity provider
+        // has already consumed and the author is shown a state-mismatch refusal for pressing F5.
+        const settled = new URL(location.href);
+        for (const spent of ['code', 'state', 'session_state', 'iss']) {
+          settled.searchParams.delete(spent);
+        }
+
+        try {
+          replaceAddress(settled);
+        } catch {
+          // Swallowed on purpose, and separately from the exchange. Tidying the address is
+          // cosmetic; some environments refuse replaceState outright, and reporting that as a
+          // problem would tell an author their sign-in failed when it had just succeeded.
+        }
+      })
+      .catch((failed: Error) => setProblem(failed.message));
+  }, [returning, session, location, replaceAddress]);
 
   useEffect(() => {
     if (!session.hasValidToken || wanted.label === null || wanted.version < 1) {
@@ -155,7 +196,7 @@ export function App({
       .marketStandingsAsync(wanted.label, wanted.version)
       .then(setStandings)
       .catch(() => setStandings(null));
-  }, [session.hasValidToken, platform, wanted.label, wanted.version]);
+  }, [session.hasValidToken, signIns, platform, wanted.label, wanted.version]);
 
   // Hoisted above every early return, because a hook called inside the JSX of a component that
   // returns early is a hook called on some renders and not others - React refuses, and the
