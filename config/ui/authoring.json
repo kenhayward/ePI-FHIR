@@ -1,0 +1,7 @@
+{
+  "_comment": "Where the authoring surface is pointed (ADR-049). Read by the browser at start-up from /config.json, so THESE ARE THE BROWSER'S ADDRESSES, not the container network's: a browser resolves localhost and cannot reach 'epi-api' or 'keycloak' whatever the container serving this file can. The values below match the development stack's default ports in deploy/docker-compose/.env.example; change them here rather than rebuilding the image, which is the whole point of the file being mounted.",
+
+  "authority": "http://localhost:8081/realms/epi",
+  "clientId": "epi-authoring-ui",
+  "api": "http://localhost:8080"
+}
