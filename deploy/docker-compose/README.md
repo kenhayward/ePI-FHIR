@@ -43,8 +43,23 @@ docker compose down                           # stop (add -v to remove volumes/d
 | Grafana* | Dashboards | http://localhost:3001 | admin / admin |
 | Kong** | API gateway (8) | http://localhost:8000 (proxy), http://localhost:8001 (admin) | - |
 | RabbitMQ*** | Messaging (optional, 20) | http://localhost:15672 | guest / guest |
+| ePI API | The platform itself | http://localhost:8080 | bearer token from Keycloak |
+| Authoring surface | The web app (ADR-037) | http://localhost:5173 | sign in as one of the users below |
 
 \* observability profile  ** gateway profile  *** messaging profile
+
+**The authoring surface is served on 5173** because that is a redirect URI the
+`epi-authoring-ui` client already permits, and a port the identity provider does not permit is a
+surface that cannot sign in. Its other permitted port, 8000, is Kong's under the gateway profile.
+The cost is that `npm run dev` and the container cannot both run - two things nobody runs at once.
+Set `EPI_UI_PORT` to move it, and add the new address to the client in
+`init/keycloak-epi-realm.json` first.
+
+Where the surface is pointed is `config/ui/authoring.json`, mounted rather than baked into the
+image (ADR-049). **The addresses in it are the browser's, not the container network's:** a browser
+resolves `localhost` and cannot reach `epi-api` or `keycloak` whatever the container serving the
+files can. If you change `EPI_API_PORT`, `KEYCLOAK_PORT` or `EPI_UI_PORT`, change that file to
+match - nothing can check it for you, because the browser is outside this network.
 
 ### If a port is already taken
 
@@ -86,11 +101,23 @@ Rae holds EU as well as GB, so the same content can hold different regulatory-ap
 in two markets (ADR-005). Omar operates the platform rather than authoring for it: the
 reconciliation report is a platform-wide action, which no content role grants.
 
-**Keycloak imports the realm only if it does not already exist.** A volume older than a user
-or role added here therefore has neither, and the symptom is a 403 from an endpoint the table
-above says should work. `tools/walkthrough.py` names the missing user rather than skipping the
-check. To take a realm change into an existing stack, delete the `epi` realm from the admin
-console and restart Keycloak, or start from a fresh volume.
+**Keycloak imports the realm only if it does not already exist.** A volume older than a user,
+role or client added here therefore has none of them, and the symptom is never "the realm is out
+of date" - it is a specific thing failing for a reason nobody attributes to configuration. It has
+happened twice: `user-ops` missing left the reconciliation report answering 403 to the only
+identity permitted to run it, and `epi-authoring-ui` missing left the authoring surface bouncing
+off the identity provider with "Client not found", which reads like a bug in the surface.
+
+```bash
+python tools/verify-realm.py
+```
+
+That says what the running realm lacks and changes nothing. To take a realm change into an
+existing stack, delete the `epi` realm from the admin console and restart Keycloak, or start from
+a fresh volume - but note first that **recreating the realm mints new subject identifiers**, and
+the platform's audit records, signatures and pinned contexts are attributed to the old ones.
+Nothing reconnects them. On a demonstration stack that is usually acceptable; it should be a
+decision rather than a discovery.
 
 Two clients: `epi-api` is the resource server and never obtains tokens, and `epi-signing` is
 a public client with direct access grants - used both to sign a person in and by the platform

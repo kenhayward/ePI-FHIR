@@ -425,6 +425,15 @@
     "iteration": "4",
     "status": "planned"
   },
+  "FN-AUT-017": {
+    "name": "Read where the surface is pointed at start-up, and refuse to render without it",
+    "component": "Authoring & Template Service",
+    "satisfies": [
+      "CAP-CFG-006"
+    ],
+    "iteration": "4",
+    "status": "planned"
+  },
   "FN-EVT-001": {
     "name": "Build a content event from a persisted document",
     "component": "Notification & Event Backbone",

@@ -312,6 +312,43 @@ services:
       - "${EPI_API_PORT:-8080}:8080"
     networks: [epi]
 
+  # ---- The authoring surface (ADR-037): a client of the API, holding no governance logic ----
+  epi-ui:
+    build:
+      context: ../..
+      dockerfile: apps/authoring-ui/Dockerfile
+    depends_on:
+      # For the ordinary case of somebody opening the surface as soon as the stack is up, not
+      # because serving static files needs either of them.
+      epi-api:
+        condition: service_started
+      keycloak:
+        condition: service_started
+    volumes:
+      # Where the surface is pointed, mounted rather than baked into the image (ADR-049). The
+      # addresses in it are the BROWSER'S: a browser resolves localhost and cannot reach
+      # "epi-api" or "keycloak" whatever this container can.
+      #
+      # If EPI_API_PORT, KEYCLOAK_PORT or EPI_UI_PORT are changed from their defaults, change
+      # config/ui/authoring.json to match. Nothing can check that for you - the browser is
+      # outside this network, so the mismatch shows up as a surface that cannot sign in.
+      - ../../config/ui/authoring.json:/usr/share/nginx/html/config.json:ro
+    ports:
+      # 5173 because the epi-authoring-ui client already permits it as a redirect URI, and a port
+      # the identity provider does not permit is a surface that cannot sign in. Its other
+      # permitted port, 8000, is Kong's proxy under the optional gateway profile - which is not a
+      # theoretical collision: it took the port on the first machine this was tried on.
+      #
+      # The cost is that this is also the Vite dev server's port, so `npm run dev` and this
+      # container cannot both run. That is a choice between two things nobody runs at once,
+      # rather than a choice between two things that both belong to the stack.
+      #
+      # Any other port has to be added to the client in init/keycloak-epi-realm.json first - and
+      # Keycloak imports a realm only if it does not already exist, so an existing volume needs
+      # the epi realm deleted before that lands.
+      - "${EPI_UI_PORT:-5173}:80"
+    networks: [epi]
+
   # ============ optional profile: observability ============
   otel-collector:
     image: otel/opentelemetry-collector-contrib:0.158.0

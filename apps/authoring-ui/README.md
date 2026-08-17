@@ -29,12 +29,20 @@ Run from the repository root, which is the npm workspace:
 npm install && npm test
 ```
 
-`npm run dev` serves it. It reads `VITE_EPI_AUTHORITY`, `VITE_EPI_CLIENT_ID` and `VITE_EPI_API`
-at build time and refuses to start without them - see `.env.example`, which matches the
-development stack.
+`npm run dev` serves it for development; `npm run lint` type-checks; `npm run build` produces the
+static files the container serves.
 
-`npm run lint` type-checks; `npm run dev` serves it; `npm run build` produces the static files
-that sit behind the gateway.
+**Where it is pointed is read at start-up, not at build time** (ADR-049). It fetches `config.json`
+from beside itself and refuses to render without a complete one, rather than defaulting to
+localhost and failing somewhere nobody would attribute to configuration. In the development stack
+that file is `config/ui/authoring.json`, mounted into the container; for `npm run dev` there is a
+copy at `public/config.json`.
+
+The addresses in it are the browser's. A browser resolves `localhost` and cannot reach `epi-api`
+or `keycloak` whatever the container serving these files can.
+
+The whole application is in the stack: `cd deploy/docker-compose && docker compose up -d` serves
+it at http://localhost:5173.
 
 ## Layout
 
