@@ -69,6 +69,8 @@ internal static class TestFixtures
                 RepositoryPath("config", "master-data", "products.json"));
             host.UseSetting("Epi:TemplateSeedPath",
                 RepositoryPath("config", "templates", "seed"));
+            host.UseSetting("Epi:Lifecycle:TemplateStatesPath",
+                RepositoryPath("config", "lifecycle", "template-states.json"));
             and?.Invoke(host);
         });
 }

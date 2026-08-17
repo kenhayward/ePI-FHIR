@@ -441,4 +441,89 @@ check("previewing mints no version and changes nothing",
       status == 200 and after_preview.get("total") == before_preview.get("total"),
       f"{before_preview.get('total')} before, {after_preview.get('total')} after")
 
+
+# ---------------------------------------------------------------------------------------------
+# The templates a deployment comes with, and what it takes to make one usable (ADR-042).
+#
+# Seeding writes at start-up, which is new, and start-up writes are the class this walkthrough
+# keeps catching: the API applied the governance schema after seeding, so the first deployment
+# that seeded anything died on a column the migration two blocks below would have added.
+
+print("\nAnna looks at the templates the deployment came with")
+status, templates = call("GET", "/templates", anna)
+check("the platform says which templates exist", status == 200 and len(templates) > 0,
+      f"{status} {[t['identifier'] for t in templates] if status == 200 else templates}")
+check("and not one of them is approved, so nothing may be officially rendered yet",
+      status == 200 and not any(t["state"] == "approved" for t in templates),
+      str([t["state"] for t in templates])[:80] if status == 200 else "")
+check("each says what may be done to it from here",
+      status == 200 and all(t["actions"] for t in templates), "")
+
+# Re-runnable against a database that survives the walkthrough. Every other scene mints a new
+# document; the seeded templates are singletons, so this scene puts back what it moves. A
+# walkthrough that only passes against a fresh volume stops being run.
+first = templates[0] if status == 200 and templates else None
+
+if first and first["state"] == "in-review":
+    call("POST", f"/templates/{first['identifier']}/versions/{first['version']}/transitions",
+         anna, {"action": "return"})
+    first = next(t for t in call("GET", "/templates", anna)[1]
+                 if t["identifier"] == first["identifier"])
+
+if first:
+    print("\nA template goes through the engine a label goes through")
+    path = f"/templates/{first['identifier']}/versions/{first['version']}/transitions"
+    check("it starts as a draft", first["state"] == "draft", first["state"])
+
+    status, moved = call("POST", path, anna, {"action": "submit"})
+    check("a template is submitted for review",
+          status == 200 and moved.get("to") == "in-review", f"{status} {str(moved)[:120]}")
+
+    status, after = call("GET", "/templates", anna)
+    state = next((t["state"] for t in after if t["identifier"] == first["identifier"]), None)
+    check("and the engine moved it", state == "in-review", str(state))
+
+    # The gate that makes approving a template mean anything, reaching a different artefact
+    # because the engine never knew the difference (ADR-042 decision 3).
+    status, unsigned = call("POST", path, ben, {"action": "approve"})
+    check("approving one without a signature is refused", status != 200,
+          f"{status} {str(unsigned)[:120]}")
+
+    status, returned = call("POST", path, anna, {"action": "return"})
+    check("and the walkthrough leaves the template as it found it",
+          status == 200 and returned.get("to") == "draft", f"{status} {str(returned)[:80]}")
+
+
+print("\nThe reconciliation report is asked what is broken")
+# An operator rather than an author. Reconciliation is platform-wide, so it is not scoped to an
+# affiliate the way content is, and only a role that grants it may ask (policies/authz).
+#
+# Named as a prerequisite rather than skipped when absent. Keycloak imports a realm only when it
+# does not already exist, so a volume older than this user has an epi realm without it - a real
+# property of that deployment, and a check that quietly passed over it would be reporting on a
+# report nobody ran.
+try:
+    ops = token("user-ops")
+except urllib.error.HTTPError:
+    ops = None
+    check("user-ops exists to run the report", False,
+          "the epi realm predates this user - recreate the realm to import it")
+
+status, report = (
+    call("GET", "/admin/reconciliation/registrations", ops) if ops else (None, None))
+
+if status == 200:
+    # The defect this found: the report asks the content store whether the content behind a
+    # registration arrived, and a template's definition lives in the template store. Every
+    # seeded template was reported as an inert registration on a healthy deployment - and a
+    # report that flags non-defects trains its reader to ignore it.
+    seeded = [i for i in report.get("inert", [])
+              if i.get("author") == "platform:template-seed"]
+    check("a seeded template is not reported as a failed write", not seeded,
+          str(seeded)[:120])
+elif ops:
+    # Only when there was somebody to ask. The prerequisite above already says so otherwise, and
+    # reporting it twice makes one missing user look like two failures.
+    check("the reconciliation report answers", False, f"{status} {str(report)[:120]}")
+
 print("\n" + ("ALL CHECKS PASSED" if not failures else f"FAILURES: {failures}"))

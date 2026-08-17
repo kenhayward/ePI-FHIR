@@ -44,6 +44,8 @@ public sealed class ReconciliationEndpointTests(WebApplicationFactory<Program> f
                 TestFixtures.RepositoryPath("config", "master-data", "products.json"));
             host.UseSetting("Epi:TemplateSeedPath",
                 TestFixtures.RepositoryPath("config", "templates", "seed"));
+            host.UseSetting("Epi:Lifecycle:TemplateStatesPath",
+                TestFixtures.RepositoryPath("config", "lifecycle", "template-states.json"));
             host.ConfigureTestServices(services =>
             {
                 services.AddAuthentication(WhoeverAsked.Name)

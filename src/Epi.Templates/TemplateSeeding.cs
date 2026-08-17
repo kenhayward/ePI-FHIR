@@ -21,6 +21,18 @@ namespace Epi.Templates;
 /// </remarks>
 public static class TemplateSeeding
 {
+    /// <summary>
+    /// Who a seeded template is recorded as authored by.
+    /// </summary>
+    /// <remarks>
+    /// The platform, because that is what is true: nobody wrote these. Anybody may therefore
+    /// approve one, which is right - segregation of duties disqualifies whoever wrote something
+    /// from approving it, and no person wrote this. Recording an operator instead would put a
+    /// name against work nobody did and disqualify them from approving a template they had
+    /// never seen.
+    /// </remarks>
+    public const string SeedAuthor = "platform:template-seed";
+
     private static readonly JsonSerializerOptions ReadOptions = new()
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,

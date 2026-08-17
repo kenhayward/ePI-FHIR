@@ -62,8 +62,13 @@ public sealed class LifecycleService(
     }
 
     /// <summary>Registers a version in the model's initial state.</summary>
-    public Task RegisterAsync(VersionRef version, string author, CancellationToken cancellationToken = default) =>
-        _store.RegisterAsync(version, author, _model.Initial, _time.GetUtcNow(), cancellationToken);
+    public Task RegisterAsync(
+        VersionRef version,
+        string author,
+        string kind = RegisteredArtefact.Content,
+        CancellationToken cancellationToken = default) =>
+        _store.RegisterAsync(
+            version, author, _model.Initial, _time.GetUtcNow(), kind, cancellationToken);
 
     /// <summary>The state this version holds now, or null if it is not under management.</summary>
     /// <remarks>

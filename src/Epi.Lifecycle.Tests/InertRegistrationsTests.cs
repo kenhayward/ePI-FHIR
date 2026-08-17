@@ -22,6 +22,8 @@ public sealed class InertRegistrationsTests
 
     private static readonly TimeSpan Settle = TimeSpan.FromMinutes(15);
 
+    private const string TemplateAuthor = "platform:template-seed";
+
     private static DocumentIdentity Identity(string value) =>
         new(Authority.DocumentSystem, value);
 
@@ -155,6 +157,43 @@ public sealed class InertRegistrationsTests
         var inert = Assert.Single((await report.RunAsync(Settle)).Inert);
 
         Assert.False(inert.BlocksVersionNumber);
+    }
+
+    [Fact]
+    public async Task FN_LCM_008_a_template_registration_is_not_reported_as_inert()
+    {
+        // Found by this test failing for real: the engine manages render templates as well as
+        // labels now (ADR-042 decision 3), and this report asks the content store whether the
+        // content behind a registration arrived. A template's definition lives in the template
+        // store, so asking the content store about one reports it as inert forever - and every
+        // seeded template appeared in the report on a healthy deployment.
+        //
+        // The generalisation the engine got for free has a limit, and it is here: once more than
+        // one kind of artefact is registered, a registration has to say which kind it is.
+        var (report, lifecycle, _, _) = Subject();
+        await lifecycle.RegisterAsync(
+            new VersionRef("qrd-package-leaflet", 1), TemplateAuthor, "draft",
+            Now - TimeSpan.FromDays(1), RegisteredArtefact.Template);
+
+        Assert.Empty((await report.RunAsync(Settle)).Inert);
+    }
+
+    [Fact]
+    public async Task FN_LCM_008_a_label_registration_beside_a_template_is_still_reported()
+    {
+        // The other direction, because a filter that reported nothing would pass the test above
+        // and destroy the report.
+        var (report, lifecycle, _, _) = Subject();
+        await lifecycle.RegisterAsync(
+            new VersionRef("qrd-package-leaflet", 1), TemplateAuthor, "draft",
+            Now - TimeSpan.FromDays(1), RegisteredArtefact.Template);
+        await lifecycle.RegisterAsync(
+            new VersionRef("01a00000-0000-7000-8000-000000000010", 1), "user-anna", "draft",
+            Now - TimeSpan.FromDays(1));
+
+        var inert = Assert.Single((await report.RunAsync(Settle)).Inert);
+
+        Assert.Equal("01a00000-0000-7000-8000-000000000010", inert.Version.DocumentIdentifier);
     }
 
     [Fact]

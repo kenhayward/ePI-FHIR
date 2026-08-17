@@ -108,6 +108,15 @@ public sealed class InertRegistrationReport
 
         foreach (var registration in registrations)
         {
+            // Content only. The engine manages templates too (ADR-042 decision 3), and their
+            // definitions live in the template store rather than the content store - so asking
+            // the content store about one reports it as inert forever, which is precisely the
+            // report that trains its reader to ignore it.
+            if (!string.Equals(registration.Kind, RegisteredArtefact.Content, StringComparison.Ordinal))
+            {
+                continue;
+            }
+
             var identity = new DocumentIdentity(
                 _documentSystem, registration.Version.DocumentIdentifier);
 

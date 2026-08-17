@@ -71,7 +71,7 @@ its people are reproducible rather than clicked together. Import is skipped if t
 already exists; to re-import after editing, delete the realm in the admin console (or via
 the admin API) and restart the container.
 
-Three fictional people, enough to demonstrate segregation of duties. **All passwords are
+Four fictional people, enough to demonstrate segregation of duties. **All passwords are
 `Demo-Passw0rd!`** and every one of these is a development default.
 
 | User | Name | Role | Affiliate | Markets |
@@ -79,10 +79,18 @@ Three fictional people, enough to demonstrate segregation of duties. **All passw
 | `user-anna` | Anna Novak | author | uk-affiliate | GB |
 | `user-ben` | Ben Okafor | approver | uk-affiliate | GB |
 | `user-rae` | Rae Lindqvist | regulatory | uk-affiliate | GB, EU |
+| `user-ops` | Omar Silva | platform-operator | uk-affiliate | GB |
 
 Anna authors and submits; Ben approves, because the author of a version may not approve it.
 Rae holds EU as well as GB, so the same content can hold different regulatory-approval state
-in two markets (ADR-005).
+in two markets (ADR-005). Omar operates the platform rather than authoring for it: the
+reconciliation report is a platform-wide action, which no content role grants.
+
+**Keycloak imports the realm only if it does not already exist.** A volume older than a user
+or role added here therefore has neither, and the symptom is a 403 from an endpoint the table
+above says should work. `tools/walkthrough.py` names the missing user rather than skipping the
+check. To take a realm change into an existing stack, delete the `epi` realm from the admin
+console and restart Keycloak, or start from a fresh volume.
 
 Two clients: `epi-api` is the resource server and never obtains tokens, and `epi-signing` is
 a public client with direct access grants - used both to sign a person in and by the platform

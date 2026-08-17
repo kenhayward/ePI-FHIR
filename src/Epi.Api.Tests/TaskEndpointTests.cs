@@ -40,6 +40,8 @@ public sealed class TaskEndpointTests(WebApplicationFactory<Program> factory)
             TestFixtures.RepositoryPath("config", "master-data", "products.json"));
         host.UseSetting("Epi:TemplateSeedPath",
             TestFixtures.RepositoryPath("config", "templates", "seed"));
+        host.UseSetting("Epi:Lifecycle:TemplateStatesPath",
+            TestFixtures.RepositoryPath("config", "lifecycle", "template-states.json"));
         host.UseSetting("Epi:Workflow:RoutingPath",
             TestFixtures.RepositoryPath("config", "workflow", "label"));
         host.ConfigureTestServices(services =>

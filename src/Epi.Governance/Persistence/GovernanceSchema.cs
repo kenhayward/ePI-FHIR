@@ -261,6 +261,18 @@ public static class GovernanceSchema
             ALTER TABLE pinned_context
                 ADD COLUMN IF NOT EXISTS terminology_bindings JSONB NULL;
             """),
+
+        // What a registration is for (ADR-042 decision 3). The engine manages render templates
+        // as well as labels now, and a registration that does not say which reads as a label
+        // whose content never arrived - which reported every seeded template as an inert
+        // registration, forever.
+        //
+        // Existing rows are labels, because that is all there was, so the default is content
+        // rather than NULL: a registration with no kind is not an unknown, it is a label.
+        new("0010-lifecycle-artefact-kind", """
+            ALTER TABLE lifecycle_version
+                ADD COLUMN IF NOT EXISTS artefact_kind TEXT NOT NULL DEFAULT 'content';
+            """),
     ];
 
     /// <summary>
