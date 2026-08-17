@@ -272,6 +272,10 @@ services:
         condition: service_healthy
       keycloak:
         condition: service_started
+      # Not for start-up - nothing is filed then - but so that the first official render does
+      # not fail against a bucket minio-init has yet to create.
+      minio-init:
+        condition: service_completed_successfully
     environment:
       # Each dependency is real here. Left unset, the service falls back to in-memory
       # components and says so loudly at start-up.
@@ -290,6 +294,14 @@ services:
       Epi__Signing__Realm: epi
       Epi__Signing__ClientId: epi-signing
       Epi__Governance__ConnectionString: "Host=postgres;Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD};Database=epi_operational"
+      # Where produced artefacts are filed (ADR-034, ADR-046). The bucket is created with
+      # object-lock by minio-init; retention comes from mounted configuration, because an
+      # artefact written without a retention period is indistinguishable from one written with
+      # it until somebody tries to destroy it.
+      Epi__Assets__Endpoint: http://minio:9000
+      Epi__Assets__AccessKey: ${MINIO_ROOT_USER}
+      Epi__Assets__SecretKey: ${MINIO_ROOT_PASSWORD}
+      Epi__Assets__Bucket: epi-rendered
       ASPNETCORE_ENVIRONMENT: Development
     volumes:
       # Configuration and the pinned conformance packages are mounted, so changing a market or

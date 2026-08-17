@@ -22,6 +22,7 @@ ENV Epi__MarketsPath=/config/markets \
     Epi__Lifecycle__MarketStatesPath=/config/lifecycle/market-approval-states.json \
     Epi__Lifecycle__TemplateStatesPath=/config/lifecycle/template-states.json \
     Epi__MasterDataPath=/config/master-data/products.json \
+    Epi__Assets__RetentionPath=/config/assets/retention.json \
     Epi__TemplateSeedPath=/config/templates/seed \
     Epi__Workflow__RoutingPath=/config/workflow/label \
     Epi__Validation__PackagesPath=/app/profiles/packages \
