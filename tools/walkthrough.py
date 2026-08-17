@@ -12,6 +12,8 @@ actually loaded with - and every one of those has been broken at least once.
 """
 import base64
 import json
+import subprocess
+import time
 from datetime import datetime, timedelta, timezone
 import urllib.error
 import urllib.parse
@@ -525,5 +527,50 @@ elif ops:
     # Only when there was somebody to ask. The prerequisite above already says so otherwise, and
     # reporting it twice makes one missing user look like two failures.
     check("the reconciliation report answers", False, f"{status} {str(report)[:120]}")
+
+# ---------------------------------------------------------------------------------------------
+# The second start.
+#
+# This walkthrough had one blind spot and it was this: it asks its questions of a service that is
+# already up, and never restarts it. A whole defect class only appears the second time - the
+# template store was in memory while its lifecycle state was durable, so a restart lost the
+# templates, kept their registrations, and seeding recreated and re-registered them onto a
+# primary key that refused. The API came up exactly once, and everything above passed (ADR-043).
+
+print("\nThe deployment is restarted, which is the first thing anybody does")
+restart = subprocess.run(
+    ["docker", "compose", "restart", "epi-api"],
+    cwd="deploy/docker-compose", capture_output=True, text=True)
+check("the API container restarts", restart.returncode == 0, restart.stderr.strip()[:120])
+
+healthy = False
+for _ in range(60):
+    try:
+        with urllib.request.urlopen(f"{API}/health", timeout=5) as response:
+            healthy = response.status == 200
+            break
+    except (urllib.error.URLError, TimeoutError, ConnectionError):
+        time.sleep(1)
+
+check("and comes back up", healthy,
+      "start-up writes have to be idempotent, or a service starts exactly once")
+
+if healthy:
+    status, after_restart = call("GET", "/templates", anna)
+    check("the templates it was seeded with are still there",
+          status == 200 and len(after_restart) == len(templates),
+          f"{len(templates)} before, {len(after_restart) if status == 200 else '?'} after")
+
+    status, still = call("GET", f"/labels/{identifier}/versions/1/sections", anna)
+    check("and so is the content", status == 200, str(status))
+
+    # Not asserted, because it is a recorded debt rather than a defect (ADR-022): the search
+    # projection is in memory and nothing rebuilds it, so a restart leaves content that exists
+    # and cannot be found. Said out loud here because the restart is what makes it visible, and
+    # a debt nobody sees the cost of is a debt nobody pays.
+    status, found = call("GET", f"/labels/search?identifier={identifier}", anna)
+    if status == 200 and found.get("total") == 0:
+        print("  NOTE  the search index is empty after a restart and nothing rebuilds it "
+              "(ADR-022 debt)")
 
 print("\n" + ("ALL CHECKS PASSED" if not failures else f"FAILURES: {failures}"))

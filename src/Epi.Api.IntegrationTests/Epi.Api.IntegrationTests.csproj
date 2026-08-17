@@ -19,6 +19,7 @@
 
   <ItemGroup>
     <ProjectReference Include="../Epi.Api/Epi.Api.csproj" />
+    <ProjectReference Include="../Epi.Governance/Epi.Governance.csproj" />
   </ItemGroup>
 
 </Project>

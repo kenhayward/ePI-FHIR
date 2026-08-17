@@ -1,3 +1,5 @@
+using Epi.Governance.Persistence;
+using Epi.Templates;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Npgsql;
@@ -97,6 +99,121 @@ public sealed class StartUpAgainstPostgresTests : IAsyncLifetime
         Assert.True(
             response.IsSuccessStatusCode,
             "the API must apply the governance schema before anything start-up writes uses it");
+    }
+
+    [Fact]
+    public async Task FN_CFG_004_the_api_starts_a_second_time_against_the_database_it_wrote()
+    {
+        // A restart, which is the ordinary thing a deployment does and the one nothing tested.
+        // Start-up writes now, and a write that is not idempotent is a service that comes up
+        // once: seeding recreated its templates on the second start and registering them again
+        // violated the lifecycle primary key, so the API died on restart. Everything looked
+        // healthy right up until somebody restarted it.
+        var connectionString = _container.GetConnectionString();
+
+        var first = Host(connectionString);
+        using (var started = await first.CreateClient().GetAsync("/health"))
+        {
+            started.EnsureSuccessStatusCode();
+        }
+
+        await first.DisposeAsync();
+
+        var second = Host(connectionString);
+        using var again = await second.CreateClient().GetAsync("/health");
+
+        Assert.True(again.IsSuccessStatusCode, "the API must survive a restart");
+    }
+
+    [Fact]
+    public async Task FN_TPL_005_a_restart_does_not_register_a_seeded_template_twice()
+    {
+        // The consequence beyond starting: a second registration would be a second version
+        // number spent on a template nobody versioned, and a lifecycle history that says a
+        // template was created twice when it was created once.
+        var connectionString = _container.GetConnectionString();
+
+        var first = Host(connectionString);
+        using (var started = await first.CreateClient().GetAsync("/health"))
+        {
+            started.EnsureSuccessStatusCode();
+        }
+
+        var registered = await CountAsync(
+            connectionString,
+            "SELECT count(*) FROM lifecycle_version WHERE author = 'platform:template-seed'");
+
+        await first.DisposeAsync();
+
+        var second = Host(connectionString);
+        using (var again = await second.CreateClient().GetAsync("/health"))
+        {
+            again.EnsureSuccessStatusCode();
+        }
+
+        Assert.Equal(
+            registered,
+            await CountAsync(
+                connectionString,
+                "SELECT count(*) FROM lifecycle_version WHERE author = 'platform:template-seed'"));
+    }
+
+    [Fact]
+    public async Task FN_TPL_003_a_template_survives_the_process_that_created_it()
+    {
+        // The half that was missing. A template's lifecycle state was durable and the template
+        // itself was not, so a restart left a registration pointing at a template that no longer
+        // existed - and seeding, asking the empty store, made a new one (ADR-043).
+        var connectionString = _container.GetConnectionString();
+
+        var first = Host(connectionString);
+        using (var started = await first.CreateClient().GetAsync("/health"))
+        {
+            started.EnsureSuccessStatusCode();
+        }
+
+        await first.DisposeAsync();
+
+        var second = Host(connectionString);
+        using var again = await second.CreateClient().GetAsync("/health");
+        again.EnsureSuccessStatusCode();
+
+        Assert.True(
+            await CountAsync(connectionString, "SELECT count(*) FROM render_template") > 0,
+            "the templates a deployment was seeded with should still be there after a restart");
+    }
+
+    [Fact]
+    public async Task FN_TPL_005_a_seeded_template_nobody_registered_is_registered_on_the_next_start()
+    {
+        // Two stores and no transaction between them. Seeding writes a template and then
+        // registers it, so a process that dies between the two leaves a template no lifecycle
+        // record knows about - and the old rule, "register what I just created", would never
+        // look at it again because the next start creates nothing.
+        //
+        // Reproduced by writing the template and no registration, which is exactly the state
+        // that crash leaves behind. Start-up ensures rather than creates (ADR-043 decision 3).
+        var connectionString = _container.GetConnectionString();
+        await GovernanceSchema.ApplyAsync(connectionString);
+
+        await using (var templates = new PostgresTemplateStore(connectionString))
+        {
+            await templates.CreateAsync(new RenderTemplateDefinition(
+                "qrd-package-leaflet", "EU QRD package leaflet", "body { }"));
+        }
+
+        var host = Host(connectionString);
+        using var started = await host.CreateClient().GetAsync("/health");
+        started.EnsureSuccessStatusCode();
+
+        Assert.Equal(
+            1,
+            await CountAsync(
+                connectionString,
+                """
+                SELECT count(*) FROM lifecycle_version
+                WHERE document_identifier = 'qrd-package-leaflet'
+                """));
     }
 
     [Fact]

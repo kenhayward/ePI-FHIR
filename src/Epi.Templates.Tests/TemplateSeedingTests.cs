@@ -23,11 +23,39 @@ public sealed class TemplateSeedingTests
     {
         var store = new InMemoryTemplateStore();
 
-        var seeded = await TemplateSeeding.ApplyAsync(store, SeedDirectory());
+        var seeded = (await TemplateSeeding.ApplyAsync(store, SeedDirectory())).Created;
 
         Assert.NotEmpty(seeded);
         Assert.Contains("qrd-package-leaflet", seeded);
         Assert.NotNull(await store.GetAsync("qrd-package-leaflet", 1));
+    }
+
+    [Fact]
+    public async Task FN_TPL_004_seeding_names_what_was_already_there_as_well_as_what_it_made()
+    {
+        // Because a caller has to be able to tell the difference between "nothing to do" and
+        // "nothing there". Start-up registers each seeded template with the lifecycle engine,
+        // and a second start that was told only about creations could not tell a template it
+        // had already registered from one whose registration never landed (ADR-043).
+        var store = new InMemoryTemplateStore();
+        await TemplateSeeding.ApplyAsync(store, SeedDirectory());
+
+        var second = await TemplateSeeding.ApplyAsync(store, SeedDirectory());
+
+        Assert.Empty(second.Created);
+        Assert.Contains("qrd-package-leaflet", second.Seeded);
+    }
+
+    [Fact]
+    public async Task FN_TPL_004_what_it_made_is_also_among_what_it_seeded()
+    {
+        // One list is a subset of the other rather than a partition of it, so a caller that
+        // wants "every standard template" reads one field and never has to concatenate.
+        var outcome = await TemplateSeeding.ApplyAsync(
+            new InMemoryTemplateStore(), SeedDirectory());
+
+        Assert.NotEmpty(outcome.Created);
+        Assert.All(outcome.Created, created => Assert.Contains(created, outcome.Seeded));
     }
 
     [Fact]
@@ -53,7 +81,7 @@ public sealed class TemplateSeedingTests
 
         var second = await TemplateSeeding.ApplyAsync(store, SeedDirectory());
 
-        Assert.Empty(second);
+        Assert.Empty(second.Created);
         Assert.Equal([1], await store.VersionsAsync("qrd-package-leaflet"));
     }
 
@@ -103,7 +131,8 @@ public sealed class TemplateSeedingTests
 
         try
         {
-            Assert.Empty(await TemplateSeeding.ApplyAsync(new InMemoryTemplateStore(), empty));
+            Assert.Empty(
+                (await TemplateSeeding.ApplyAsync(new InMemoryTemplateStore(), empty)).Created);
         }
         finally
         {
