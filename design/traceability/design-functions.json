@@ -415,6 +415,16 @@
     "iteration": "4",
     "status": "planned"
   },
+  "FN-AUT-016": {
+    "name": "Produce and show the filed artefact of record, never beside a preview",
+    "component": "Authoring & Template Service",
+    "satisfies": [
+      "CAP-RND-002",
+      "CAP-RND-004"
+    ],
+    "iteration": "4",
+    "status": "planned"
+  },
   "FN-EVT-001": {
     "name": "Build a content event from a persisted document",
     "component": "Notification & Event Backbone",

@@ -42,6 +42,22 @@ describe('FN-AUT-006 the authoring application', () => {
     })),
     marketTransitionAsync: vi.fn(async () => ({ ok: true as const, from: 'x', to: 'y' })),
     previewAsync: vi.fn(async () => '<!DOCTYPE html><html><body><p>Preview</p></body></html>'),
+    approvedTemplatesAsync: vi.fn(async () => [
+      { identifier: 'qrd-package-leaflet', version: 1, name: 'EU QRD package leaflet' },
+    ]),
+    filedRendersAsync: vi.fn(async () => []),
+    produceRenderAsync: vi.fn(async () => ({
+      ok: true as const,
+      render: {
+        template: 'qrd-package-leaflet',
+        templateVersion: 1,
+        key: 'rendered/doc/1/qrd-package-leaflet/1/final.html',
+        mediaType: 'text/html',
+        alreadyFiled: false,
+      },
+    })),
+    filedRenderAsync: vi.fn(async () =>
+      '<!DOCTYPE html><html><body><p>Filed</p></body></html>'),
     versionRecordAsync: vi.fn(async () => ({
       state: 'draft',
       author: 'user-anna',
@@ -131,6 +147,27 @@ describe('FN-AUT-006 the authoring application', () => {
     );
 
     await waitFor(() => expect(signIn.completeAsync).toHaveBeenCalled());
+  });
+
+  it('shows a draft a preview, and never the artefact of record', async () => {
+    // The panels are exclusive on purpose. A preview and the filed artefact on one screen is
+    // the confusion CAP-RND-004 exists to prevent, and somebody who cannot tell them apart
+    // eventually sends the wrong one.
+    render(
+      <App session={session(true)} platform={platform()} location={at(label)} go={vi.fn()} />);
+
+    expect(await screen.findByTitle(/preview of this version/i)).toBeDefined();
+    expect(screen.queryByTitle(/filed artefact/i)).toBeNull();
+  });
+
+  it('shows an approved version the filed leaflet, and no preview', async () => {
+    const client = platform();
+    client.loadVersion = vi.fn(async () => ({ ...version, state: 'approved', editable: false }));
+
+    render(<App session={session(true)} platform={client} location={at(label)} go={vi.fn()} />);
+
+    expect(await screen.findByRole('heading', { name: /the filed leaflet/i })).toBeDefined();
+    expect(screen.queryByTitle(/preview of this version/i)).toBeNull();
   });
 
   it('opens the label the address names, once there is a token', async () => {
@@ -384,6 +421,22 @@ describe('FN-AUT-006 the authoring application', () => {
     ]),
     searchLabels: vi.fn(async () => ({ total: 0, page: 1, pageSize: 20, hits: [] })),
       previewAsync: vi.fn(async () => '<!DOCTYPE html><html><body><p>Preview</p></body></html>'),
+    approvedTemplatesAsync: vi.fn(async () => [
+      { identifier: 'qrd-package-leaflet', version: 1, name: 'EU QRD package leaflet' },
+    ]),
+    filedRendersAsync: vi.fn(async () => []),
+    produceRenderAsync: vi.fn(async () => ({
+      ok: true as const,
+      render: {
+        template: 'qrd-package-leaflet',
+        templateVersion: 1,
+        key: 'rendered/doc/1/qrd-package-leaflet/1/final.html',
+        mediaType: 'text/html',
+        alreadyFiled: false,
+      },
+    })),
+    filedRenderAsync: vi.fn(async () =>
+      '<!DOCTYPE html><html><body><p>Filed</p></body></html>'),
     versionRecordAsync: vi.fn(async () => ({
         state: 'draft',
         author: null,

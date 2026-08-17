@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { LabelEditor } from './LabelEditor';
 import { LabelPicker } from './LabelPicker';
 import { LeafletPreview } from './LeafletPreview';
+import { OfficialLeaflet } from './OfficialLeaflet';
 import { ProductChoice } from './ProductChoice';
 import { LifecycleActions } from './LifecycleActions';
 import { MarketApprovals } from './MarketApprovals';
@@ -9,8 +10,11 @@ import { VersionHistory } from './VersionHistory';
 import { WaitingWork } from './WaitingWork';
 import type { SectionDescription, VersionDescription } from './authoring/editingSession';
 import type {
+  FiledRender,
   MarketStandings,
+  OfficialRenderOutcome,
   Product,
+  RenderTemplateChoice,
   VersionRecord,
   SignatureOutcome,
   TransitionOutcome,
@@ -61,6 +65,19 @@ export interface Platform {
   marketStandingsAsync(documentIdentifier: string, version: number): Promise<MarketStandings>;
   versionRecordAsync(documentIdentifier: string, version: number): Promise<VersionRecord>;
   previewAsync(documentIdentifier: string, version: number): Promise<string>;
+  approvedTemplatesAsync(): Promise<readonly RenderTemplateChoice[]>;
+  filedRendersAsync(documentIdentifier: string, version: number): Promise<readonly FiledRender[]>;
+  produceRenderAsync(
+    documentIdentifier: string,
+    version: number,
+    template: string,
+  ): Promise<OfficialRenderOutcome>;
+  filedRenderAsync(
+    documentIdentifier: string,
+    version: number,
+    template: string,
+    templateVersion: number,
+  ): Promise<string>;
   marketTransitionAsync(
     documentIdentifier: string,
     version: number,
@@ -148,6 +165,41 @@ export function App({
       version === null
         ? Promise.reject(new Error('There is no version to preview.'))
         : platform.previewAsync(version.documentIdentifier, version.version),
+    [platform, version],
+  );
+
+  // The same hoisting rule as the preview above, and the same reason.
+  const approvedTemplates = useCallback(
+    () => platform.approvedTemplatesAsync(),
+    [platform],
+  );
+
+  const filedRenders = useCallback(
+    () =>
+      version === null
+        ? Promise.resolve([] as readonly FiledRender[])
+        : platform.filedRendersAsync(version.documentIdentifier, version.version),
+    [platform, version],
+  );
+
+  const produceRender = useCallback(
+    (template: string) =>
+      version === null
+        ? Promise.resolve({
+            ok: false as const,
+            kind: 'failed' as const,
+            detail: 'There is no version to render.',
+          })
+        : platform.produceRenderAsync(version.documentIdentifier, version.version, template),
+    [platform, version],
+  );
+
+  const filedArtefact = useCallback(
+    (template: string, templateVersion: number) =>
+      version === null
+        ? Promise.reject(new Error('There is no version to read an artefact for.'))
+        : platform.filedRenderAsync(
+            version.documentIdentifier, version.version, template, templateVersion),
     [platform, version],
   );
 
@@ -245,7 +297,21 @@ export function App({
           onDone={() => setVersion(null)}
         />
       )}
-      <LeafletPreview load={preview} />
+      {/*
+        One panel at a time, chosen by whether the version is approved. Showing both would put a
+        preview and the artefact of record on the same screen, and CAP-RND-004 exists because
+        somebody who cannot tell them apart eventually sends the wrong one.
+      */}
+      {version.state === 'approved' ? (
+        <OfficialLeaflet
+          approvedTemplates={approvedTemplates}
+          filedRenders={filedRenders}
+          produce={produceRender}
+          artefact={filedArtefact}
+        />
+      ) : (
+        <LeafletPreview load={preview} />
+      )}
       <VersionHistory
         load={() => platform.versionRecordAsync(version.documentIdentifier, version.version)}
       />

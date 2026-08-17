@@ -32,6 +32,34 @@ export type SaveOutcome =
   | { readonly ok: false; readonly kind: 'conflict'; readonly detail: string }
   | { readonly ok: false; readonly kind: 'unreachable'; readonly detail: string };
 
+/** A template an author may render with: approved, and named so it can be recognised. */
+export interface RenderTemplateChoice {
+  readonly identifier: string;
+  readonly version: number;
+  readonly name: string;
+}
+
+/** An artefact in the asset store, as the platform describes it. */
+export interface FiledRender {
+  readonly template: string;
+  readonly templateVersion: number;
+  readonly key: string;
+  readonly mediaType: string;
+  readonly alreadyFiled: boolean;
+}
+
+/**
+ * What asking for the artefact of record did.
+ *
+ * @remarks
+ * Refused and missing are kept apart from each other and from a plain failure, because their
+ * remedies differ: get something approved, look at a version that exists, or try again.
+ */
+export type OfficialRenderOutcome =
+  | { readonly ok: true; readonly render: FiledRender }
+  | { readonly ok: false; readonly kind: 'missing' }
+  | { readonly ok: false; readonly kind: 'refused' | 'failed'; readonly detail: string };
+
 /** What an author is looking for. Every part optional, and only what is given is sent. */
 export interface SearchCriteria {
   readonly text?: string;
@@ -537,6 +565,134 @@ export class PlatformClient {
       throw new Error(
         `The platform answered ${response.status} for that preview, so this is not an empty ` +
           'leaflet - it was not rendered.',
+      );
+    }
+
+    return response.text();
+  }
+
+  /**
+   * The templates somebody has approved, so an author picks from what will work (FN-AUT-016).
+   *
+   * @remarks
+   * Filtered here rather than displayed and then refused. A draft template cannot produce an
+   * official render (ADR-042 decision 4), so offering one offers a choice the platform will turn
+   * down - and an author would reasonably conclude the platform was broken rather than that they
+   * had picked an unapproved template.
+   */
+  async approvedTemplatesAsync(): Promise<readonly RenderTemplateChoice[]> {
+    const response = await this.#send(
+      `${this.#connection.baseUrl.replace(/\/$/, '')}/templates`, { method: 'GET' });
+
+    if (!response.ok) {
+      throw new Error(
+        `The platform answered ${response.status} when asked which templates exist, so this is ` +
+          'not "no templates" - it was not answered.',
+      );
+    }
+
+    const templates = (await response.json()) as readonly {
+      readonly identifier: string;
+      readonly version: number;
+      readonly name: string;
+      readonly state: string;
+    }[];
+
+    return templates
+      .filter((template) => template.state === 'approved')
+      .map(({ identifier, version, name }) => ({ identifier, version, name }));
+  }
+
+  /**
+   * Produces the artefact of record for a version, with a template somebody approved.
+   *
+   * @remarks
+   * A request rather than a page load, because it files something. The outcomes are kept apart
+   * because their remedies are: get the version approved, get a template approved, or look at a
+   * version that exists (ADR-046).
+   */
+  async produceRenderAsync(
+    documentIdentifier: string,
+    version: number,
+    template: string,
+  ): Promise<OfficialRenderOutcome> {
+    const response = await this.#send(
+      `${this.#connection.baseUrl.replace(/\/$/, '')}` +
+        `/labels/${encodeURIComponent(documentIdentifier)}/versions/${version}/renders`,
+      {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ template }),
+      },
+    );
+
+    if (response.ok) {
+      return { ok: true, render: (await response.json()) as FiledRender };
+    }
+
+    if (response.status === 404) {
+      return { ok: false, kind: 'missing' };
+    }
+
+    // The platform's own words. A rule refused this, and which rule is the only thing that tells
+    // an author what to do next.
+    const problem = (await response.json().catch(() => ({}))) as { readonly detail?: string };
+
+    return {
+      ok: false,
+      kind: response.status === 409 ? 'refused' : 'failed',
+      detail:
+        problem.detail ??
+        `The platform answered ${response.status}, and said nothing more about why.`,
+    };
+  }
+
+  /** What has been filed for a version, so what exists is offered rather than remade. */
+  async filedRendersAsync(
+    documentIdentifier: string,
+    version: number,
+  ): Promise<readonly FiledRender[]> {
+    const response = await this.#send(
+      `${this.#connection.baseUrl.replace(/\/$/, '')}` +
+        `/labels/${encodeURIComponent(documentIdentifier)}/versions/${version}/renders`,
+      { method: 'GET' },
+    );
+
+    if (!response.ok) {
+      throw new Error(
+        `The platform answered ${response.status} when asked what has been filed, so this is ` +
+          'not "nothing filed" - it was not answered.',
+      );
+    }
+
+    return (await response.json()) as readonly FiledRender[];
+  }
+
+  /**
+   * The filed artefact itself, as the document it is.
+   *
+   * @remarks
+   * Read from the asset store rather than rendered again: what a regulator was sent is what was
+   * filed, and re-rendering to answer would answer with a fresh artefact that ought to match
+   * (ADR-046 decision 6).
+   */
+  async filedRenderAsync(
+    documentIdentifier: string,
+    version: number,
+    template: string,
+    templateVersion: number,
+  ): Promise<string> {
+    const response = await this.#send(
+      `${this.#connection.baseUrl.replace(/\/$/, '')}` +
+        `/labels/${encodeURIComponent(documentIdentifier)}/versions/${version}/renders/` +
+        `${encodeURIComponent(template)}/${templateVersion}`,
+      { method: 'GET' },
+    );
+
+    if (!response.ok) {
+      throw new Error(
+        `The platform answered ${response.status} for that filed artefact, so this is not an ` +
+          'empty leaflet - it was not read.',
       );
     }
 
