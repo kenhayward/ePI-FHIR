@@ -622,6 +622,16 @@
     "iteration": "2",
     "status": "planned"
   },
+  "FN-RND-004": {
+    "name": "Produce and file the artefact of record from an approved version and an approved template",
+    "component": "Rendering Service",
+    "satisfies": [
+      "CAP-RND-002",
+      "CAP-RND-004"
+    ],
+    "iteration": "4",
+    "status": "planned"
+  },
   "FN-SCH-001": {
     "name": "Search labels by market, status and identifier, scoped to the caller",
     "component": "Search Service",

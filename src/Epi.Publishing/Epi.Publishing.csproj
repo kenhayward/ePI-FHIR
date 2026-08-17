@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>Epi.Publishing</RootNamespace>
+  </PropertyGroup>
+
+  <!--
+    Producing the artefact of record is the one operation that needs all four: the content, its
+    lifecycle state, the approved template, and somewhere to file the result.
+
+    It is its own project because Epi.Rendering says of itself that it "reads content and nothing
+    else: no lifecycle" - and that boundary is why a render is a pure function of a label version
+    and a template version (ADR-033 decision 1). Deciding whether a render may be produced is a
+    different question from producing one, and mixing them would put lifecycle state inside the
+    thing whose purity is the guarantee.
+  -->
+  <ItemGroup>
+    <ProjectReference Include="..\Epi.ContentCore\Epi.ContentCore.csproj" />
+    <ProjectReference Include="..\Epi.Lifecycle\Epi.Lifecycle.csproj" />
+    <ProjectReference Include="..\Epi.Rendering\Epi.Rendering.csproj" />
+    <ProjectReference Include="..\Epi.Templates\Epi.Templates.csproj" />
+  </ItemGroup>
+
+</Project>

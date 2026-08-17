@@ -1,5 +1,6 @@
 using System.Text;
 using System.Security.Claims;
+using Amazon.S3;
 using Epi.ContentCore;
 using Epi.Contracts;
 using Epi.Governance.Audit;
@@ -8,6 +9,7 @@ using Epi.Governance.Events;
 using Epi.Governance.Persistence;
 using Epi.Iam;
 using Epi.Lifecycle;
+using Epi.Publishing;
 using Epi.Rendering;
 using Epi.Search;
 using Epi.Signature;
@@ -202,6 +204,61 @@ builder.Services.AddSingleton<ISignatureCheck>(services =>
 builder.Services.AddSingleton<ITemplateStore>(_ => string.IsNullOrWhiteSpace(governanceConnection)
     ? new InMemoryTemplateStore()
     : new PostgresTemplateStore(governanceConnection));
+
+// Where produced artefacts are filed (ADR-034, ADR-046). The object store when one is
+// configured, and the reference implementation when there is none - the same shape every other
+// store here takes.
+//
+// Retention is configuration rather than a constant, and there is no default: an artefact
+// written without a retention period is indistinguishable from one written with it until
+// somebody tries to destroy it, and by then the answer matters (AssetRetention).
+var objectStoreEndpoint = builder.Configuration["Epi:Assets:Endpoint"];
+
+builder.Services.AddSingleton<IAssetStore>(_ =>
+{
+    if (string.IsNullOrWhiteSpace(objectStoreEndpoint))
+    {
+        return new InMemoryAssetStore();
+    }
+
+    var client = new AmazonS3Client(
+        builder.Configuration["Epi:Assets:AccessKey"],
+        builder.Configuration["Epi:Assets:SecretKey"],
+        new AmazonS3Config
+        {
+            ServiceURL = objectStoreEndpoint,
+
+            // MinIO addresses buckets by path rather than by subdomain, and a virtual-hosted
+            // request against it resolves to a host that does not exist (ADR-013).
+            ForcePathStyle = true,
+            AuthenticationRegion = "us-east-1",
+        });
+
+    return new ObjectStoreAssetStore(
+        client,
+        builder.Configuration["Epi:Assets:Bucket"] ?? "epi-rendered",
+        AssetRetention.Load(
+            builder.Configuration["Epi:Assets:RetentionPath"]
+            ?? Path.Combine(
+                builder.Environment.ContentRootPath, "config", "assets", "retention.json")),
+        TimeProvider.System);
+});
+
+// Producing the artefact of record, which needs all four: the content, its lifecycle state, an
+// approved template, and somewhere to file the result (ADR-046).
+builder.Services.AddSingleton(services => new OfficialRender(
+    services.GetRequiredService<IContentStore>(),
+    services.GetRequiredService<ILifecycleStore>(),
+    services.GetRequiredService<ITemplateStore>(),
+    services.GetRequiredService<IAssetStore>(),
+    labelModel.Value.ApprovedState
+    ?? throw new InvalidOperationException(
+        "The label state model names no approved state, so nothing could ever be officially "
+        + "rendered. Set 'approvedState' in the label state model."),
+    templateModel.Value.ApprovedState
+    ?? throw new InvalidOperationException(
+        "The template state model names no approved state, so no template could ever be used "
+        + "for an official render. Set 'approvedState' in the template state model.")));
 
 // The same engine a label passes through, over the template state model (ADR-042 decision 3).
 // One engine and two models rather than two engines: the segregation-of-duties check and the
@@ -1675,6 +1732,193 @@ app.MapGet("/labels/{id}/versions/{version:int}/preview", async (
         Encoding.UTF8.GetString(rendered.Content), "text/html", Encoding.UTF8);
 }).RequireAuthorization();
 
+// The artefact of record: a render of an approved version, made with an approved template, filed
+// where it can be cited (FN-RND-004, ADR-046).
+//
+// Everything the preview allows, this refuses. A preview renders whatever an author may read and
+// files nothing; this one needs two approvals and writes what it produces, because the difference
+// between looking at your work and producing the document a regulator is sent is the difference
+// CAP-RND-004 exists to keep visible.
+app.MapPost("/labels/{id}/versions/{version:int}/renders", async (
+    string id,
+    int version,
+    RenderRequest body,
+    ClaimsPrincipal principal,
+    IContentStore store,
+    IPolicyDecisionPoint policy,
+    OfficialRender renders,
+    IdentifierAuthority authority,
+    CancellationToken cancellationToken) =>
+{
+    var subject = SubjectFactory.From(principal);
+    if (subject is null)
+    {
+        return Results.Unauthorized();
+    }
+
+    if (string.IsNullOrWhiteSpace(body.Template))
+    {
+        return Results.BadRequest(new
+        {
+            problems = new[]
+            {
+                "Say which template to render with. The platform lists the approved ones at "
+                + "/templates; nobody types a template identifier from memory.",
+            },
+        });
+    }
+
+    // Scope first, and through the same store the rest of the platform reads content through.
+    // An official render of content the caller may not see would be a way of extracting it.
+    var identity = new DocumentIdentity(authority.DocumentSystem, id);
+
+    try
+    {
+        if (await new ScopedContentStore(store, policy, subject)
+                .GetAsync(identity, version, cancellationToken) is null)
+        {
+            return Results.NotFound();
+        }
+    }
+    catch (AccessDeniedException)
+    {
+        // Not found rather than forbidden, as everywhere else: a 403 tells a caller a version
+        // exists, which is the thing scope is meant to withhold.
+        return Results.NotFound();
+    }
+
+    try
+    {
+        var outcome = await renders.ProduceAsync(identity, version, body.Template, cancellationToken);
+
+        if (outcome is null)
+        {
+            return Results.NotFound();
+        }
+
+        var view = new
+        {
+            template = outcome.Document.RenderTemplate,
+            templateVersion = outcome.Document.RenderTemplateVersion,
+            key = outcome.Key.ToString(),
+            mediaType = outcome.Document.MediaType,
+            alreadyFiled = outcome.AlreadyFiled,
+        };
+
+        // 201 the first time and 200 afterwards, because asking twice for a pure function of two
+        // versions is not a conflict - and a caller that got 409 would learn to retry through it.
+        return outcome.AlreadyFiled
+            ? Results.Ok(view)
+            : Results.Created(
+                $"/labels/{id}/versions/{version}/renders/"
+                + $"{outcome.Document.RenderTemplate}/{outcome.Document.RenderTemplateVersion}",
+                view);
+    }
+    catch (RenderRefusedException refused)
+    {
+        // 409: the request was understood, and a rule about what may be officially rendered
+        // would not have it.
+        return Results.Problem(refused.Message, statusCode: StatusCodes.Status409Conflict);
+    }
+    catch (RenderMismatchException mismatch)
+    {
+        // Not a conflict a caller can resolve. What is filed is not what this content and this
+        // template produce, which means one of them has changed underneath a copy somebody
+        // already has - and that is a platform problem, said out loud.
+        return Results.Problem(mismatch.Message, statusCode: StatusCodes.Status500InternalServerError);
+    }
+}).RequireAuthorization();
+
+// What has been filed for a version, so a surface can offer what exists rather than asking for it
+// to be made again, and so an inspector can see what a version produced.
+app.MapGet("/labels/{id}/versions/{version:int}/renders", async (
+    string id,
+    int version,
+    ClaimsPrincipal principal,
+    IContentStore store,
+    IPolicyDecisionPoint policy,
+    OfficialRender renders,
+    IdentifierAuthority authority,
+    CancellationToken cancellationToken) =>
+{
+    var subject = SubjectFactory.From(principal);
+    if (subject is null)
+    {
+        return Results.Unauthorized();
+    }
+
+    var identity = new DocumentIdentity(authority.DocumentSystem, id);
+
+    try
+    {
+        if (await new ScopedContentStore(store, policy, subject)
+                .GetAsync(identity, version, cancellationToken) is null)
+        {
+            return Results.NotFound();
+        }
+    }
+    catch (AccessDeniedException)
+    {
+        return Results.NotFound();
+    }
+
+    var filed = await renders.FiledAsync(identity, version, cancellationToken);
+
+    return Results.Ok(filed.Select(render => new
+    {
+        template = render.RenderTemplate,
+        templateVersion = render.RenderTemplateVersion,
+        key = render.Key.ToString(),
+        mediaType = "text/html",
+        alreadyFiled = true,
+    }));
+}).RequireAuthorization();
+
+// The filed artefact itself. Read from the asset store rather than re-rendered: what a regulator
+// was sent is what was filed, and re-rendering to answer would be answering a question about the
+// artefact with a fresh one that ought to match.
+app.MapGet("/labels/{id}/versions/{version:int}/renders/{template}/{templateVersion:int}", async (
+    string id,
+    int version,
+    string template,
+    int templateVersion,
+    ClaimsPrincipal principal,
+    IContentStore store,
+    IPolicyDecisionPoint policy,
+    IAssetStore assets,
+    IdentifierAuthority authority,
+    CancellationToken cancellationToken) =>
+{
+    var subject = SubjectFactory.From(principal);
+    if (subject is null)
+    {
+        return Results.Unauthorized();
+    }
+
+    var identity = new DocumentIdentity(authority.DocumentSystem, id);
+
+    try
+    {
+        if (await new ScopedContentStore(store, policy, subject)
+                .GetAsync(identity, version, cancellationToken) is null)
+        {
+            return Results.NotFound();
+        }
+    }
+    catch (AccessDeniedException)
+    {
+        return Results.NotFound();
+    }
+
+    var key = new AssetKey(
+        AssetKey.RenderedLineage, $"{id}/{version}/{template}/{templateVersion}/final.html");
+    var artefact = await assets.GetAsync(key, cancellationToken);
+
+    return artefact is null
+        ? Results.NotFound()
+        : Results.Text(Encoding.UTF8.GetString(artefact.Content), "text/html", Encoding.UTF8);
+}).RequireAuthorization();
+
 // The templates a deployment has, with the state each is in (FN-TPL-005).
 //
 // Nobody types a template identifier and nobody guesses whether one may be used: both come from
@@ -1881,6 +2125,14 @@ internal sealed record SignatureRequest(
 /// When a market's approval takes effect. Required on a transition that records one, refused on
 /// any other, and never defaulted (ADR-029 decision 3).
 /// </param>
+/// <summary>What a caller asks for when producing the artefact of record.</summary>
+/// <remarks>
+/// The template is named rather than chosen by the platform: which template a leaflet is rendered
+/// with is an editorial decision, and the platform's job is to list the approved ones (GET
+/// /templates) so that nobody types an identifier from memory (ADR-037 decision 3).
+/// </remarks>
+internal sealed record RenderRequest(string? Template);
+
 internal sealed record TransitionRequest(
     string Action, string? Reason, string? SignatureReference, DateTimeOffset? EffectiveFrom = null);
 

@@ -536,6 +536,51 @@ check("the deployment has a template somebody has taken responsibility for",
       str([t["state"] for t in templates])[:80] if status == 200 else "")
 
 
+# ---------------------------------------------------------------------------------------------
+# The artefact of record (ADR-046).
+#
+# Everything above has been leading here since iteration 3, and it needed both approvals to be
+# reachable: the content's, and the template's. What this produces is not a preview - it is filed
+# in the object store under object-lock, keyed by both versions that made it, and it is what a
+# regulator would be sent.
+
+usable = next((t for t in templates if t["state"] == "approved"), None) if status == 200 else None
+
+if usable:
+    print("\nAnna produces the artefact of record")
+    renders = f"/labels/{identifier}/versions/1/renders"
+    status, produced = call("POST", renders, anna, {"template": usable["identifier"]})
+    check("an approved version and an approved template produce a filed render",
+          status in (200, 201), f"{status} {str(produced)[:180]}")
+
+    if status in (200, 201):
+        check("and the key names both versions that made it",
+              usable["identifier"] in produced["key"] and identifier in produced["key"],
+              produced["key"])
+
+        # Asking again is asking for the same bytes, because a render is a pure function of its
+        # two versions. A 409 here would make an idempotent request look like a conflict.
+        status, again = call("POST", renders, anna, {"template": usable["identifier"]})
+        check("asking again files nothing new",
+              status == 200 and again.get("alreadyFiled") is True, f"{status} {str(again)[:120]}")
+
+        status, filed = call("GET", renders, anna)
+        check("what has been filed can be listed",
+              status == 200 and len(filed) >= 1, f"{status} {str(filed)[:120]}")
+
+        status, leaflet = call(
+            "GET", f"{renders}/{usable['identifier']}/{produced['templateVersion']}", anna)
+        check("the filed artefact reads back from the object store", status == 200,
+              str(leaflet)[:60])
+        check("and it does not say it is a preview",
+              status == 200 and "preview" not in str(leaflet).lower(), "")
+
+    status, refused = call("POST", f"/labels/{identifier}/versions/1/renders", anna,
+                           {"template": "no-such-template"})
+    check("a template nobody approved produces nothing", status != 200 and status != 201,
+          f"{status} {str(refused)[:100]}")
+
+
 print("\nThe reconciliation report is asked what is broken")
 # An operator rather than an author. Reconciliation is platform-wide, so it is not scoped to an
 # affiliate the way content is, and only a role that grants it may ask (policies/authz).

@@ -3,6 +3,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Epi.ContentCore\Epi.ContentCore.csproj" />
     <ProjectReference Include="..\Epi.Validation\Epi.Validation.csproj" />
+    <ProjectReference Include="..\Epi.Publishing\Epi.Publishing.csproj" />
     <ProjectReference Include="..\Epi.Rendering\Epi.Rendering.csproj" />
     <ProjectReference Include="..\Epi.Iam\Epi.Iam.csproj" />
     <ProjectReference Include="..\Epi.Governance\Epi.Governance.csproj" />
