@@ -13,8 +13,8 @@ Name unit tests for the function they verify, for example
 
 ## Coverage
 
-- Design functions declared: **81**
-- Verified by at least one unit test: **77**
+- Design functions declared: **82**
+- Verified by at least one unit test: **78**
 - Not yet verified: **4**
 
 ## Matrix
@@ -44,6 +44,7 @@ Name unit tests for the function they verify, for example
 | FN-AUT-016 | Produce and show the filed artefact of record, never beside a preview | Authoring & Template Service | CAP-RND-002, CAP-RND-004 | 4 | verified | `FN-AUT-016` (apps/authoring-ui/test/OfficialLeaflet.test.tsx)<br>`FN-AUT-016` (apps/authoring-ui/test/officialLeafletClient.test.ts) |
 | FN-AUT-017 | Read where the surface is pointed at start-up, and refuse to render without it | Authoring & Template Service | CAP-CFG-006 | 4 | verified | `FN-AUT-017` (apps/authoring-ui/test/settings.test.ts) |
 | FN-AUT-018 | Call the browser APIs the way a browser requires them to be called | Authoring & Template Service | CAP-IAM-001 | 4 | verified | `FN-AUT-018` (apps/authoring-ui/test/boundFetch.test.ts) |
+| FN-AUT-019 | Keep the open label in the address, and follow the author back to it | Authoring & Template Service | CAP-SCH-001, CAP-IAM-001 | 4 | verified | `FN-AUT-019` (apps/authoring-ui/test/addressing.test.tsx) |
 | FN-CC-001 | Parse an ePI document Bundle anchored by a Composition | Content Core (FHIR) | CAP-SCM-001 | 1 | verified | `FN_CC_001_reads_a_document_bundle_anchored_by_a_composition` (src/Epi.ContentCore.Tests/EpiBundleReaderTests.cs)<br>`FN_CC_001_rejects_a_bundle_that_is_not_of_type_document` (src/Epi.ContentCore.Tests/EpiBundleReaderTests.cs)<br>`FN_CC_001_rejects_a_bundle_with_no_entries` (src/Epi.ContentCore.Tests/EpiBundleReaderTests.cs)<br>`FN_CC_001_rejects_a_document_bundle_whose_first_entry_is_not_a_composition` (src/Epi.ContentCore.Tests/EpiBundleReaderTests.cs)<br>`FN_CC_001_rejects_content_carrying_elements_that_are_not_in_the_model` (src/Epi.ContentCore.Tests/EpiBundleReaderTests.cs)<br>`FN_CC_001_rejects_content_that_is_not_a_bundle` (src/Epi.ContentCore.Tests/EpiBundleReaderTests.cs)<br>`FN_CC_001_rejects_malformed_json_without_leaking_a_parser_stack_trace` (src/Epi.ContentCore.Tests/EpiBundleReaderTests.cs) |
 | FN-CC-002 | Assign a canonical identifier to a document | Content Core (FHIR) | CAP-SCM-007 | 1 | verified | `FN_CC_002_assigns_a_canonical_identifier_the_caller_did_not_supply` (src/Epi.ContentCore.Tests/ContentStoreConformance.cs)<br>`FN_CC_002_encodes_no_business_meaning_in_the_identifier` (src/Epi.ContentCore.Tests/ContentStoreConformance.cs)<br>`FN_CC_002_mints_a_distinct_identifier_for_every_document` (src/Epi.ContentCore.Tests/ContentStoreConformance.cs) |
 | FN-CC-003 | Create an immutable version snapshot and record its lineage | Content Core (FHIR) | CAP-SCM-007 | 1 | verified | `FN_CC_003_records_the_identifier_on_the_stored_bundle` (src/Epi.ContentCore.Tests/ContentStoreConformance.cs)<br>`FN_CC_003_rejects_a_new_version_of_a_document_that_does_not_exist` (src/Epi.ContentCore.Tests/ContentStoreConformance.cs)<br>`FN_CC_003_starts_at_version_one_and_increments_monotonically` (src/Epi.ContentCore.Tests/ContentStoreConformance.cs) |
@@ -116,7 +117,7 @@ Name unit tests for the function they verify, for example
 | CAP-CFG-006 | FN-AUT-017, FN-CFG-003, FN-CFG-005 | Validate configuration consistency before activation. |
 | CAP-CFG-007 | FN-CFG-004 | Support environment-aware configuration (dev/test/prod) with controlled promotion (GxP/CSV). |
 | CAP-EVT-001 | FN-EVT-001, FN-EVT-002 | Provide a publish/subscribe event backbone for inter-capability communication. |
-| CAP-IAM-001 | FN-AUT-005, FN-AUT-006, FN-AUT-018, FN-CFG-005, FN-IAM-001 | Authenticate via the enterprise IdP (OIDC/SAML) with SSO/federation and MFA (delegated to IdP). |
+| CAP-IAM-001 | FN-AUT-005, FN-AUT-006, FN-AUT-018, FN-AUT-019, FN-CFG-005, FN-IAM-001 | Authenticate via the enterprise IdP (OIDC/SAML) with SSO/federation and MFA (delegated to IdP). |
 | CAP-IAM-002 | FN-IAM-002, FN-IAM-003 | Enforce combined RBAC + ABAC authorization on every action and API. |
 | CAP-IAM-006 | FN-WFL-002 | Enforce segregation of duties (e.g. author != approver) across workflows (#16). |
 | CAP-IAM-007 | FN-IAM-004, FN-IAM-005 | Enforce multi-tenant isolation of affiliate data. |
@@ -135,7 +136,7 @@ Name unit tests for the function they verify, for example
 | CAP-RND-001 | FN-AUT-015 | Render FHIR ePI to accessible, structured HTML. |
 | CAP-RND-002 | FN-AUT-016, FN-RND-004 | Render FHIR ePI to PDF for regulatory/electronic distribution (the rendered-PDF lineage, distinct from artwork PDF). |
 | CAP-RND-004 | FN-AUT-015, FN-AUT-016, FN-RND-004 | Produce interactive author previews (draft, watermarked) and official renders (approved). |
-| CAP-SCH-001 | FN-SCH-001, FN-SCH-003, FN-SCH-004, FN-SCH-005 | Provide a FHIR RESTful API with search parameters (product, market, language, status, identifier, effective date). |
+| CAP-SCH-001 | FN-AUT-019, FN-SCH-001, FN-SCH-003, FN-SCH-004, FN-SCH-005 | Provide a FHIR RESTful API with search parameters (product, market, language, status, identifier, effective date). |
 | CAP-SCH-002 | FN-SCH-002 | Retrieve a specific version and the current-approved version of a label per market/language. |
 | CAP-SCH-004 | FN-AUT-007, FN-IAM-005, FN-SCH-001 | Scope all results by caller permissions/attributes (#17); never leak out-of-scope content. |
 | CAP-SCH-006 | FN-SCH-005 | Provide performance-bounded queries with pagination and result limits. |

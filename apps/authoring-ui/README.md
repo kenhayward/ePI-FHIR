@@ -44,6 +44,16 @@ or `keycloak` whatever the container serving these files can.
 The whole application is in the stack: `cd deploy/docker-compose && docker compose up -d` serves
 it at http://localhost:5173.
 
+Sign in as one of the demonstration people - `user-anna`, `user-ben`, `user-rae`, `user-ops`, all
+with password `Demo-Passw0rd!`. **Not** Keycloak's `admin`, which belongs to the `master` realm and
+is unknown to this surface.
+
+The address is where you are (ADR-051). Opening a label puts it in the address, so it can be
+bookmarked, shared and reloaded, and the browser's back button returns to the search. A label
+address followed while signed out survives the round trip to the identity provider: where you were
+going is remembered locally rather than handed to the provider, because a label identifier is the
+platform's business and not its.
+
 ## Layout
 
 - `src/authoring/narrative.ts` - the formatting an author can produce, and the only thing that

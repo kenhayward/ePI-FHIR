@@ -96,6 +96,12 @@ Four fictional people, enough to demonstrate segregation of duties. **All passwo
 | `user-rae` | Rae Lindqvist | regulatory | uk-affiliate | GB, EU |
 | `user-ops` | Omar Silva | platform-operator | uk-affiliate | GB |
 
+**These are the people who use the platform, and they are not the Keycloak administrator.**
+`admin` / `admin` administers Keycloak itself in the `master` realm: it is for the admin console at
+http://localhost:8081, and it is genuinely an unknown user to the authoring surface, which signs
+into the `epi` realm. Signing in to the surface with it fails with "invalid user or password", which
+is correct and reads like a broken deployment. Use one of the four below.
+
 Anna authors and submits; Ben approves, because the author of a version may not approve it.
 Rae holds EU as well as GB, so the same content can hold different regulatory-approval state
 in two markets (ADR-005). Omar operates the platform rather than authoring for it: the

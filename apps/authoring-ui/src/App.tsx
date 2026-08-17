@@ -106,6 +106,7 @@ export function App({
   location,
   go,
   replaceAddress = (url) => window.history.replaceState(null, '', url.toString()),
+  pushAddress = (url) => window.history.pushState(null, '', url.toString()),
 }: {
   readonly session: Session;
   readonly platform: Platform;
@@ -118,15 +119,33 @@ export function App({
    * in a browser wants the same thing.
    */
   readonly replaceAddress?: (url: URL) => void;
+
+  /**
+   * Adds an address to the history, so the label an author opened can be bookmarked, shared and
+   * reloaded - and so the browser's back button means what it means everywhere else.
+   */
+  readonly pushAddress?: (url: URL) => void;
 }) {
   const [version, setVersion] = useState<VersionDescription | null>(null);
   const [problem, setProblem] = useState<string | null>(null);
   const [outcome, setOutcome] = useState<SaveOutcome | null>(null);
   const [standings, setStandings] = useState<MarketStandings | null>(null);
 
-  // What the author picked, where they picked one. The address still wins when it names a
-  // label, so a link opens what it says.
-  const [picked, setPicked] = useState<{ label: string; version: number } | null>(null);
+  /**
+   * Where the author is.
+   *
+   * @remarks
+   * Held in state rather than read from the prop, because the address changes while the
+   * application runs: opening a label pushes one, and the browser's back button replaces one
+   * underneath us. It used to be the prop plus a separate note of what had been picked, which
+   * meant the label an author was working on was nowhere in the address - unbookmarkable,
+   * unshareable, and lost on a refresh.
+   *
+   * A remembered address wins on the way back from the identity provider. Everybody is sent back
+   * to the origin, so the label somebody followed a link to is gone from the address by the time
+   * they return, and they landed on a search box with no idea which label they had been sent.
+   */
+  const [address, setAddress] = useState<URL>(() => intendedInsteadOf(location));
 
   // Undefined until the author changes it, and sent that way: omission is not removal, and the
   // platform reads an absent product as unchanged (ADR-040). Sending the current one back
@@ -139,13 +158,44 @@ export function App({
    */
   const [signIns, setSignIns] = useState(0);
 
-  const fromAddress = location.searchParams.get('label');
-  const wanted =
-    fromAddress !== null
-      ? { label: fromAddress, version: Number(location.searchParams.get('version') ?? '0') }
-      : { label: picked?.label ?? null, version: picked?.version ?? 0 };
+  const fromAddress = address.searchParams.get('label');
+  const wanted = {
+    label: fromAddress,
+    version: fromAddress === null ? 0 : Number(address.searchParams.get('version') ?? '0'),
+  };
 
-  const returning = location.searchParams.has('code');
+  const returning = address.searchParams.has('code');
+
+  /** Opening a label: into the address, and into the history so back works. */
+  const open = useCallback(
+    (label: string, version: number) => {
+      const opened = new URL(address.href);
+      opened.searchParams.set('label', label);
+      opened.searchParams.set('version', String(version));
+      opened.searchParams.delete('view');
+
+      setAddress(opened);
+
+      try {
+        pushAddress(opened);
+      } catch {
+        // The label is open either way. Some environments refuse pushState, and declining to open
+        // a label because the address bar could not be updated would be losing the thing for the
+        // label on it.
+      }
+    },
+    [address, pushAddress],
+  );
+
+  // The browser's back and forward buttons change the address underneath this page and tell
+  // nobody. Without this, back leaves the application rather than returning the author to the
+  // search they came from.
+  useEffect(() => {
+    const followed = () => setAddress(new URL(window.location.href));
+
+    window.addEventListener('popstate', followed);
+    return () => window.removeEventListener('popstate', followed);
+  }, []);
 
   useEffect(() => {
     if (!returning || session.hasValidToken) {
@@ -153,7 +203,7 @@ export function App({
     }
 
     session
-      .completeAsync(location)
+      .completeAsync(address)
       .then(() => {
         // Counted, because hasValidToken is a getter on a mutable object and nothing else tells
         // React the answer has changed. Without this the exchange succeeded, the token sat in
@@ -164,10 +214,15 @@ export function App({
         // The spent code taken out of the address. An authorization code is used once (ADR-039
         // decision 4), so leaving it there means a refresh replays a code the identity provider
         // has already consumed and the author is shown a state-mismatch refusal for pressing F5.
-        const settled = new URL(location.href);
+        const settled = new URL(address.href);
         for (const spent of ['code', 'state', 'session_state', 'iss']) {
           settled.searchParams.delete(spent);
         }
+
+        // Into the state as well as the bar. Rewriting only the bar left this component holding
+        // the callback's parameters, and the next address it pushed put the spent code back -
+        // found in a browser, in the change that introduced it.
+        setAddress(settled);
 
         try {
           replaceAddress(settled);
@@ -178,7 +233,7 @@ export function App({
         }
       })
       .catch((failed: Error) => setProblem(failed.message));
-  }, [returning, session, location, replaceAddress]);
+  }, [returning, session, address, replaceAddress]);
 
   useEffect(() => {
     if (!session.hasValidToken || wanted.label === null || wanted.version < 1) {
@@ -266,7 +321,16 @@ export function App({
           You are signed out. Signing in happens at your organisation&apos;s identity provider -
           this application never asks for a password.
         </p>
-        <button type="button" onClick={() => void session.beginAsync().then(go)}>
+        <button
+          type="button"
+          onClick={() => {
+            // Where they were going, kept locally rather than handed to the identity provider.
+            // Putting the label in the redirect URI would work and would also write it into
+            // somebody else's logs; a label identifier is the platform's business.
+            remember(address);
+            void session.beginAsync().then(go);
+          }}
+        >
           Sign in
         </button>
       </main>
@@ -276,15 +340,15 @@ export function App({
   if (wanted.label === null || wanted.version < 1) {
     return (
       <Shell>
-        {location.searchParams.get('view') === 'tasks' ? (
+        {address.searchParams.get('view') === 'tasks' ? (
           <WaitingWork
             tasks={() => platform.openTasks()}
-            onOpen={(label, version) => setPicked({ label, version })}
+            onOpen={open}
           />
         ) : (
           <LabelPicker
             search={(criteria) => platform.searchLabels(criteria)}
-            onOpen={(label, version) => setPicked({ label, version })}
+            onOpen={open}
           />
         )}
       </Shell>
@@ -449,4 +513,62 @@ function Outcome({ outcome }: { readonly outcome: SaveOutcome | null }) {
         </p>
       );
   }
+}
+
+/** Where a remembered address is kept, beside the PKCE material the same round trip needs. */
+const INTENDED = 'epi.intended';
+
+/**
+ * Notes where the author was going, before they are sent to the identity provider.
+ *
+ * @remarks
+ * Locally rather than in the redirect URI. Putting the label there would work, and would also
+ * write a label identifier into the identity provider's logs - which is the platform's business
+ * and not its (ADR-051).
+ */
+function remember(address: URL): void {
+  try {
+    sessionStorage.setItem(INTENDED, address.href);
+  } catch {
+    // Storage can be refused. The author signs in either way and lands on the picker, which is
+    // the behaviour this replaces rather than a new failure.
+  }
+}
+
+/**
+ * The address the author was heading for, if one was remembered, and otherwise the one they are
+ * at (FN-AUT-019).
+ *
+ * @remarks
+ * Consumed as it is read. Left behind, it would reopen weeks-old work on the next sign-in, and on
+ * a shared machine it would reopen somebody else's label.
+ *
+ * Only on the way back from the identity provider. A plain visit to the root is somebody choosing
+ * to start at the picker, and reopening whatever they last had would be overriding that.
+ */
+function intendedInsteadOf(location: URL): URL {
+  if (!location.searchParams.has('code')) {
+    return location;
+  }
+
+  let intended: string | null = null;
+
+  try {
+    intended = sessionStorage.getItem(INTENDED);
+    sessionStorage.removeItem(INTENDED);
+  } catch {
+    return location;
+  }
+
+  if (intended === null || !URL.canParse(intended)) {
+    return location;
+  }
+
+  // The callback's own parameters travel with it, so the exchange still has its code and state.
+  const restored = new URL(intended);
+  for (const [name, value] of location.searchParams) {
+    restored.searchParams.set(name, value);
+  }
+
+  return restored;
 }
