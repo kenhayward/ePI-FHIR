@@ -257,6 +257,18 @@ public abstract class LifecycleStoreConformance : IAsyncDisposable
     }
 
     [Fact]
+    public async Task FN_LCM_008_asking_for_everything_returns_everything()
+    {
+        // The rebuild asks for every registration rather than every registration before now
+        // (FN-SCH-004), so the far end of the range has to be an answerable question rather
+        // than one the store's date handling falls over on.
+        var store = await NewStoreAsync();
+        await store.RegisterAsync(Version, "user-anna", "draft", Registered);
+
+        Assert.Single(await store.RegistrationsBeforeAsync(DateTimeOffset.MaxValue));
+    }
+
+    [Fact]
     public async Task FN_LCM_008_a_store_holding_no_registrations_returns_none()
     {
         var store = await NewStoreAsync();

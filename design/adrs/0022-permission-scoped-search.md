@@ -129,6 +129,10 @@ unbounded query against a regulated corpus is an outage waiting for its first la
   reaches content through search, the authoring UI's label picker included, then shows an empty
   platform. The debt is not "search is slower than it could be"; it is "a restarted deployment
   looks empty".
+
+  Paid in [ADR-044](0044-search-projection-rebuild.md): start-up rebuilds the index from the
+  lifecycle and content stores, which is also the first thing that has ever tested the claim
+  that this projection is derivable.
 - `product` as a search parameter binds to what the content carries as its subject until
   master data (capability 5) exists to bind it to properly. `effective date` waits for
   effective dating.

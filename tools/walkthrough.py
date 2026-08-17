@@ -164,7 +164,12 @@ check("approving closed the task that asked for it", remaining == [], str(remain
 
 
 print("\nAnna searches for it")
-status, results = call("GET", "/labels/search?state=approved", anna)
+# Narrowed to this document as well as this state. It used to ask for the first page of
+# everything approved and look for this label in it, which held only while the index was as
+# empty as the walkthrough had left it - and start-up now rebuilds the index from the canonical
+# stores (ADR-044), so a deployment that has been used has more than a page of approved
+# versions. The question was always "is this label findable as approved"; now it is asked.
+status, results = call("GET", f"/labels/search?state=approved&identifier={identifier}", anna)
 check("search finds the approved label", status == 200
       and any(hit["documentIdentifier"] == identifier for hit in results.get("hits", [])),
       f"{status} {str(results)[:200]}")
@@ -564,13 +569,19 @@ if healthy:
     status, still = call("GET", f"/labels/{identifier}/versions/1/sections", anna)
     check("and so is the content", status == 200, str(status))
 
-    # Not asserted, because it is a recorded debt rather than a defect (ADR-022): the search
-    # projection is in memory and nothing rebuilds it, so a restart leaves content that exists
-    # and cannot be found. Said out loud here because the restart is what makes it visible, and
-    # a debt nobody sees the cost of is a debt nobody pays.
+    # The debt this restart priced, now paid (ADR-044). The projection is in memory, so a
+    # restart empties it; what makes the content findable again is that start-up rebuilds the
+    # index from the stores that are canonical. Without that, content sat in the FHIR server
+    # that nothing could find - and every surface reaching content through search, the
+    # authoring UI's label picker included, showed an empty platform.
     status, found = call("GET", f"/labels/search?identifier={identifier}", anna)
-    if status == 200 and found.get("total") == 0:
-        print("  NOTE  the search index is empty after a restart and nothing rebuilds it "
-              "(ADR-022 debt)")
+    check("and it is findable again, because start-up rebuilt the index",
+          status == 200 and found.get("total", 0) > 0,
+          f"{status} total={found.get('total') if status == 200 else '?'}")
+
+    status, approved = call("GET", f"/labels/search?state=approved", anna)
+    check("a rebuilt version carries the state it reached, not the one it started in",
+          status == 200 and approved.get("total", 0) > 0,
+          f"total={approved.get('total') if status == 200 else '?'}")
 
 print("\n" + ("ALL CHECKS PASSED" if not failures else f"FAILURES: {failures}"))

@@ -651,6 +651,15 @@
     "iteration": "4",
     "status": "planned"
   },
+  "FN-SCH-004": {
+    "name": "Rebuild the search projection from the canonical stores at start-up",
+    "component": "Search & Retrieval Service",
+    "satisfies": [
+      "CAP-SCH-001"
+    ],
+    "iteration": "4",
+    "status": "planned"
+  },
   "FN-TPL-001": {
     "name": "Instantiate a conformant draft from an approved template",
     "component": "Authoring & Template Service",
