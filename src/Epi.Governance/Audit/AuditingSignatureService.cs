@@ -32,7 +32,7 @@ public sealed class AuditingSignatureService(IElectronicSignatureService inner, 
 
     private readonly IAuditSink _audit = audit ?? throw new ArgumentNullException(nameof(audit));
 
-    public async Task<SignatureManifest> SignAsync(
+    public Task<SignatureManifest> SignAsync(
         EpiDocument document,
         string signerIdentifier,
         string password,
@@ -41,12 +41,50 @@ public sealed class AuditingSignatureService(IElectronicSignatureService inner, 
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(document);
-        var target = $"{document.Identity}@{document.Version}";
 
+        return RecordedAsync(
+            $"{document.Identity}@{document.Version}",
+            signerIdentifier,
+            reason,
+            token => _inner.SignAsync(
+                document, signerIdentifier, password, meaning, reason, token),
+            cancellationToken);
+    }
+
+    public Task<SignatureManifest> SignAsync(
+        SignableArtefact artefact,
+        string signerIdentifier,
+        string password,
+        SignatureMeaning meaning,
+        string? reason = null,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(artefact);
+
+        return RecordedAsync(
+            $"{artefact.Identity}@{artefact.Version}",
+            signerIdentifier,
+            reason,
+            token => _inner.SignAsync(
+                artefact, signerIdentifier, password, meaning, reason, token),
+            cancellationToken);
+    }
+
+    /// <summary>
+    /// Signs, and records the attempt either way. Written once for both overloads: an audit
+    /// decorator that recorded one route and not the other would be a control with a hole in
+    /// exactly the shape of whatever was added last.
+    /// </summary>
+    private async Task<SignatureManifest> RecordedAsync(
+        string target,
+        string signerIdentifier,
+        string? reason,
+        Func<CancellationToken, Task<SignatureManifest>> sign,
+        CancellationToken cancellationToken)
+    {
         try
         {
-            var manifest = await _inner.SignAsync(
-                document, signerIdentifier, password, meaning, reason, cancellationToken);
+            var manifest = await sign(cancellationToken);
 
             // The manifest is the record. It carries no credential - only who signed, under
             // what name, what they meant, when, and the hash of what they signed.

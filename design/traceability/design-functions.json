@@ -717,5 +717,15 @@
     ],
     "iteration": "4",
     "status": "planned"
+  },
+  "FN-TPL-006": {
+    "name": "Sign for a render template, so its approval gate can be passed",
+    "component": "Authoring & Template Service",
+    "satisfies": [
+      "CAP-TPL-008",
+      "CAP-AUD-003"
+    ],
+    "iteration": "4",
+    "status": "planned"
   }
 }

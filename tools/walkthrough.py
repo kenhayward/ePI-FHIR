@@ -11,6 +11,7 @@ paths a container resolves differently from a checkout, the policy the decision 
 actually loaded with - and every one of those has been broken at least once.
 """
 import base64
+import http.client
 import json
 import subprocess
 import time
@@ -60,6 +61,12 @@ def call(method, path, jwt, body=None, content_type="application/json", base=Non
     except urllib.error.HTTPError as error:
         raw = error.read().decode()
         return error.code, (json.loads(raw) if raw.strip().startswith(("{", "[")) else raw)
+    except (urllib.error.URLError, TimeoutError, ConnectionError, http.client.HTTPException) as down:
+        # A service that is not answering is a failing check, not a traceback. The walkthrough
+        # restarts the API now (ADR-043), so a request can genuinely arrive while nothing is
+        # listening - and a stack trace ends the run, taking every check after it with it and
+        # saying less than one line of "could not reach".
+        return 0, f"could not reach {base or API}: {down}"
 
 
 def scoped_document():
@@ -460,34 +467,35 @@ print("\nAnna looks at the templates the deployment came with")
 status, templates = call("GET", "/templates", anna)
 check("the platform says which templates exist", status == 200 and len(templates) > 0,
       f"{status} {[t['identifier'] for t in templates] if status == 200 else templates}")
-check("and not one of them is approved, so nothing may be officially rendered yet",
-      status == 200 and not any(t["state"] == "approved" for t in templates),
-      str([t["state"] for t in templates])[:80] if status == 200 else "")
 check("each says what may be done to it from here",
       status == 200 and all(t["actions"] for t in templates), "")
 
-# Re-runnable against a database that survives the walkthrough. Every other scene mints a new
-# document; the seeded templates are singletons, so this scene puts back what it moves. A
-# walkthrough that only passes against a fresh volume stops being run.
-first = templates[0] if status == 200 and templates else None
+# Re-runnable against a database that survives the walkthrough. The seeded templates are
+# singletons rather than documents this run minted, so the scene takes whichever one is still
+# waiting to be approved - and once every one of them has been, it says so and asserts what is
+# true of a deployment in that state. A walkthrough that only passes against a fresh volume
+# stops being run.
+waiting = next(
+    (t for t in templates if t["state"] in ("draft", "in-review")), None) if status == 200 else None
 
-if first and first["state"] == "in-review":
-    call("POST", f"/templates/{first['identifier']}/versions/{first['version']}/transitions",
+if waiting and waiting["state"] == "in-review":
+    call("POST",
+         f"/templates/{waiting['identifier']}/versions/{waiting['version']}/transitions",
          anna, {"action": "return"})
-    first = next(t for t in call("GET", "/templates", anna)[1]
-                 if t["identifier"] == first["identifier"])
+    waiting = next(t for t in call("GET", "/templates", anna)[1]
+                   if t["identifier"] == waiting["identifier"])
 
-if first:
+if waiting:
     print("\nA template goes through the engine a label goes through")
-    path = f"/templates/{first['identifier']}/versions/{first['version']}/transitions"
-    check("it starts as a draft", first["state"] == "draft", first["state"])
+    path = f"/templates/{waiting['identifier']}/versions/{waiting['version']}/transitions"
+    check("it starts as a draft", waiting["state"] == "draft", waiting["state"])
 
     status, moved = call("POST", path, anna, {"action": "submit"})
     check("a template is submitted for review",
           status == 200 and moved.get("to") == "in-review", f"{status} {str(moved)[:120]}")
 
     status, after = call("GET", "/templates", anna)
-    state = next((t["state"] for t in after if t["identifier"] == first["identifier"]), None)
+    state = next((t["state"] for t in after if t["identifier"] == waiting["identifier"]), None)
     check("and the engine moved it", state == "in-review", str(state))
 
     # The gate that makes approving a template mean anything, reaching a different artefact
@@ -496,9 +504,36 @@ if first:
     check("approving one without a signature is refused", status != 200,
           f"{status} {str(unsigned)[:120]}")
 
-    status, returned = call("POST", path, anna, {"action": "return"})
-    check("and the walkthrough leaves the template as it found it",
-          status == 200 and returned.get("to") == "draft", f"{status} {str(returned)[:80]}")
+    # Through the gate, not only up to it. Every check here used to assert a refusal, and a gate
+    # nobody can pass refuses everything correctly - which is how a template approval that was
+    # impossible went unnoticed through three pull requests (ADR-047).
+    status, signature = call("POST", "/signatures", ben, {
+        "documentIdentifier": waiting["identifier"],
+        "version": waiting["version"],
+        "artefact": "template",
+        "meaning": "Approval",
+        "password": PASSWORD,
+        "reason": "reviewed the stylesheet against the QRD",
+    })
+    check("a template can be signed for", status == 200, f"{status} {str(signature)[:120]}")
+
+    if status == 200:
+        status, approved = call("POST", path, ben, {
+            "action": "approve", "signatureReference": signature["reference"]})
+        check("and the signature opens the approval gate",
+              status == 200 and approved.get("to") == "approved",
+              f"{status} {str(approved)[:120]}")
+
+    # Left approved rather than put back. Retiring it would need another signature, and an
+    # approved template is a better state for the next run to find than a draft: it is what a
+    # deployment looks like once somebody has taken responsibility for one.
+else:
+    print("\nEvery template here has been approved already")
+
+status, templates = call("GET", "/templates", anna)
+check("the deployment has a template somebody has taken responsibility for",
+      status == 200 and any(t["state"] == "approved" for t in templates),
+      str([t["state"] for t in templates])[:80] if status == 200 else "")
 
 
 print("\nThe reconciliation report is asked what is broken")

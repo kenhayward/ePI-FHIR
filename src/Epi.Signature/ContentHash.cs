@@ -40,7 +40,16 @@ public static class ContentHash
             canonical.Meta.LastUpdated = null;
         }
 
-        var hash = SHA256.HashData(Encoding.UTF8.GetBytes(EpiBundleReader.Write(canonical)));
-        return $"{Algorithm}:{Convert.ToHexStringLower(hash)}";
+        return Of(Encoding.UTF8.GetBytes(EpiBundleReader.Write(canonical)));
     }
+
+    /// <summary>The hash of an artefact that is not FHIR, over bytes its owner canonicalised.</summary>
+    /// <remarks>
+    /// A render template is signed for too (ADR-047), and it is a stylesheet rather than a
+    /// Bundle. What its canonical bytes are is the template module's business - it knows what an
+    /// approver is signing for - and how they are hashed is this one's, so a later change of
+    /// algorithm reaches everything the platform has ever signed rather than one artefact kind.
+    /// </remarks>
+    public static string Of(ReadOnlySpan<byte> canonical) =>
+        $"{Algorithm}:{Convert.ToHexStringLower(SHA256.HashData(canonical))}";
 }
