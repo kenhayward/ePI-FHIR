@@ -193,9 +193,15 @@ builder.Services.AddSingleton<ISpentSignatures>(services => new SpentSignatures(
 builder.Services.AddSingleton<ISignatureCheck>(services =>
     new SignatureCheck(services.GetRequiredService<ISignatureStore>()));
 
-// Where render templates live (ADR-042). In memory for now, like every other store before its
-// durable counterpart lands.
-builder.Services.AddSingleton<ITemplateStore>(_ => new InMemoryTemplateStore());
+// Where render templates live (ADR-042), durably wherever the governance store is (ADR-043).
+//
+// This was in memory while its lifecycle state was already durable, and the split did exactly
+// what a split like that does: a restart lost the templates, kept their registrations, and
+// seeding then recreated and re-registered them - onto a primary key that refused. The API
+// came up once.
+builder.Services.AddSingleton<ITemplateStore>(_ => string.IsNullOrWhiteSpace(governanceConnection)
+    ? new InMemoryTemplateStore()
+    : new PostgresTemplateStore(governanceConnection));
 
 // The same engine a label passes through, over the template state model (ADR-042 decision 3).
 // One engine and two models rather than two engines: the segregation-of-duties check and the
@@ -365,7 +371,7 @@ else
 // Standard templates a deployment starts from, created as drafts and never as approvals
 // (ADR-042 decision 7). Nothing already in the store is touched: it belongs to whoever put it
 // there, and a seed correcting it would change what a patient reads without anybody deciding to.
-var seededTemplates = await TemplateSeeding.ApplyAsync(
+var seeding = await TemplateSeeding.ApplyAsync(
     app.Services.GetRequiredService<ITemplateStore>(),
     builder.Configuration["Epi:TemplateSeedPath"]
     ?? Path.Combine(builder.Environment.ContentRootPath, "config", "templates", "seed"));
@@ -378,20 +384,46 @@ var seededTemplates = await TemplateSeeding.ApplyAsync(
 // from approving it, and no person wrote this. Attributing it to an operator would disqualify
 // them from approving a template they did not write, and would put a name against work nobody
 // did.
-foreach (var seeded in seededTemplates)
+// Ensured rather than created, and decided by the lifecycle store rather than by what seeding
+// happened to make (ADR-043 decision 3). The two stores have no transaction between them, so a
+// process that died between writing a template and registering it would otherwise leave a
+// template no lifecycle record knew about - and "register what I just created" never looks at
+// it again, because the next start creates nothing.
+var lifecycleOfTemplates = app.Services.GetRequiredKeyedService<LifecycleService>("templates");
+var registeredTemplates = new List<string>();
+
+foreach (var seeded in seeding.Seeded)
 {
-    await app.Services.GetRequiredKeyedService<LifecycleService>("templates")
-        .RegisterAsync(new VersionRef(seeded, 1), TemplateSeeding.SeedAuthor,
-            RegisteredArtefact.Template);
+    var version = new VersionRef(seeded, 1);
+
+    if (await lifecycleOfTemplates.AuthorOfAsync(version) is not null)
+    {
+        continue;
+    }
+
+    await lifecycleOfTemplates.RegisterAsync(
+        version, TemplateSeeding.SeedAuthor, RegisteredArtefact.Template);
+    registeredTemplates.Add(seeded);
 }
 
 app.Logger.LogInformation(
-    seededTemplates.Count == 0
+    seeding.Created.Count == 0
         ? "No templates were seeded; the store already holds what it needs."
         : "Seeded {Count} template(s) as drafts: {Templates}. None is approved, and nothing may "
           + "be officially rendered with one until somebody signs for it.",
-    seededTemplates.Count,
-    string.Join(", ", seededTemplates));
+    seeding.Created.Count,
+    string.Join(", ", seeding.Created));
+
+if (registeredTemplates.Count > seeding.Created.Count)
+{
+    // Said out loud, because it means a previous start died between the two writes. Nothing is
+    // wrong now, and an operator who never hears about it has no way to know it happened.
+    app.Logger.LogWarning(
+        "Registered {Count} template(s) that existed without a lifecycle record: {Templates}. "
+        + "A previous start-up wrote the template and did not reach the registration.",
+        registeredTemplates.Count - seeding.Created.Count,
+        string.Join(", ", registeredTemplates.Except(seeding.Created)));
+}
 
 if (string.IsNullOrWhiteSpace(signingAuthority) || string.IsNullOrWhiteSpace(signingRealm))
 {

@@ -3,6 +3,8 @@ using Epi.Governance.Persistence;
 using Epi.Lifecycle;
 using Epi.Lifecycle.Tests;
 using Epi.Signature;
+using Epi.Templates;
+using Epi.Templates.Tests;
 using Npgsql;
 using Xunit;
 
@@ -81,6 +83,25 @@ public sealed class PostgresWorkflowStoreConformanceTests(PostgresServer server)
     }
 }
 
+/// <summary>The durable template store, held to the contract every one must meet.</summary>
+/// <remarks>
+/// The suite that mattered most here. A template determines what a patient reads, and the
+/// in-memory store was the only implementation until a restart proved what that meant: the
+/// templates went and their lifecycle state stayed (ADR-043).
+/// </remarks>
+[Collection(PostgresCollection.Name)]
+[Trait("Category", "Container")]
+public sealed class PostgresTemplateStoreConformanceTests(PostgresServer server)
+    : TemplateStoreConformance
+{
+    protected override async Task<ITemplateStore> CreateStoreAsync()
+    {
+        var connectionString = await server.CreateDatabaseAsync();
+        await GovernanceSchema.ApplyAsync(connectionString);
+        return new PostgresTemplateStore(connectionString);
+    }
+}
+
 /// <summary>
 /// The guarantee the durable stores exist to provide, and which an in-memory one cannot make:
 /// append-only enforced by the database rather than by the application.
@@ -132,6 +153,10 @@ public sealed class PostgresGovernanceRecordsAreAppendOnlyTests(PostgresServer s
             "task-1", Version, TaskEventKind.Raised, "approve", "approver", "user-anna",
             DateTimeOffset.UtcNow));
 
+        var templates = new PostgresTemplateStore(connectionString);
+        await templates.CreateAsync(
+            new RenderTemplateDefinition("qrd-leaflet", "EU QRD package leaflet", "body { }"));
+
         return connectionString;
     }
 
@@ -142,6 +167,7 @@ public sealed class PostgresGovernanceRecordsAreAppendOnlyTests(PostgresServer s
     [InlineData("signature_manifest", "signer_identifier")]
     [InlineData("pinned_context", "content_hash")]
     [InlineData("workflow_task_event", "assignee")]
+    [InlineData("render_template", "stylesheet")]
     public async Task FN_AUD_003_the_database_refuses_an_update_even_from_a_direct_connection(
         string table, string column)
     {
@@ -163,6 +189,7 @@ public sealed class PostgresGovernanceRecordsAreAppendOnlyTests(PostgresServer s
     [InlineData("signature_manifest")]
     [InlineData("pinned_context")]
     [InlineData("workflow_task_event")]
+    [InlineData("render_template")]
     public async Task FN_AUD_003_the_database_refuses_a_delete_even_from_a_direct_connection(
         string table)
     {
@@ -185,6 +212,7 @@ public sealed class PostgresGovernanceRecordsAreAppendOnlyTests(PostgresServer s
                  {
                      "lifecycle_version", "lifecycle_transition",
                      "market_approval_transition", "signature_manifest", "pinned_context",
+                     "render_template",
                  })
         {
             await using var source = new NpgsqlDataSourceBuilder(connectionString).Build();

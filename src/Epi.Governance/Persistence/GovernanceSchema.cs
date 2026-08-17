@@ -273,6 +273,34 @@ public static class GovernanceSchema
             ALTER TABLE lifecycle_version
                 ADD COLUMN IF NOT EXISTS artefact_kind TEXT NOT NULL DEFAULT 'content';
             """),
+
+        // Render templates, durably (ADR-043). Their lifecycle state was already here and the
+        // templates themselves were not, so a restart left registrations pointing at templates
+        // that no longer existed - and seeding, asking an empty store, made new ones and
+        // registered them again. The API did not survive a restart.
+        //
+        // Append-only in the same sense the lifecycle tables are: the primary key is the
+        // template and its version, so a change is another row and nothing rewrites what a
+        // filed render was made with.
+        new("0011-render-template", """
+            CREATE TABLE IF NOT EXISTS render_template (
+                identifier TEXT    NOT NULL,
+                version    INTEGER NOT NULL,
+                name       TEXT    NOT NULL,
+                stylesheet TEXT    NOT NULL,
+                PRIMARY KEY (identifier, version)
+            );
+            CREATE OR REPLACE FUNCTION render_template_is_append_only() RETURNS TRIGGER AS $$
+            BEGIN
+                RAISE EXCEPTION 'render_template is append-only: % is not permitted', TG_OP
+                    USING ERRCODE = 'restrict_violation';
+            END;
+            $$ LANGUAGE plpgsql;
+            DROP TRIGGER IF EXISTS render_template_no_change ON render_template;
+            CREATE TRIGGER render_template_no_change
+                BEFORE UPDATE OR DELETE ON render_template
+                FOR EACH ROW EXECUTE FUNCTION render_template_is_append_only();
+            """),
     ];
 
     /// <summary>

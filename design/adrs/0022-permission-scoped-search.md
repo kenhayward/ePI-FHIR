@@ -123,6 +123,12 @@ unbounded query against a regulated corpus is an outage waiting for its first la
   acceptable now and is the first thing to replace under load, per decision 5.
 - The projection must be rebuildable, and nothing may be written to it that is not derivable
   from the canonical stores. A rebuild path is not yet implemented and is recorded as a debt.
+  What that debt costs was measured once the walkthrough began restarting the service
+  (ADR-043): the index is in memory, so a restart empties it, and content that is still in the
+  FHIR server becomes unfindable - permanently, because nothing reprojects. Every surface that
+  reaches content through search, the authoring UI's label picker included, then shows an empty
+  platform. The debt is not "search is slower than it could be"; it is "a restarted deployment
+  looks empty".
 - `product` as a search parameter binds to what the content carries as its subject until
   master data (capability 5) exists to bind it to properly. `effective date` waits for
   effective dating.

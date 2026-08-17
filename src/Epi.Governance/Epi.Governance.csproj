@@ -4,6 +4,7 @@
     <ProjectReference Include="..\Epi.ContentCore\Epi.ContentCore.csproj" />
     <ProjectReference Include="..\Epi.Contracts\Epi.Contracts.csproj" />
     <ProjectReference Include="..\Epi.Signature\Epi.Signature.csproj" />
+    <ProjectReference Include="..\Epi.Templates\Epi.Templates.csproj" />
   </ItemGroup>
 
   <ItemGroup>
