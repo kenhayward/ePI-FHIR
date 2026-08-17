@@ -9,6 +9,9 @@ namespace Epi.Search.Tests;
 //   CAP-SCH-004 Never leak out-of-scope content
 public sealed class CurrentApprovedVersionsTests
 {
+    private static readonly DateTimeOffset Projected =
+        new DateTimeOffset(2026, 8, 17, 9, 0, 0, TimeSpan.Zero);
+
     private const string Approved = "approved";
 
     private static async Task<(CurrentApprovedVersions Resolver, InMemoryMarketApprovalStore Approvals)>
@@ -17,7 +20,7 @@ public sealed class CurrentApprovedVersionsTests
         var index = new InMemorySearchIndex();
         foreach (var (version, scope) in versions)
         {
-            await index.ProjectAsync(SearchFixtures.Document("doc-1", version, scope), "approved");
+            await index.ProjectAsync(SearchFixtures.Document("doc-1", version, scope), "approved", Projected);
         }
 
         var approvals = new InMemoryMarketApprovalStore();

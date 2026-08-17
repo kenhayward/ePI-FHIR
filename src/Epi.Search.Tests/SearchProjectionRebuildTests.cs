@@ -19,6 +19,9 @@ namespace Epi.Search.Tests;
 // content is not there.
 public sealed class SearchProjectionRebuildTests
 {
+    private static readonly DateTimeOffset Projected =
+        new DateTimeOffset(2026, 8, 17, 9, 0, 0, TimeSpan.Zero);
+
     private static readonly DateTimeOffset Now = new(2026, 8, 17, 9, 0, 0, TimeSpan.Zero);
 
     private static readonly IReadOnlyList<DocumentScope> Everywhere =
@@ -165,6 +168,33 @@ public sealed class SearchProjectionRebuildTests
         await subject.Rebuild.RunAsync();
 
         Assert.Equal(1, (await FindAsync(subject, "01a00000-0000-7000-8000-00000000a005")).Total);
+    }
+
+    [Fact]
+    public async Task FN_SCH_004_a_rebuild_reproduces_the_order_things_happened_in()
+    {
+        // The moment is reconstructed from the lifecycle record rather than stamped now. A
+        // rebuild that stamped its own clock would give a whole corpus one moment and lose the
+        // order it is meant to reproduce - and the order is what a picker shows first
+        // (ADR-045).
+        var subject = Fresh();
+        await WrittenAsync(subject, "01a00000-0000-7000-8000-00000000a009");
+        await WrittenAsync(subject, "01a00000-0000-7000-8000-00000000a00a");
+
+        // The second document moves later, so recency and identifier order disagree. Asserting
+        // an order that both rules produce would prove neither.
+        await subject.Lifecycle.AppendAsync(new StateTransition(
+            new VersionRef("01a00000-0000-7000-8000-00000000a00a", 1), "draft", "in-review",
+            "submit", "user-anna", Now.AddHours(6)));
+
+        await subject.Rebuild.RunAsync();
+
+        var results = await subject.Index.SearchAsync(
+            new ScopedSearchQuery(new SearchCriteria(), Everywhere));
+
+        Assert.Equal(
+            ["01a00000-0000-7000-8000-00000000a00a", "01a00000-0000-7000-8000-00000000a009"],
+            results.Hits.Select(hit => hit.DocumentIdentifier));
     }
 
     [Fact]

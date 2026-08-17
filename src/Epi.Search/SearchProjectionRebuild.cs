@@ -100,7 +100,14 @@ public sealed class SearchProjectionRebuild(
                     + "for it. The projection cannot be rebuilt from a store that disagrees "
                     + "with itself.");
 
-            await projection.ProjectAsync(document, state, cancellationToken);
+            // When it was last touched, reconstructed rather than stamped: the moment of its
+            // last transition, or of its registration if it has never moved. A rebuild that
+            // stamped its own clock would give a whole corpus one moment and lose the order it
+            // is meant to reproduce (ADR-045).
+            var history = await lifecycle.HistoryAsync(registration.Version, cancellationToken);
+            var lastTouched = history.Count > 0 ? history[^1].At : registration.RegisteredAt;
+
+            await projection.ProjectAsync(document, state, lastTouched, cancellationToken);
 
             projected++;
         }

@@ -18,17 +18,26 @@ namespace Epi.Search;
 /// </para>
 /// </remarks>
 public sealed class ProjectingContentStore(
-    IContentStore inner, ISearchProjection projection, string initialState) : IContentStore
+    IContentStore inner,
+    ISearchProjection projection,
+    string initialState,
+    TimeProvider? time = null) : IContentStore
 {
     private readonly IContentStore _inner = inner ?? throw new ArgumentNullException(nameof(inner));
     private readonly ISearchProjection _projection =
         projection ?? throw new ArgumentNullException(nameof(projection));
 
+    // A write happens now. The lifecycle side takes its moment from the transition it records,
+    // because that moment is evidence; this side has no record to read one from, and "now" is
+    // what is true (ADR-045).
+    private readonly TimeProvider _time = time ?? TimeProvider.System;
+
     public async Task<EpiDocument> CreateAsync(
         DocumentIdentity identity, Bundle bundle, CancellationToken cancellationToken = default)
     {
         var stored = await _inner.CreateAsync(identity, bundle, cancellationToken);
-        await _projection.ProjectAsync(stored, initialState, cancellationToken);
+        await _projection.ProjectAsync(
+            stored, initialState, _time.GetUtcNow(), cancellationToken);
         return stored;
     }
 
@@ -36,7 +45,8 @@ public sealed class ProjectingContentStore(
         DocumentIdentity identity, int version, Bundle bundle, CancellationToken cancellationToken = default)
     {
         var stored = await _inner.CreateVersionAsync(identity, version, bundle, cancellationToken);
-        await _projection.ProjectAsync(stored, initialState, cancellationToken);
+        await _projection.ProjectAsync(
+            stored, initialState, _time.GetUtcNow(), cancellationToken);
         return stored;
     }
 
@@ -78,7 +88,8 @@ public sealed class ProjectingLifecycleStore(
         // one, with no scope to bound it (ADR-022 decision 3).
         if (string.Equals(kind, RegisteredArtefact.Content, StringComparison.Ordinal))
         {
-            await _projection.ProjectStateAsync(version, initialState, cancellationToken);
+            await _projection.ProjectStateAsync(
+                version, initialState, registeredAt, cancellationToken);
         }
     }
 
@@ -94,12 +105,13 @@ public sealed class ProjectingLifecycleStore(
         CancellationToken cancellationToken = default)
     {
         await _inner.AppendAsync(transition, pin, consequence, cancellationToken);
-        await _projection.ProjectStateAsync(transition.Version, transition.To, cancellationToken);
+        await _projection.ProjectStateAsync(
+            transition.Version, transition.To, transition.At, cancellationToken);
 
         if (consequence is not null)
         {
             await _projection.ProjectStateAsync(
-                consequence.Version, consequence.To, cancellationToken);
+                consequence.Version, consequence.To, consequence.At, cancellationToken);
         }
     }
 
