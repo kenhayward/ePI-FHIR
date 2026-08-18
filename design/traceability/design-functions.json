@@ -444,6 +444,16 @@
     "iteration": "4",
     "status": "planned"
   },
+  "FN-AUT-019": {
+    "name": "Keep the open label in the address, and follow the author back to it",
+    "component": "Authoring & Template Service",
+    "satisfies": [
+      "CAP-SCH-001",
+      "CAP-IAM-001"
+    ],
+    "iteration": "4",
+    "status": "planned"
+  },
   "FN-EVT-001": {
     "name": "Build a content event from a persisted document",
     "component": "Notification & Event Backbone",
